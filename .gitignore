@@ -1,24 +1,85 @@
-# Java
+# ── BACKEND (Java / Spring Boot / Maven) ──────────────────────
 
 target/
 *.class
 *.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# VS Code Java
+.classpath
+.project
+.settings/
+bin/
 
 # Logs
-
-logs/
 *.log
+logs/
 
-# Node
+# ── FRONTEND (Node.js / React / Vite) ─────────────────────────
 
-node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
 
-# IDE
+# npm / yarn / pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-.vscode/
-.idea/
+# ── VARIÁVEIS DE AMBIENTE ──────────────────────────────────────
 
-# OS
+.env
+.env.local
+.env.development
+.env.production
+*.env
 
+# ── SISTEMA OPERACIONAL ────────────────────────────────────────
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ── DOCKER ────────────────────────────────────────────────────
+
+# Não ignorar docker-compose.yml (necessário para o projeto)
+# Ignorar apenas overrides locais
+docker-compose.override.yml
