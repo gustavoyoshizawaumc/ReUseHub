@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: reusehub_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reusehub
+    ports:
+      - "5432:5432"
+
+  mongo:
+    image: mongo:6
+    container_name: reusehub_mongo
+    ports:
+      - "27017:27017"
