@@ -1,10 +1,10 @@
 <div align="center">
 
-# ♻️ ReUseHub
+# ReUseHub
 
 **Plataforma web gratuita de doação e troca de itens usados**
 
-Trabalho de Conclusão de Curso — Bacharelado em Sistemas de Informação  
+Projeto Final de Curso — Bacharelado em Sistemas de Informação  
 Universidade de Mogi das Cruzes · 2026
 
 [![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
