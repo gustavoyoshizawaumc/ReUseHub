@@ -1,3 +1,28 @@
 spring:
   application:
-    name: backend
+    name: reusehub
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/reusehub
+    username: reusehub
+    password: reusehub123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    mongodb:
+      uri: mongodb://reusehub:reusehub123@localhost:27017/reusehub?authSource=admin
+
+server:
+  port: 8080
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000
