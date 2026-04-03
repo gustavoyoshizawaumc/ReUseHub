@@ -72,7 +72,18 @@
 }
 
 body {
-  margin: 0;
+  font-family: "DM Sans", sans-serif;
+  color: #333333;
+  @apply bg-white;
+}
+
+/* Esconder scrollbar mantendo funcionalidade */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 h1,
