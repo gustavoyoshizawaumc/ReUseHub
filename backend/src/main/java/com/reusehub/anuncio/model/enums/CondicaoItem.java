@@ -2,7 +2,7 @@ package com.reusehub.anuncio.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum EstadoItem {
+public enum CondicaoItem {
     NEW("Novo"),
     GOOD("Em bom estado"),
     FAIR("Marcas de uso"),
@@ -10,7 +10,7 @@ public enum EstadoItem {
 
     private final String descricao;
 
-    EstadoItem(String descricao){
+    CondicaoItem(String descricao){
         this.descricao = descricao;
     }
 
