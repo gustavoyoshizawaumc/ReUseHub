@@ -1,6 +1,6 @@
 package com.reusehub.anuncio.model;
 
-import com.reusehub.anuncio.model.enums.EstadoItem;
+import com.reusehub.anuncio.model.enums.CondicaoItem;
 import com.reusehub.anuncio.model.enums.StatusAnuncio;
 import com.reusehub.anuncio.model.enums.TipoAnuncio;
 import com.reusehub.auth.model.Usuario;
@@ -19,8 +19,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "listings")
-
 public class Anuncio {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -45,11 +45,11 @@ public class Anuncio {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "condition", nullable = false)
-    private EstadoItem condicao;
+    private CondicaoItem condicao;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private StatusAnuncio status = StatusAnuncio.ACTIVE;
+    private StatusAnuncio status;
 
     @Column(name = "views_count")
     private Integer totalVisualizacoes = 0;
@@ -68,6 +68,12 @@ public class Anuncio {
     @Column(name = "updated_at")
     private LocalDateTime atualizadoEm;
 
+    @PrePersist
+    private void definirStatusInicial() {
+        this.status = StatusAnuncio.ACTIVE;
+    }
+
+
     public boolean pertenceAo(UUID idUsuarioRequisicao) {
         return this.usuario.getId().equals(idUsuarioRequisicao);
     }
@@ -84,8 +90,11 @@ public class Anuncio {
         return status == StatusAnuncio.CANCELLED;
     }
 
+    public boolean podeSerReservado() {
+        return status == StatusAnuncio.ACTIVE;
+    }
+
     public boolean jaEstaEncerrado() {
         return status == StatusAnuncio.COMPLETED;
     }
 }
-
