@@ -54,7 +54,6 @@ public class ImagemService {
                 .findByAnuncio_IdOrderByOrdemExibicaoAsc(anuncioId);
 
         for (ImagemAnuncio imagem : imagens) {
-            // Extrai o nome do arquivo a partir do final da URL salva no banco
             String url = imagem.getUrlImagem();
             String nomeArquivo = url.substring(url.lastIndexOf('/') + 1);
 
@@ -109,7 +108,7 @@ public class ImagemService {
         imagem.setAnuncio(anuncio);
         imagem.setUrlImagem(urlBase + "/" + anuncio.getId() + "/" + nomeArquivo);
         imagem.setCapa(ordem == 0);
-        imagem.setOrdemExibicao((short) ordem); // Convertendo o int para Short
+        imagem.setOrdemExibicao((short) ordem);
         return imagem;
     }
 
