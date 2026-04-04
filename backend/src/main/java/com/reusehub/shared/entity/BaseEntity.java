@@ -16,10 +16,10 @@ public abstract class BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @Column(name = "atualizado_em")
     private LocalDateTime updatedAt;
     
     @PrePersist

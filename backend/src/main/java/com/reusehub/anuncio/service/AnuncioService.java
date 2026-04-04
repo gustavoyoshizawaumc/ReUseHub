@@ -6,7 +6,6 @@ import com.reusehub.anuncio.dto.AnuncioRespostaDTO;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.model.Categoria;
 import com.reusehub.auth.model.Usuario;
-import com.reusehub.anuncio.model.enums.CondicaoItem; // Import atualizado!
 import com.reusehub.anuncio.model.enums.StatusAnuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.CategoriaRepository;
@@ -48,7 +47,7 @@ public class AnuncioService {
     }
 
     public List<AnuncioRespostaDTO> listarAtivos() {
-        return anuncioRepository.findByStatus(StatusAnuncio.ACTIVE)
+        return anuncioRepository.findByStatus(StatusAnuncio.ATIVO)
                 .stream()
                 .map(this::converterParaRespostaComDependencias)
                 .toList();
@@ -88,7 +87,7 @@ public class AnuncioService {
         verificarPermissao(anuncio, usuarioId);
         verificarSeAnuncioPodeSerPausado(anuncio);
 
-        anuncio.setStatus(StatusAnuncio.CANCELLED);
+        anuncio.setStatus(StatusAnuncio.CANCELADO);
         anuncioRepository.save(anuncio);
 
         return converterParaRespostaComDependencias(anuncio);
@@ -100,7 +99,7 @@ public class AnuncioService {
         verificarPermissao(anuncio, usuarioId);
         verificarSeAnuncioPodeSerReativado(anuncio);
 
-        anuncio.setStatus(StatusAnuncio.ACTIVE);
+        anuncio.setStatus(StatusAnuncio.ATIVO);
         anuncioRepository.save(anuncio);
 
         return converterParaRespostaComDependencias(anuncio);
@@ -112,7 +111,7 @@ public class AnuncioService {
         verificarPermissao(anuncio, usuarioId);
         verificarSeAnuncioJaEstaEncerrado(anuncio);
 
-        anuncio.setStatus(StatusAnuncio.COMPLETED);
+        anuncio.setStatus(StatusAnuncio.CONCLUIDO);
         anuncioRepository.save(anuncio);
 
         return converterParaRespostaComDependencias(anuncio);

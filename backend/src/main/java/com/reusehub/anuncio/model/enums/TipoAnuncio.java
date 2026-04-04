@@ -3,8 +3,8 @@ package com.reusehub.anuncio.model.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum TipoAnuncio {
-    DONATION("Doação"),
-    TRADE("Troca");
+    DOACAO("Doação"),
+    TROCA("Troca");
 
     private final String descricao;
 
