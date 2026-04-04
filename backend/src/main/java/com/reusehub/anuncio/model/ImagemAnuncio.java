@@ -13,7 +13,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "listing_images")
+@Table(name = "imagens_anuncio")
 public class ImagemAnuncio {
 
     @Id
@@ -21,25 +21,19 @@ public class ImagemAnuncio {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "listing_id", nullable = false)
+    @JoinColumn(name = "anuncio_id", nullable = false)
     private Anuncio anuncio;
 
-    @Column(name = "image_url", nullable = false)
+    @Column(name = "url_imagem", nullable = false, columnDefinition = "TEXT")
     private String urlImagem;
 
-    @Column(name = "thumbnail_url")
-    private String urlThumbnail;
+    @Column(name = "capa")
+    private Boolean capa = false;
 
-    @Column(name = "file_name")
-    private String nomeArquivo;
-
-    @Column(name = "is_cover")
-    private Boolean ehCapa = false;
-
-    @Column(name = "display_order")
-    private Integer ordemExibicao = 0;
+    @Column(name = "ordem_exibicao")
+    private Short ordemExibicao = 0;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "criado_em", updatable = false)
     private LocalDateTime criadoEm;
 }
