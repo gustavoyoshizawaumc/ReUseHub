@@ -22,7 +22,6 @@ public class Categoria {
     @Column(name = "slug", nullable = false, unique = true, length = 80)
     private String slug;
 
-    // Auto-relacionamento para subcategorias (Ex: "Eletrônicos" -> "Celulares")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_pai_id")
     private Categoria categoriaPai;

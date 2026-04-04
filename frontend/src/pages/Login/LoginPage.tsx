@@ -1,4 +1,4 @@
-// frontend/src/pages/login/LoginPage.tsx
+//. frontend/src/pages/login/LoginPage.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
@@ -71,7 +71,7 @@ export const LoginPage: React.FC = () => {
 
     try {
       await authService.login(formData);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err: any) {
       setFormError(
         err.message || "Erro ao fazer login. Verifique suas credenciais.",

@@ -5,6 +5,8 @@ import com.reusehub.anuncio.dto.AnuncioRequestDTO;
 import com.reusehub.anuncio.dto.AnuncioRespostaDTO;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.model.Categoria;
+import com.reusehub.anuncio.model.Endereco;
+import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.anuncio.model.enums.StatusAnuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
@@ -26,12 +28,16 @@ public class AnuncioService {
     private final CategoriaRepository categoriaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ImagemService imagemService;
+    private final EnderecoRepository enderecoRepository;
 
     public AnuncioRespostaDTO publicar(AnuncioRequestDTO dto, List<MultipartFile> imagens) throws IOException {
         Usuario usuario = buscarUsuarioPorId(dto.getUsuarioId());
         Categoria categoria = buscarCategoriaPorId(dto.getCategoriaId());
 
-        Anuncio anuncio = criarAnuncio(dto, usuario, categoria);
+        Endereco endereco = enderecoRepository.findById(dto.getEnderecoId())
+                .orElseThrow(() -> new RuntimeException("Endereço não encontrado"));
+
+        Anuncio anuncio = criarAnuncio(dto, usuario, categoria, endereco);
         Anuncio salvo = anuncioRepository.save(anuncio);
 
         if (imagensForamEnviadas(imagens)) {
@@ -126,16 +132,16 @@ public class AnuncioService {
     }
 
 
-    private Anuncio criarAnuncio(AnuncioRequestDTO dto, Usuario usuario, Categoria categoria) {
+    private Anuncio criarAnuncio(AnuncioRequestDTO dto, Usuario usuario, Categoria categoria, Endereco endereco) {
         Anuncio anuncio = new Anuncio();
         anuncio.setUsuario(usuario);
         anuncio.setCategoria(categoria);
+        anuncio.setEndereco(endereco);
         anuncio.setTitulo(dto.getTitulo());
         anuncio.setDescricao(dto.getDescricao());
         anuncio.setTipo(dto.getTipo());
         anuncio.setCondicao(dto.getCondicao());
-        // Como você usou o @PrePersist na Entidade, não precisamos mais colocar as datas e o status inicial aqui! O Java faz isso sozinho agora.
-        return anuncio;
+          return anuncio;
     }
 
     private void atualizarDadosDoAnuncio(Anuncio anuncio, AnuncioEdicaoDTO dto, Categoria categoria) {
@@ -144,7 +150,7 @@ public class AnuncioService {
         anuncio.setTipo(dto.getTipo());
         anuncio.setCondicao(dto.getCondicao());
         anuncio.setCategoria(categoria);
-        // O @PreUpdate da sua Entidade vai cuidar do atualizadoEm sozinho também!
+
     }
 
     private AnuncioRespostaDTO converterParaRespostaComDependencias(Anuncio anuncio) {
