@@ -54,7 +54,11 @@ public class ImagemService {
                 .findByAnuncio_IdOrderByOrdemExibicaoAsc(anuncioId);
 
         for (ImagemAnuncio imagem : imagens) {
-            deletarArquivosDoDisco(anuncioId, imagem.getNomeArquivo());
+            // Extrai o nome do arquivo a partir do final da URL salva no banco
+            String url = imagem.getUrlImagem();
+            String nomeArquivo = url.substring(url.lastIndexOf('/') + 1);
+
+            deletarArquivosDoDisco(anuncioId, nomeArquivo);
         }
 
         imagemAnuncioRepository.deleteByAnuncio_Id(anuncioId);
@@ -82,7 +86,7 @@ public class ImagemService {
         Anuncio anuncioRef = anuncioRepository.getReferenceById(anuncioId);
 
         imagemAnuncioRepository.save(
-                montarImagemAnuncio(anuncioRef, nomeArquivo, nomeThumbnail, ordem)
+                montarImagemAnuncio(anuncioRef, nomeArquivo, ordem)
         );
     }
 
@@ -100,17 +104,12 @@ public class ImagemService {
                 .toFile(destino.toFile());
     }
 
-    private ImagemAnuncio montarImagemAnuncio(Anuncio anuncio,
-                                              String nomeArquivo,
-                                              String nomeThumbnail,
-                                              int ordem) {
+    private ImagemAnuncio montarImagemAnuncio(Anuncio anuncio, String nomeArquivo, int ordem) {
         ImagemAnuncio imagem = new ImagemAnuncio();
         imagem.setAnuncio(anuncio);
         imagem.setUrlImagem(urlBase + "/" + anuncio.getId() + "/" + nomeArquivo);
-        imagem.setUrlThumbnail(urlBase + "/" + anuncio.getId() + "/" + nomeThumbnail);
-        imagem.setNomeArquivo(nomeArquivo);
-        imagem.setEhCapa(ordem == 0);
-        imagem.setOrdemExibicao(ordem);
+        imagem.setCapa(ordem == 0);
+        imagem.setOrdemExibicao((short) ordem); // Convertendo o int para Short
         return imagem;
     }
 

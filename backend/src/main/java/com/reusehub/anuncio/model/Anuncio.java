@@ -9,8 +9,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,7 +21,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "listings")
+@Table(name = "anuncios")
 public class Anuncio {
 
     @Id
@@ -26,75 +29,81 @@ public class Anuncio {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
-    @Column(name = "title", nullable = false, length = 150)
+    // Adicionado para satisfazer a regra NOT NULL do banco de dados
+    @Column(name = "endereco_id", nullable = false)
+    private UUID enderecoId;
+
+    @Column(name = "titulo", nullable = false, length = 150)
     private String titulo;
 
-    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "descricao", nullable = false, columnDefinition = "TEXT")
     private String descricao;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "tipo", nullable = false)
     private TipoAnuncio tipo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "condition", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "condicao", nullable = false)
     private CondicaoItem condicao;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
     private StatusAnuncio status;
 
-    @Column(name = "views_count")
+    @Column(name = "total_visualizacoes")
     private Integer totalVisualizacoes = 0;
 
-    @Column(name = "relevance_score")
-    private Double pontuacaoRelevancia = 0.0;
+    @Column(name = "nota_relevancia", precision = 8, scale = 4)
+    private BigDecimal pontuacaoRelevancia = BigDecimal.ZERO;
 
-    @Column(name = "expires_at")
+    @Column(name = "expira_em")
     private LocalDateTime expiraEm;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "criado_em", updatable = false)
     private LocalDateTime criadoEm;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
 
     @PrePersist
     private void definirStatusInicial() {
-        this.status = StatusAnuncio.ACTIVE;
+        this.status = StatusAnuncio.ATIVO;
     }
-
 
     public boolean pertenceAo(UUID idUsuarioRequisicao) {
         return this.usuario.getId().equals(idUsuarioRequisicao);
     }
 
     public boolean podeSerEditado() {
-        return status != StatusAnuncio.COMPLETED;
+        return status != StatusAnuncio.CONCLUIDO;
     }
 
     public boolean podeSerPausado() {
-        return status == StatusAnuncio.ACTIVE;
+        return status == StatusAnuncio.ATIVO;
     }
 
     public boolean podeSerReativado() {
-        return status == StatusAnuncio.CANCELLED;
+        return status == StatusAnuncio.CANCELADO;
     }
 
     public boolean podeSerReservado() {
-        return status == StatusAnuncio.ACTIVE;
+        return status == StatusAnuncio.ATIVO;
     }
 
     public boolean jaEstaEncerrado() {
-        return status == StatusAnuncio.COMPLETED;
+        return status == StatusAnuncio.CONCLUIDO;
     }
 }
