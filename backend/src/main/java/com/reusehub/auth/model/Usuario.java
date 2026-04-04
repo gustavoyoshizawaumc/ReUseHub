@@ -17,46 +17,47 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Usuario extends BaseEntity {
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "nome", nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 150, unique = true)
+    @Column(name = "email", nullable = false, length = 150, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 14, unique = true)
+    @Column(name = "cpf", nullable = false, length = 11, unique = true)
     private String cpf;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "senha_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(length = 20)
+    @Column(name = "telefone", length = 20)
     private String phone;
 
-    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    @Column(name = "url_avatar", columnDefinition = "TEXT")
     private String avatarUrl;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "biografia", columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "reputation_score", precision = 3, scale = 2)
+    @Column(name = "nota_reputacao", precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal reputationScore = BigDecimal.ZERO;
 
-    @Column(name = "is_active")
+    @Column(name = "ativo")
     @Builder.Default
     private Boolean isActive = true;
 
-    @Column(name = "is_verified")
+    @Column(name = "email_verificado")
     @Builder.Default
     private Boolean isVerified = false;
 
-    @Column(name = "lgpd_consent", nullable = false)
+    @Column(name = "consentimento_lgpd", nullable = false)
     private Boolean lgpdConsent;
 
-    @Column(name = "lgpd_consent_at")
+    @Column(name = "data_consentimento_lgpd")
     private LocalDateTime lgpdConsentAt;
 
-    @Enumerated(EnumType.STRING)
+    // @Transient avisa o Hibernate para não procurar essa coluna no banco de dados
+    @Transient
     @Builder.Default
     private Perfil perfil = Perfil.USUARIO;
 }

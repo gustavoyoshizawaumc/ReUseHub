@@ -3,10 +3,10 @@ package com.reusehub.anuncio.model.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum CondicaoItem {
-    NEW("Novo"),
-    GOOD("Em bom estado"),
-    FAIR("Marcas de uso"),
-    POOR("Com defeito/ Para retirada de peças");
+    NOVO("Novo"),
+    BOM("Em bom estado"),
+    REGULAR("Marcas de uso"),
+    RUIM("Com defeito/ Para retirada de peças");
 
     private final String descricao;
 

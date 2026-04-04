@@ -3,10 +3,10 @@ package com.reusehub.anuncio.model.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum StatusAnuncio {
-    ACTIVE("Ativo"),
-    RESERVED("Reservado"),
-    COMPLETED("Concluído"),
-    CANCELLED("Cancelado");
+    ATIVO("Ativo"),
+    RESERVADO("Reservado"),
+    CONCLUIDO("Concluído"),
+    CANCELADO("Cancelado");
 
     private final String descricao;
 
