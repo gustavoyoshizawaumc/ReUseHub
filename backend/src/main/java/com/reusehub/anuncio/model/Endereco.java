@@ -10,7 +10,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder // Padrão Clean Code para construção de objetos complexos
+@Builder
 @Entity
 @Table(name = "enderecos")
 public class Endereco {
