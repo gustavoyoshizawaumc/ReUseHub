@@ -116,7 +116,8 @@ export const RegisterPage: React.FC = () => {
 
     try {
       await authService.register(formData);
-      navigate("/dashboard");
+      // Rota corrigida aqui!
+      navigate("/login");
     } catch (err: any) {
       setFormError(err.message || "Erro ao cadastrar. Tente novamente.");
     } finally {

@@ -36,9 +36,10 @@ public class Anuncio {
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
-    // Adicionado para satisfazer a regra NOT NULL do banco de dados
-    @Column(name = "endereco_id", nullable = false)
-    private UUID enderecoId;
+    // Atualizado: Agora é um relacionamento real com a Entidade Endereco
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "endereco_id", nullable = false)
+    private Endereco endereco;
 
     @Column(name = "titulo", nullable = false, length = 150)
     private String titulo;
@@ -80,7 +81,9 @@ public class Anuncio {
 
     @PrePersist
     private void definirStatusInicial() {
-        this.status = StatusAnuncio.ATIVO;
+        if (this.status == null) {
+            this.status = StatusAnuncio.ATIVO;
+        }
     }
 
     public boolean pertenceAo(UUID idUsuarioRequisicao) {
