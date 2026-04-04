@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/reusehub
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    username: reusehub
+    password: reusehub123
     driver-class-name: org.postgresql.Driver
 
   flyway:
