@@ -71,7 +71,7 @@ export const LoginPage: React.FC = () => {
 
     try {
       await authService.login(formData);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err: any) {
       setFormError(
         err.message || "Erro ao fazer login. Verifique suas credenciais.",

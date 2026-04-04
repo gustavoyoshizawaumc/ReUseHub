@@ -24,12 +24,15 @@ public class AuthService {
     public AuthResponse registrar(RegisterRequest request) {
         System.out.println("📝 Tentando registrar: " + request.getEmail());
 
-        // Validação de E-mail duplicado
+        String cpfLimpo = request.getCpf() != null ? request.getCpf().replaceAll("[^0-9]", "") : null;
+        String telefoneLimpo = request.getPhone() != null ? request.getPhone().replaceAll("[^0-9]", "") : null;
+
+
         if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
 
-        // Validação de CPF duplicado
+
         if (usuarioRepository.existsByCpf(request.getCpf())) {
             throw new IllegalArgumentException("CPF já cadastrado");
         }
