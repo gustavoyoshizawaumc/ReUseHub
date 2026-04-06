@@ -1,18 +1,20 @@
-package com.reusehub.anuncio.model;
+package com.reusehub.anuncio.model; 
 
 import com.reusehub.auth.model.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
+@Entity
+@Table(name = "enderecos")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
-@Table(name = "enderecos")
 public class Endereco {
 
     @Id
@@ -23,36 +25,38 @@ public class Endereco {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    @Column(nullable = false, length = 9)
+    @Column(name = "cep", nullable = false, length = 9)
     private String cep;
 
-    @Column(nullable = false)
-    private String cidade;
-
-    @Column(nullable = false, length = 2)
-    private String uf;
-
+    @Column(name = "rua", length = 150)
     private String rua;
+
+    @Column(name = "numero", length = 10)
     private String numero;
-    private String bairro;
+
+    @Column(name = "complemento", length = 80)
     private String complemento;
 
-    public String getEnderecoCompleto() {
-        return String.format("%s, %s - %s, %s/%s",
-                rua != null ? rua : "S/R",
-                numero != null ? numero : "S/N",
-                bairro != null ? bairro : "S/B",
-                cidade,
-                uf);
-    }
+    @Column(name = "bairro", length = 100)
+    private String bairro;
 
-    public boolean pertenceAo(UUID usuarioId) {
-        return this.usuario != null && this.usuario.getId().equals(usuarioId);
-    }
+    @Column(name = "cidade", nullable = false, length = 100)
+    private String cidade;
 
+    @Column(name = "uf", nullable = false, length = 2)
+    private String uf;
 
-    @Override
-    public String toString() {
-        return "Endereco{" + "id=" + id + ", cep='" + cep + '\'' + ", cidade='" + cidade + '\'' + '}';
-    }
+    @Column(name = "latitude", precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 9, scale = 6)
+    private BigDecimal longitude;
+
+    @Column(name = "principal", nullable = false)
+    @Builder.Default
+    private Boolean principal = false;
+
+    @CreationTimestamp
+    @Column(name = "criado_em", nullable = false, updatable = false)
+    private LocalDateTime criadoEm;
 }

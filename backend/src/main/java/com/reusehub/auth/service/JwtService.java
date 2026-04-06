@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -49,5 +50,15 @@ public class JwtService {
 
     private SecretKey getChave() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+    }
+
+    public UUID extrairUuidDoToken(String token) {
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        
+        String email = extrairEmail(token);
+        
+        throw new IllegalArgumentException("Use obterPerfilPorEmail em vez disso");
     }
 }
