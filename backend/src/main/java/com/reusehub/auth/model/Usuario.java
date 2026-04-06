@@ -7,6 +7,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+
 @Entity
 @Table(name = "usuarios")
 @Data
@@ -56,7 +57,6 @@ public class Usuario extends BaseEntity {
     @Column(name = "data_consentimento_lgpd")
     private LocalDateTime lgpdConsentAt;
 
-    // @Transient avisa o Hibernate para não procurar essa coluna no banco de dados
     @Transient
     @Builder.Default
     private Perfil perfil = Perfil.USUARIO;

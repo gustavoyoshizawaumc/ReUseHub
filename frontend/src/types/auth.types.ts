@@ -49,3 +49,25 @@ export interface AuthContextType {
   login: (data: LoginRequest) => Promise<void>;
   logout: () => void;
 }
+
+export interface UsuarioRespostaDTO {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  cpf: string;
+  avatarUrl?: string;
+  bio?: string;
+  reputationScore: number;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProfileRequest {
+  name: string;
+  phone?: string;
+  bio?: string;
+  avatarUrl?: string;
+}

@@ -2,12 +2,13 @@ import type {
   RegisterRequest,
   LoginRequest,
   AuthResponse,
+  UsuarioRespostaDTO,
+  UpdateProfileRequest,
 } from "../types/auth.types";
 
 const API_URL = "http://localhost:8080/api/auth";
 
 export const authService = {
-  // Cadastro
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await fetch(`${API_URL}/register`, {
       method: "POST",
@@ -28,7 +29,6 @@ export const authService = {
     return result;
   },
 
-  // Login
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
@@ -49,20 +49,122 @@ export const authService = {
     return result;
   },
 
-  // Logout
+  getProfile: async (): Promise<UsuarioRespostaDTO> => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("Token não encontrado. Faça login novamente.");
+    }
+
+    const response = await fetch(`${API_URL}/me`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao obter perfil");
+    }
+
+    return await response.json();
+  },
+
+  updateProfile: async (
+    data: UpdateProfileRequest,
+    avatarFile?: File,
+  ): Promise<UsuarioRespostaDTO> => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("Token não encontrado. Faça login novamente.");
+    }
+
+    if (avatarFile) {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("phone", data.phone || "");
+      formData.append("bio", data.bio || "");
+      formData.append("avatarFile", avatarFile);
+
+      const response = await fetch(`${API_URL}/me`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao atualizar perfil");
+      }
+
+      const result = await response.json();
+      localStorage.setItem("user", JSON.stringify(result));
+      return result;
+    }
+
+    const response = await fetch(`${API_URL}/me`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao atualizar perfil");
+    }
+
+    const result = await response.json();
+    localStorage.setItem("user", JSON.stringify(result));
+    return result;
+  },
+
+  deleteAccount: async (): Promise<void> => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("Token não encontrado. Faça login novamente.");
+    }
+
+    const response = await fetch(`${API_URL}/me`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao deletar conta");
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  },
+
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
   },
 
-  // Get token
   getToken: (): string | null => {
     return localStorage.getItem("token");
   },
 
-  // Get user
   getUser: () => {
     const user = localStorage.getItem("user");
     return user ? JSON.parse(user) : null;
+  },
+
+  isLoggedIn: (): boolean => {
+    return !!localStorage.getItem("token");
   },
 };

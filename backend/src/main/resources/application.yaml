@@ -3,9 +3,9 @@ spring:
     name: reusehub
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/reusehub
-    username: reusehub
-    password: reusehub123
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/reusehub
+    username: ${DB_USER:reusehub}
+    password: ${DB_PASSWORD:reusehub123}
     driver-class-name: org.postgresql.Driver
 
   flyway:
@@ -16,14 +16,41 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   data:
     mongodb:
-      uri: mongodb://reusehub:reusehub123@localhost:27017/reusehub?authSource=admin
+      uri: ${MONGO_URI:mongodb://reusehub:reusehub123@localhost:27017/reusehub?authSource=admin}
+
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/
+      cache:
+        period: 3600
+
+  mvc:
+    static-path-pattern: /static/**
+
+  error:
+    include-stacktrace: always
+    include-message: always
+    include-binding-errors: always
 
 server:
   port: 8080
+  servlet:
+    context-path: /
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: "9aPq8bRs7cTu6vWx5yZa4bCd3eEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGh"
   expiration: 86400000
+
+logging:
+  level:
+    root: INFO
+    com.reusehub: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
