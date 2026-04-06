@@ -1,15 +1,14 @@
-package com.reusehub.anuncio.model;
+package com.reusehub.anuncio.model; 
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "categorias")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Categoria {
 
     @Id
@@ -22,13 +21,13 @@ public class Categoria {
     @Column(name = "slug", nullable = false, unique = true, length = 80)
     private String slug;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_pai_id")
-    private Categoria categoriaPai;
+    @Column(name = "categoria_pai_id")
+    private Integer categoriaPaiId;
 
     @Column(name = "url_icone", columnDefinition = "TEXT")
     private String urlIcone;
 
-    @Column(name = "ativa")
+    @Column(name = "ativa", nullable = false)
+    @Builder.Default
     private Boolean ativa = true;
 }
