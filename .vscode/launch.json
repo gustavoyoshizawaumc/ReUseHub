@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Current File",
+      "request": "launch",
+      "mainClass": "${file}"
+    },
+    {
+      "type": "java",
+      "name": "BackendApplication",
+      "request": "launch",
+      "mainClass": "com.reusehub.backend.BackendApplication",
+      "projectName": "backend",
+      "env": {
+        "DB_USER": "reusehub",
+        "DB_PASSWORD": "reusehub123"
+      }
+    }
+  ]
+}
