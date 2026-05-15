@@ -1,337 +1,341 @@
 import React, { useState } from "react";
+import { Camera, PlusCircle, X, Loader2, MapPin, Search } from "lucide-react";
+import type { AnuncioCriacao } from "../../types/anuncio.types";
 import { buscarEnderecoPorCEP } from "../../services/viaCepService";
-import type {
-  DadosCEP,
-  AnuncioCriacao,
-  Anuncio,
-  AnuncioAtualizacao,
-} from "../../types/anuncio.types";
-import {
-  MapPin,
-  Info,
-  Tag,
-  AlertCircle,
-  Search,
-  Loader2,
-  CheckCircle2,
-} from "lucide-react";
 
 interface FormularioAnuncioProps {
-  onSubmit: (
-    dados: AnuncioCriacao | AnuncioAtualizacao,
-  ) => void | Promise<void>;
+  onSubmit: (dados: AnuncioCriacao, imagens: File[]) => Promise<void>;
   loading: boolean;
-  anuncioInicial?: Anuncio;
-  isEditando?: boolean;
 }
-
-const CATEGORIAS = [
-  { id: 5, nome: "Casa, Decoração" },
-  { id: 8, nome: "Moda e Beleza" },
-  { id: 11, nome: "Música e Hobbies" },
-  { id: 16, nome: "Games" },
-  { id: 19, nome: "Informática" },
-  { id: 20, nome: "Eletro" },
-  { id: 21, nome: "Móveis" },
-];
 
 export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
   onSubmit,
   loading,
-  anuncioInicial,
-  isEditando = false,
 }) => {
-  const [cep, setCep] = useState(anuncioInicial?.endereco?.cep || "");
-  const [endereco, setEndereco] = useState<DadosCEP | null>(
-    anuncioInicial?.endereco
-      ? {
-          cep: anuncioInicial.endereco.cep,
-          rua: anuncioInicial.endereco.rua,
-          bairro: anuncioInicial.endereco.bairro,
-          cidade: anuncioInicial.endereco.cidade,
-          uf: anuncioInicial.endereco.uf,
-        }
-      : null,
-  );
-  const [numero, setNumero] = useState(anuncioInicial?.endereco?.numero || "");
-  const [complemento, setComplemento] = useState(
-    anuncioInicial?.endereco?.complemento || "",
-  );
-  const [titulo, setTitulo] = useState(anuncioInicial?.titulo || "");
-  const [descricao, setDescricao] = useState(anuncioInicial?.descricao || "");
-  const [tipo, setTipo] = useState<"DOACAO" | "TROCA">(
-    (anuncioInicial?.tipo as "DOACAO" | "TROCA") || "DOACAO",
-  );
-  const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">(
-    (anuncioInicial?.condicao as "NOVO" | "BOM" | "REGULAR" | "RUIM") || "BOM",
-  );
-  const [categoriaId, setCategoriaId] = useState(
-    anuncioInicial?.categoriaId || 19,
-  );
-  const [expiraEm, setExpiraEm] = useState(anuncioInicial?.expiraEm || "");
-  const [erroCep, setErroCep] = useState("");
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [tipo, setTipo] = useState<"DOACAO" | "TROCA">("DOACAO");
+  const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">("BOM");
+  const [categoriaId, setCategoriaId] = useState("");
+  const [expiraEm, setExpiraEm] = useState("");
+  const [cep, setCep] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [enderecoDisplay, setEnderecoDisplay] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroCep, setErroCep] = useState<string | null>(null);
+
+  const [imagens, setImagens] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [erroImagens, setErroImagens] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const novasImagens = Array.from(e.target.files);
+    const total = [...imagens, ...novasImagens].slice(0, 5);
+    setImagens(total);
+    setPreviews(total.map((f) => URL.createObjectURL(f)));
+    setErroImagens(null);
+    e.target.value = "";
+  };
+
+  const removerImagem = (index: number) => {
+    const novas = imagens.filter((_, i) => i !== index);
+    const novasPreviews = previews.filter((_, i) => i !== index);
+    setImagens(novas);
+    setPreviews(novasPreviews);
+  };
 
   const handleBuscarCep = async () => {
-    const cleanCep = cep.replace(/\D/g, "");
-
-    if (cleanCep.length !== 8) {
-      setErroCep("CEP inválido");
+    if (cep.replace(/\D/g, "").length !== 8) {
+      setErroCep("CEP deve conter 8 dígitos");
       return;
     }
-
     setBuscandoCep(true);
-    setErroCep("");
-
+    setErroCep(null);
     try {
-      const dados = await buscarEnderecoPorCEP(cleanCep);
-      setEndereco(dados);
+      const dados = await buscarEnderecoPorCEP(cep);
+      setEnderecoDisplay(`${dados.rua}, ${dados.bairro} — ${dados.cidade}/${dados.uf}`);
     } catch (err) {
-      setErroCep("CEP não encontrado");
-      setEndereco(null);
+      setErroCep(err instanceof Error ? err.message : "CEP não encontrado");
+      setEnderecoDisplay("");
     } finally {
       setBuscandoCep(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!endereco) {
-      setErroCep("Valide o endereço antes de prosseguir");
+    if (imagens.length < 5) {
+      setErroImagens("É obrigatório enviar exatamente 5 fotos para publicar o anúncio.");
       return;
     }
 
-    const dados: AnuncioCriacao | AnuncioAtualizacao =
-      isEditando && anuncioInicial
-        ? {
-            titulo,
-            descricao,
-            condicao,
-            categoriaId,
-            expiraEm,
-            cep,
-            numero,
-            complemento,
-            enderecoId: anuncioInicial.enderecoId,
-          }
-        : {
-            titulo,
-            descricao,
-            tipo,
-            condicao,
-            categoriaId,
-            expiraEm,
-            cep,
-            numero,
-            complemento,
-          };
+    const dados: AnuncioCriacao = {
+      titulo,
+      descricao,
+      tipo,
+      condicao,
+      categoriaId: Number(categoriaId),
+      expiraEm: expiraEm ? `${expiraEm}T00:00:00` : "",
+      cep: cep.replace(/\D/g, ""),
+      numero,
+      complemento: complemento || undefined,
+    };
 
-    onSubmit(dados);
+    await onSubmit(dados, imagens);
   };
 
-  const inputStyle =
-    "w-full p-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl outline-none transition-all focus:ring-4 focus:ring-blue-50 focus:border-blue-500 font-medium text-slate-700 placeholder:text-slate-400 text-sm";
-  const labelStyle =
-    "text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block";
+  const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider ml-1";
+  const inputClass =
+    "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-10 font-plus-jakarta-sans text-left"
-    >
-      <section className="space-y-6">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <MapPin size={20} className="text-blue-600" />
-          <h3 className="font-bold text-slate-900">Onde o item está?</h3>
+    <form onSubmit={handleSubmit} className="space-y-8">
+
+      {/* CAMPOS PRINCIPAIS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className={labelClass}>Título</label>
+          <input
+            required
+            className={inputClass}
+            placeholder="Ex: PlayStation 2 Slim Conservado"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-            <label className={labelStyle}>CEP</label>
-            <div className="relative">
+        <div className="space-y-2">
+          <label className={labelClass}>Categoria</label>
+          <select
+            required
+            className={inputClass + " cursor-pointer"}
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+          >
+            <option value="">Selecione...</option>
+            <option value="1">Imóveis</option>
+            <option value="2">Autos</option>
+            <option value="3">Autopeças</option>
+            <option value="4">Celulares e Telefonia</option>
+            <option value="5">Casa, Decoração e Utensílios</option>
+            <option value="6">Esportes e Fitness</option>
+            <option value="7">Serviços</option>
+            <option value="8">Moda e Beleza</option>
+            <option value="9">Artigos Infantis</option>
+            <option value="10">Animais de Estimação</option>
+            <option value="11">Música e Hobbies</option>
+            <option value="12">Agro e Indústria</option>
+            <option value="13">Vagas de Emprego</option>
+            <option value="14">Comércio</option>
+            <option value="15">Câmeras e Drones</option>
+            <option value="16">Games</option>
+            <option value="17">TVs e Vídeo</option>
+            <option value="18">Áudio</option>
+            <option value="19">Informática</option>
+            <option value="20">Eletro</option>
+            <option value="21">Móveis</option>
+            <option value="22">Materiais de Construção</option>
+            <option value="23">Escritório e Home Office</option>
+          </select>
+        </div>
+
+        <div className="md:col-span-2 space-y-2">
+          <label className={labelClass}>Descrição Detalhada</label>
+          <textarea
+            required
+            rows={4}
+            className={inputClass + " resize-none"}
+            placeholder="Conte mais sobre o produto, estado de conservação, motivo da doação..."
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className={labelClass}>Tipo</label>
+          <select
+            className={inputClass + " cursor-pointer"}
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as "DOACAO" | "TROCA")}
+          >
+            <option value="DOACAO">Doação</option>
+            <option value="TROCA">Troca</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className={labelClass}>Condição</label>
+          <select
+            className={inputClass + " cursor-pointer"}
+            value={condicao}
+            onChange={(e) => setCondicao(e.target.value as "NOVO" | "BOM" | "REGULAR" | "RUIM")}
+          >
+            <option value="NOVO">Novo</option>
+            <option value="BOM">Bem Conservado</option>
+            <option value="REGULAR">Regular</option>
+            <option value="RUIM">Ruim</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className={labelClass}>Data Limite</label>
+          <input
+            required
+            type="date"
+            className={inputClass}
+            value={expiraEm}
+            min={new Date().toISOString().split("T")[0]}
+            onChange={(e) => setExpiraEm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* ENDEREÇO */}
+      <div className="space-y-4 pt-6 border-t border-slate-100">
+        <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+          <MapPin size={18} className="text-blue-600" />
+          Onde o item está?
+        </label>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className={labelClass}>CEP</label>
+            <div className="relative flex gap-2">
               <input
-                type="text"
+                required
+                className={inputClass}
                 placeholder="00000-000"
                 value={cep}
-                onChange={(e) => setCep(e.target.value)}
+                maxLength={9}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 8);
+                  setCep(v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v);
+                  setEnderecoDisplay("");
+                  setErroCep(null);
+                }}
                 onBlur={handleBuscarCep}
-                className={inputStyle}
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                {buscandoCep ? (
-                  <Loader2 size={18} className="animate-spin text-blue-600" />
-                ) : (
-                  <Search size={18} className="text-slate-300" />
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={handleBuscarCep}
+                disabled={buscandoCep}
+                className="px-4 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all disabled:opacity-50"
+              >
+                {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+              </button>
             </div>
-          </div>
-
-          <div className="md:col-span-2">
-            {endereco && (
-              <div className="h-full flex items-center p-4 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in fade-in zoom-in duration-300">
-                <CheckCircle2
-                  className="text-emerald-500 mr-3 shrink-0"
-                  size={20}
-                />
-                <p className="text-xs text-emerald-800 font-medium leading-relaxed">
-                  <strong>{endereco.rua}</strong>, {endereco.bairro}
-                  <br />
-                  {endereco.cidade} - {endereco.uf}
-                </p>
-              </div>
-            )}
-
-            {erroCep && (
-              <div className="h-full flex items-center p-4 bg-red-50 border border-red-100 rounded-2xl">
-                <AlertCircle className="text-red-500 mr-3 shrink-0" size={20} />
-                <p className="text-xs text-red-800 font-bold">{erroCep}</p>
-              </div>
+            {erroCep && <p className="text-red-500 text-xs font-semibold ml-1">{erroCep}</p>}
+            {enderecoDisplay && (
+              <p className="text-emerald-600 text-xs font-semibold ml-1">✓ {enderecoDisplay}</p>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <label className={labelStyle}>Número</label>
+          <div className="space-y-2">
+            <label className={labelClass}>Número</label>
             <input
-              type="text"
               required
+              className={inputClass}
+              placeholder="Ex: 42"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
-              className={inputStyle}
-              placeholder="Ex: 123"
             />
           </div>
-          <div>
-            <label className={labelStyle}>Complemento</label>
+
+          <div className="md:col-span-2 space-y-2">
+            <label className={labelClass}>
+              Complemento{" "}
+              <span className="normal-case font-normal text-slate-400">(opcional)</span>
+            </label>
             <input
-              type="text"
+              className={inputClass}
+              placeholder="Ex: Apto 12, Bloco B"
               value={complemento}
               onChange={(e) => setComplemento(e.target.value)}
-              className={inputStyle}
-              placeholder="Apto, Bloco..."
             />
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="space-y-6">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <Info size={20} className="text-blue-600" />
-          <h3 className="font-bold text-slate-900">Sobre o Desapego</h3>
+      {/* UPLOAD DE FOTOS */}
+      <div className="space-y-4 pt-6 border-t border-slate-100">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <Camera size={18} className="text-blue-600" />
+            Fotos do Produto
+          </label>
+          <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+            imagens.length === 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+          }`}>
+            {imagens.length}/5 {imagens.length === 5 ? "✓" : "obrigatório"}
+          </span>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className={labelStyle}>Título do Anúncio</label>
-            <input
-              type="text"
-              required
-              minLength={5}
-              maxLength={150}
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              className={inputStyle}
-              placeholder="Ex: Teclado Mecânico RGB em perfeito estado"
-            />
-          </div>
-
-          <div>
-            <label className={labelStyle}>Descrição Detalhada</label>
-            <textarea
-              required
-              rows={4}
-              minLength={10}
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              className={`${inputStyle} resize-none`}
-              placeholder="Conte mais sobre o item, tempo de uso, motivo do desapego..."
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="grid grid-cols-2 gap-4">
-            {!isEditando && (
-              <div>
-                <label className={labelStyle}>Tipo</label>
-                <select
-                  value={tipo}
-                  onChange={(e) => setTipo(e.target.value as any)}
-                  className={inputStyle}
-                >
-                  <option value="DOACAO">Doação</option>
-                  <option value="TROCA">Troca</option>
-                </select>
-              </div>
-            )}
-
-            <div>
-              <label className={labelStyle}>Condição</label>
-              <select
-                value={condicao}
-                onChange={(e) => setCondicao(e.target.value as any)}
-                className={inputStyle}
-              >
-                <option value="NOVO">Novo</option>
-                <option value="BOM">Bom</option>
-                <option value="REGULAR">Regular</option>
-                <option value="RUIM">Ruim</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelStyle}>Categoria</label>
-              <select
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(Number(e.target.value))}
-                className={inputStyle}
-              >
-                {CATEGORIAS.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelStyle}>Data Limite</label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          {imagens.length < 5 && (
+            <label className="cursor-pointer aspect-square rounded-[20px] border-2 border-dashed border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center justify-center bg-white group">
+              <PlusCircle className="text-slate-400 group-hover:text-blue-600 mb-1 transition-colors" size={24} />
+              <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-500 uppercase transition-colors">
+                Adicionar
+              </span>
               <input
-                type="datetime-local"
-                value={expiraEm}
-                onChange={(e) => setExpiraEm(e.target.value)}
-                className={inputStyle}
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
               />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="pt-4">
-        <button
-          type="submit"
-          disabled={loading || !endereco}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-[20px] font-bold text-lg shadow-lg shadow-orange-100 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-        >
-          {loading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <>
-              <Tag size={20} />
-              {isEditando ? "Atualizar Anúncio" : "Publicar Anúncio"}
-            </>
+            </label>
           )}
-        </button>
-        {!endereco && !erroCep && (
-          <p className="text-center text-[11px] text-slate-400 font-bold uppercase mt-4 tracking-widest">
-            Valide o CEP para habilitar o botão
+
+          {previews.map((url, index) => (
+            <div
+              key={index}
+              className="relative aspect-square rounded-[20px] overflow-hidden border border-slate-100 shadow-sm"
+            >
+              <img src={url} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => removerImagem(index)}
+                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow transition-all hover:scale-110"
+              >
+                <X size={12} />
+              </button>
+              <span className="absolute bottom-2 left-2 bg-black/40 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {index + 1}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {erroImagens && (
+          <p className="text-red-500 text-sm font-semibold flex items-center gap-2">
+            <span>⚠</span> {erroImagens}
           </p>
         )}
+
+        <p className="text-xs text-slate-400 font-medium">
+          Envie exatamente 5 fotos do item. Formatos aceitos: JPG, PNG, WEBP.
+        </p>
       </div>
+
+      {/* BOTÃO PUBLICAR */}
+      <button
+        type="submit"
+        disabled={loading || imagens.length < 5}
+        className="w-full py-5 bg-orange-600 text-white font-bold rounded-[24px] shadow-lg shadow-orange-200 hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="animate-spin" size={20} />
+            Publicando...
+          </>
+        ) : (
+          "Publicar Anúncio"
+        )}
+      </button>
     </form>
   );
 };

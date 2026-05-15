@@ -41,12 +41,31 @@ services:
     image: node:22-alpine
     container_name: reusehub-frontend
     working_dir: /app
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    environment:
+      - WATCHPACK_POLLING=true
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  #  backend:
+#    build: ./backend
+#    container_name: reusehub-backend
+#    restart: unless-stopped
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://reusehub-postgres:5432/reusehub
+#      - SPRING_DATASOURCE_USERNAME=reusehub
+#      - SPRING_DATASOURCE_PASSWORD=reusehub123
+#      - SPRING_DATA_MONGODB_URI=mongodb://reusehub:reusehub123@reusehub-mongo:27017/reusehub?authSource=admin
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      mongodb:
+#        condition: service_healthy
 
 volumes:
   postgres_data:

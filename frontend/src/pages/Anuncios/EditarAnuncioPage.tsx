@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FormularioAnuncio } from "../../components/anuncios/FormularioAnuncio";
 import * as anuncioService from "../../services/anuncioService";
-import type {
-  Anuncio,
-  AnuncioCriacao,
-  AnuncioAtualizacao,
-} from "../../types/anuncio.types";
+import type { Anuncio, AnuncioCriacao } from "../../types/anuncio.types";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
-import { AlertCircle, ArrowLeft, Edit3 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Edit3, Loader2, MapPin, Search, Camera, PlusCircle, X } from "lucide-react";
+import { buscarEnderecoPorCEP } from "../../services/viaCepService";
 
 export const EditarAnuncioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,69 +14,110 @@ export const EditarAnuncioPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [usuarioAtual, setUsuarioAtual] = useState<{ id: string } | null>(null);
 
-  // ✅ Carregar dados do usuário e do anúncio
+  // Campos do formulário
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">("BOM");
+  const [categoriaId, setCategoriaId] = useState("");
+  const [expiraEm, setExpiraEm] = useState("");
+  const [cep, setCep] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [enderecoDisplay, setEnderecoDisplay] = useState("");
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroCep, setErroCep] = useState<string | null>(null);
+  const [imagens, setImagens] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [erroImagens, setErroImagens] = useState<string | null>(null);
+
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        // Carregar usuário atual
-        const token = localStorage.getItem("token");
-        if (token) {
-          const response = await fetch("http://localhost:8080/api/auth/me", {
-            headers: {
-              Authorization: `Bearer ${token}`, // ✅ CORRIGIDO: Adicionar backticks
-            },
-          });
-          if (response.ok) {
-            const usuario = await response.json();
-            setUsuarioAtual({ id: usuario.id });
-          }
-        }
-
-        // Carregar anúncio
         if (id) {
           const dados = await anuncioService.obterAnuncio(id);
           setAnuncio(dados);
 
-          // Verificar se é o dono
-          if (usuarioAtual && usuarioAtual.id !== dados.usuarioId) {
-            setErro("Você não tem permissão para editar este anúncio");
-            setTimeout(() => navigate(-1), 2000);
+          // Pré-preenche os campos com os dados existentes
+          setTitulo(dados.titulo);
+          setDescricao(dados.descricao);
+          setCondicao(dados.condicao);
+          setCategoriaId(String(dados.categoriaId));
+          setExpiraEm(dados.expiraEm ? dados.expiraEm.split("T")[0] : "");
+          setCep(dados.endereco?.cep ?? "");
+          setNumero(dados.endereco?.numero ?? "");
+          setComplemento(dados.endereco?.complemento ?? "");
+          if (dados.endereco) {
+            setEnderecoDisplay(
+              `${dados.endereco.rua}, ${dados.endereco.bairro} — ${dados.endereco.cidade}/${dados.endereco.uf}`
+            );
           }
         }
       } catch (err) {
-        setErro(
-          err instanceof Error ? err.message : "Erro ao carregar anúncio",
-        );
+        setErro(err instanceof Error ? err.message : "Erro ao carregar anúncio");
       } finally {
         setCarregando(false);
       }
     };
 
     carregarDados();
-  }, [id, navigate, usuarioAtual]);
+  }, [id]);
 
-  // ✅ Enviar atualização - CORRIGIDO para aceitar ambos os tipos
-  const handleSubmit = async (dados: AnuncioCriacao | AnuncioAtualizacao) => {
-    if (!id) return;
+  const handleBuscarCep = async () => {
+    if (cep.replace(/\D/g, "").length !== 8) {
+      setErroCep("CEP deve conter 8 dígitos");
+      return;
+    }
+    setBuscandoCep(true);
+    setErroCep(null);
+    try {
+      const dados = await buscarEnderecoPorCEP(cep);
+      setEnderecoDisplay(`${dados.rua}, ${dados.bairro} — ${dados.cidade}/${dados.uf}`);
+    } catch (err) {
+      setErroCep(err instanceof Error ? err.message : "CEP não encontrado");
+      setEnderecoDisplay("");
+    } finally {
+      setBuscandoCep(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const novasImagens = Array.from(e.target.files);
+    const total = [...imagens, ...novasImagens].slice(0, 5);
+    setImagens(total);
+    setPreviews(total.map((f) => URL.createObjectURL(f)));
+    setErroImagens(null);
+    e.target.value = "";
+  };
+
+  const removerImagem = (index: number) => {
+    setImagens(imagens.filter((_, i) => i !== index));
+    setPreviews(previews.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !anuncio) return;
 
     setLoading(true);
     setErro(null);
 
     try {
-      // ✅ TypeGuard para garantir que tem enderecoId
-      const dadosAtualizacao = dados as AnuncioAtualizacao;
+      const dadosAtualizacao = {
+        titulo,
+        descricao,
+        condicao,
+        categoriaId: Number(categoriaId),
+        expiraEm: expiraEm ? `${expiraEm}T00:00:00` : "",
+        cep: cep.replace(/\D/g, ""),
+        numero,
+        complemento: complemento || undefined,
+        enderecoId: anuncio.enderecoId, // ← vem do anúncio carregado
+      };
 
-      if (!dadosAtualizacao.enderecoId) {
-        throw new Error("enderecoId é obrigatório para atualização");
-      }
-
-      const anuncioAtualizado = await anuncioService.atualizarAnuncio(
-        id,
-        dadosAtualizacao,
-      );
-      navigate(`/listings/${anuncioAtualizado.id}`); // ✅ CORRIGIDO: Adicionar backticks
+      const anuncioAtualizado = await anuncioService.atualizarAnuncio(id, dadosAtualizacao);
+      navigate(`/anuncios/${anuncioAtualizado.id}`);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao atualizar anúncio");
     } finally {
@@ -88,10 +125,14 @@ export const EditarAnuncioPage: React.FC = () => {
     }
   };
 
+  const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider ml-1";
+  const inputClass =
+    "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
+
   if (carregando) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -120,19 +161,14 @@ export const EditarAnuncioPage: React.FC = () => {
 
       <main className="flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmc+')] py-12 px-4 flex items-center justify-center">
         <div className="bg-white rounded-[32px] shadow-xl w-full max-w-3xl p-8 md:p-12 border border-slate-100">
-          {/* Botão Voltar */}
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-8 transition-colors group"
           >
-            <ArrowLeft
-              size={18}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             Voltar
           </button>
 
-          {/* Header da Seção */}
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-2">
               <Edit3 className="text-orange-500" size={28} />
@@ -140,30 +176,220 @@ export const EditarAnuncioPage: React.FC = () => {
                 Editar Anúncio
               </h1>
             </div>
-            <p className="text-slate-500 text-[16px]">
-              Atualize os detalhes do seu anúncio.
-            </p>
+            <p className="text-slate-500 text-[16px]">Atualize os detalhes do seu anúncio.</p>
           </div>
 
-          {/* Exibir erro se houver */}
           {erro && (
-            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-sm flex items-center gap-3 animate-in fade-in">
+            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-sm flex items-center gap-3">
               <AlertCircle size={20} />
               <span className="font-bold text-[16px]">{erro}</span>
             </div>
           )}
 
-          {/* Formulário com dados pre-preenchidos */}
-          {anuncio && (
-            <div className="relative">
-              <FormularioAnuncio
-                onSubmit={handleSubmit}
-                loading={loading}
-                anuncioInicial={anuncio}
-                isEditando={true}
-              />
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className={labelClass}>Título</label>
+                <input
+                  required
+                  className={inputClass}
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className={labelClass}>Categoria</label>
+                <select
+                  required
+                  className={inputClass + " cursor-pointer"}
+                  value={categoriaId}
+                  onChange={(e) => setCategoriaId(e.target.value)}
+                >
+                  <option value="">Selecione...</option>
+                  <option value="1">Imóveis</option>
+                  <option value="2">Autos</option>
+                  <option value="3">Autopeças</option>
+                  <option value="4">Celulares e Telefonia</option>
+                  <option value="5">Casa, Decoração e Utensílios</option>
+                  <option value="6">Esportes e Fitness</option>
+                  <option value="7">Serviços</option>
+                  <option value="8">Moda e Beleza</option>
+                  <option value="9">Artigos Infantis</option>
+                  <option value="10">Animais de Estimação</option>
+                  <option value="11">Música e Hobbies</option>
+                  <option value="12">Agro e Indústria</option>
+                  <option value="13">Vagas de Emprego</option>
+                  <option value="14">Comércio</option>
+                  <option value="15">Câmeras e Drones</option>
+                  <option value="16">Games</option>
+                  <option value="17">TVs e Vídeo</option>
+                  <option value="18">Áudio</option>
+                  <option value="19">Informática</option>
+                  <option value="20">Eletro</option>
+                  <option value="21">Móveis</option>
+                  <option value="22">Materiais de Construção</option>
+                  <option value="23">Escritório e Home Office</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <label className={labelClass}>Descrição Detalhada</label>
+                <textarea
+                  required
+                  rows={4}
+                  className={inputClass + " resize-none"}
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className={labelClass}>Condição</label>
+                <select
+                  className={inputClass + " cursor-pointer"}
+                  value={condicao}
+                  onChange={(e) => setCondicao(e.target.value as "NOVO" | "BOM" | "REGULAR" | "RUIM")}
+                >
+                  <option value="NOVO">Novo</option>
+                  <option value="BOM">Bem Conservado</option>
+                  <option value="REGULAR">Regular</option>
+                  <option value="RUIM">Ruim</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className={labelClass}>Data Limite</label>
+                <input
+                  required
+                  type="date"
+                  className={inputClass}
+                  value={expiraEm}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setExpiraEm(e.target.value)}
+                />
+              </div>
             </div>
-          )}
+
+            {/* ENDEREÇO */}
+            <div className="space-y-4 pt-6 border-t border-slate-100">
+              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                <MapPin size={18} className="text-blue-600" />
+                Onde o item está?
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className={labelClass}>CEP</label>
+                  <div className="flex gap-2">
+                    <input
+                      required
+                      className={inputClass}
+                      placeholder="00000-000"
+                      value={cep}
+                      maxLength={9}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, "").slice(0, 8);
+                        setCep(v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v);
+                        setEnderecoDisplay("");
+                        setErroCep(null);
+                      }}
+                      onBlur={handleBuscarCep}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleBuscarCep}
+                      disabled={buscandoCep}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all disabled:opacity-50"
+                    >
+                      {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                    </button>
+                  </div>
+                  {erroCep && <p className="text-red-500 text-xs font-semibold ml-1">{erroCep}</p>}
+                  {enderecoDisplay && (
+                    <p className="text-emerald-600 text-xs font-semibold ml-1">✓ {enderecoDisplay}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClass}>Número</label>
+                  <input
+                    required
+                    className={inputClass}
+                    value={numero}
+                    onChange={(e) => setNumero(e.target.value)}
+                  />
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className={labelClass}>
+                    Complemento <span className="normal-case font-normal text-slate-400">(opcional)</span>
+                  </label>
+                  <input
+                    className={inputClass}
+                    value={complemento}
+                    onChange={(e) => setComplemento(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* UPLOAD DE FOTOS */}
+            <div className="space-y-4 pt-6 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                  <Camera size={18} className="text-blue-600" />
+                  Fotos do Produto
+                </label>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                  imagens.length === 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                }`}>
+                  {imagens.length}/5 {imagens.length === 5 ? "✓" : "opcional"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                {imagens.length < 5 && (
+                  <label className="cursor-pointer aspect-square rounded-[20px] border-2 border-dashed border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center justify-center bg-white group">
+                    <PlusCircle className="text-slate-400 group-hover:text-blue-600 mb-1 transition-colors" size={24} />
+                    <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-500 uppercase transition-colors">
+                      Adicionar
+                    </span>
+                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
+                  </label>
+                )}
+                {previews.map((url, index) => (
+                  <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border border-slate-100 shadow-sm">
+                    <img src={url} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removerImagem(index)}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow transition-all hover:scale-110"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 font-medium">
+                Adicione novas fotos para substituir as existentes. Formatos aceitos: JPG, PNG, WEBP.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-5 bg-orange-600 text-white font-bold rounded-[24px] shadow-lg shadow-orange-200 hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Alterações"
+              )}
+            </button>
+          </form>
         </div>
       </main>
 
