@@ -240,6 +240,13 @@ public class AnuncioService {
                 .nomeCategoria(anuncio.getCategoria().getNome())
                 .enderecoId(anuncio.getEndereco().getId())
                 .imagensUrls(urlsImagens)
+                .cep(anuncio.getEndereco().getCep())
+                .numero(anuncio.getEndereco().getNumero())
+                .complemento(anuncio.getEndereco().getComplemento())
+                .rua(anuncio.getEndereco().getRua())
+                .bairro(anuncio.getEndereco().getBairro())
+                .cidade(anuncio.getEndereco().getCidade())
+                .uf(anuncio.getEndereco().getUf())
                 .build();
     }
 }

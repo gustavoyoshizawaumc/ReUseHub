@@ -38,19 +38,29 @@ export const EditarAnuncioPage: React.FC = () => {
           const dados = await anuncioService.obterAnuncio(id);
           setAnuncio(dados);
 
-          // Pré-preenche os campos com os dados existentes
           setTitulo(dados.titulo);
           setDescricao(dados.descricao);
           setCondicao(dados.condicao);
           setCategoriaId(String(dados.categoriaId));
           setExpiraEm(dados.expiraEm ? dados.expiraEm.split("T")[0] : "");
-          setCep(dados.endereco?.cep ?? "");
-          setNumero(dados.endereco?.numero ?? "");
-          setComplemento(dados.endereco?.complemento ?? "");
-          if (dados.endereco) {
+
+          // Endereço direto do DTO
+          setCep(dados.cep ?? "");
+          setNumero(dados.numero ?? "");
+          setComplemento(dados.complemento ?? "");
+          if (dados.cep && dados.rua) {
             setEnderecoDisplay(
-              `${dados.endereco.rua}, ${dados.endereco.bairro} — ${dados.endereco.cidade}/${dados.endereco.uf}`
+              `${dados.rua}, ${dados.bairro} — ${dados.cidade}/${dados.uf}`
             );
+          }
+
+          // Fotos existentes como previews
+          if (dados.imagensUrls && dados.imagensUrls.length > 0) {
+            const urls = dados.imagensUrls.map((url) =>
+              url.startsWith("http") ? url : `http://localhost:8080${url}`
+            );
+            setPreviews(urls);
+            // imagens fica vazio — só envia novas fotos se o usuário trocar
           }
         }
       } catch (err) {
