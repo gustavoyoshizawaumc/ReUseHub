@@ -10,9 +10,6 @@ const API_URL = "http://localhost:8080/api/anuncios";
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use((config) => {
@@ -20,11 +17,28 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  if (!(config.data instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
+  }
   return config;
 });
 
-export const criarAnuncio = async (dados: AnuncioCriacao): Promise<Anuncio> => {
-  const response = await api.post("", dados);
+export const criarAnuncio = async (
+  dados: AnuncioCriacao,
+  imagens: File[]
+): Promise<Anuncio> => {
+  const formData = new FormData();
+
+  formData.append(
+    "dados",
+    new Blob([JSON.stringify(dados)], { type: "application/json" })
+  );
+
+  imagens.forEach((imagem) => {
+    formData.append("imagens", imagem);
+  });
+
+  const response = await api.post("", formData);
   return response.data;
 };
 

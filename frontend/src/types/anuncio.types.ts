@@ -45,6 +45,7 @@ export interface Anuncio {
   nomeCategoria: string;
   enderecoId: string;
   endereco?: Endereco;
+  imagensUrls?: string[];
 }
 
 export interface AnuncioCriacao {
