@@ -224,17 +224,17 @@ git commit -m "test(listings): adiciona testes unitários para criação de anú
 ## ✅ Módulos e Status
 
 | Módulo | Responsável | Status |
-|---|---|---|
-| Tela de Login | Compartilhado | 🔲 Não iniciado |
-| Autenticação (JWT + RBAC) | Gustavo | 🔲 Não iniciado |
-| Anúncios (CRUD) | Guilherme | 🔲 Não iniciado |
-| Motor de Busca e Filtros | Guilherme | 🔲 Não iniciado |
-| Sistema de Destaque | Guilherme | 🔲 Não iniciado |
-| Chat (MongoDB) | Gustavo | 🔲 Não iniciado |
-| Avaliações e Reputação | Gustavo | 🔲 Não iniciado |
-| Dashboard Analítico | Compartilhado | 🔲 Não iniciado |
-| Segurança / LGPD | Compartilhado | 🔲 Não iniciado |
-| Testes Automatizados | Compartilhado | 🔲 Não iniciado |
+| :--- | :--- | :--- |
+| Tela de Login | Compartilhado | ✅ Concluído |
+| Autenticação (JWT + RBAC) | Gustavo | ✅ Concluído |
+| Anúncios (CRUD) | Guilherme | ✅ Concluído |
+| Motor de Busca e Filtros | Guilherme | 🟨 Em andamento |
+| Sistema de Destaque | Guilherme | ⬜ Não iniciado |
+| Chat (MongoDB) | Gustavo | ✅ Concluído |
+| Interesses, Avaliações e Reputação | Guilherme / Gustavo | ⬜ Não iniciado |
+| Dashboard Analítico | Compartilhado | ⬜ Não iniciado |
+| Segurança / LGPD | Compartilhado | ⬜ Não iniciado |
+| Testes Automatizados | Compartilhado | ⬜ Não iniciado |
 
 ---
 
