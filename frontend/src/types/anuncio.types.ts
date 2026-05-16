@@ -46,6 +46,14 @@ export interface Anuncio {
   enderecoId: string;
   endereco?: Endereco;
   imagensUrls?: string[];
+  // Dados do endereço diretos
+  cep?: string;
+  numero?: string;
+  complemento?: string;
+  rua?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
 }
 
 export interface AnuncioCriacao {
