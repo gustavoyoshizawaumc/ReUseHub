@@ -291,7 +291,19 @@ export const DetalhesAnuncioPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95">
+                    <button
+                      onClick={() =>
+                        navigate("/chat", {
+                          state: {
+                            destinatarioId: anuncio.usuarioId,
+                            destinatarioNome: anuncio.nomeUsuario,
+                            anuncioId: anuncio.id,
+                            anuncioTitulo: anuncio.titulo,
+                          },
+                        })
+                      }
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
+                    >
                       <MessageCircle size={18} />
                       Entrar em Contato
                     </button>
