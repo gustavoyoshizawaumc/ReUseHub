@@ -29,11 +29,18 @@ public class AnuncioRespostaDTO {
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 
-  
     private UUID usuarioId;
     private String nomeUsuario;
     private Integer categoriaId;
     private String nomeCategoria;
     private UUID enderecoId;
     private List<String> imagensUrls;
+
+    private String cep;
+    private String numero;
+    private String complemento;
+    private String rua;
+    private String bairro;
+    private String cidade;
+    private String uf;
 }

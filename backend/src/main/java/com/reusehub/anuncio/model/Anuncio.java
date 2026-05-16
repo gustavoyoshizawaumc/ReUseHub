@@ -8,6 +8,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -28,11 +30,11 @@ public class Anuncio {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id", nullable = false)
-    private Categoria categoria;  
+    private Categoria categoria;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "endereco_id", nullable = false)
-    private Endereco endereco;  
+    private Endereco endereco;
 
     @Column(name = "titulo", nullable = false, length = 150)
     private String titulo;
@@ -62,6 +64,11 @@ public class Anuncio {
 
     @Column(name = "expira_em")
     private LocalDateTime expiraEm;
+
+    @OneToMany(mappedBy = "anuncio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("ordemExibicao ASC")
+    @Builder.Default
+    private List<ImagemAnuncio> imagens = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "criado_em", nullable = false, updatable = false)

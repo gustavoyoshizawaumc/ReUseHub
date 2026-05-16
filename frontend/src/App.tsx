@@ -22,7 +22,7 @@ function App() {
 
         <Route path="/anuncios" element={<ListaAnunciosPage />} />
 
-        <Route path="/listings/:id" element={<DetalhesAnuncioPage />} />
+        <Route path="/anuncios/:id" element={<DetalhesAnuncioPage />} />
 
         <Route
           path="/create-listing"
