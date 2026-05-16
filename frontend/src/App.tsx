@@ -10,6 +10,7 @@ import { DetalhesAnuncioPage } from "./pages/Anuncios/DetalhesAnuncioPage";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { EditProfilePage } from "./pages/Profile/EditProfilePage";
 import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
+import { ChatPage } from "./pages/Chat/ChatPage";
 import { PrivateRoute } from "./components/PrivateRoute";
 
 function App() {
@@ -21,7 +22,6 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
 
         <Route path="/anuncios" element={<ListaAnunciosPage />} />
-
         <Route path="/anuncios/:id" element={<DetalhesAnuncioPage />} />
 
         <Route
@@ -52,6 +52,15 @@ function App() {
         />
 
         <Route
+          path="/chat"
+          element={
+            <PrivateRoute>
+              <ChatPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/profile"
           element={
             <PrivateRoute>
@@ -59,6 +68,7 @@ function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/profile/edit"
           element={
@@ -67,6 +77,7 @@ function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/profile/delete"
           element={
@@ -91,7 +102,7 @@ function App() {
                 </p>
                 <button
                   onClick={() => window.history.back()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py--3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100 active:scale-95"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100 active:scale-95"
                 >
                   Voltar para onde eu estava
                 </button>
