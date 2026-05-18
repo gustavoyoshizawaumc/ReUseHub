@@ -9,6 +9,7 @@ import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.CategoriaRepository;
 import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
+import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -72,14 +73,13 @@ public class AnuncioService {
                 .descricao(dto.getDescricao())
                 .tipo(dto.getTipo())
                 .condicao(dto.getCondicao())
-                .status(Anuncio.StatusAnuncio.ATIVO)
+                .status(Anuncio.StatusAnuncio.PENDENTE)
                 .totalVisualizacoes(0)
                 .expiraEm(dto.getExpiraEm())
                 .build();
 
         Anuncio salvo = anuncioRepository.save(anuncio);
 
-        // Salva as imagens no disco e persiste cada uma como ImagemAnuncio
         List<String> urlsImagens = storageService.salvarImagens(imagens);
 
         for (int i = 0; i < urlsImagens.size(); i++) {
@@ -95,28 +95,43 @@ public class AnuncioService {
         return mapearParaRespostaDTO(salvo);
     }
 
-    @Transactional(readOnly = true)
-    public AnuncioRespostaDTO obterAnuncioPorId(UUID id) {
+    @Transactional
+        public AnuncioRespostaDTO obterAnuncioPorId(UUID id, String emailUsuario) {
         Anuncio anuncio = anuncioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Anúncio não encontrado"));
+
+        if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
+                // anúncio não ativo: só dono ou moderador pode ver
+                if (emailUsuario == null) {
+                throw new RuntimeException("Anúncio não disponível");
+                }
+
+                Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                        .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+                boolean dono = anuncio.getUsuario().getId().equals(usuario.getId());
+                boolean moderador = usuario.getPerfil() == Perfil.MODERADOR
+                                || usuario.getPerfil() == Perfil.ADMIN;
+
+                if (!dono && !moderador) {
+                throw new RuntimeException("Anúncio não disponível");
+                }
+        }
 
         anuncio.setTotalVisualizacoes(anuncio.getTotalVisualizacoes() + 1);
         anuncioRepository.save(anuncio);
 
         return mapearParaRespostaDTO(anuncio);
-    }
+        }
 
-    @Transactional(readOnly = true)
-    public Page<AnuncioRespostaDTO> listarAnunciosDoUsuario(
-            String emailUsuario,
-            Pageable pageable
-    ) {
+        @Transactional(readOnly = true)
+        public Page<AnuncioRespostaDTO> listarAnunciosDoUsuario(String emailUsuario, Pageable pageable) {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        return anuncioRepository.findByUsuarioId(usuario.getId(), pageable)
+        return anuncioRepository.findByUsuarioIdOrderByCriadoEmDesc(usuario.getId(), pageable)
                 .map(this::mapearParaRespostaDTO);
-    }
+        }
 
     @Transactional(readOnly = true)
     public Page<AnuncioRespostaDTO> listarAnunciosAtivos(Pageable pageable) {
@@ -185,15 +200,19 @@ public class AnuncioService {
     }
 
     public AnuncioRespostaDTO alterarStatus(
-            UUID id,
-            String emailUsuario,
-            Anuncio.StatusAnuncio novoStatus
-    ) {
+                UUID id,
+                String emailUsuario,
+                Anuncio.StatusAnuncio novoStatus
+        ) {
         Anuncio anuncio = anuncioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Anúncio não encontrado"));
 
         if (!anuncio.getUsuario().getEmail().equals(emailUsuario)) {
-            throw new RuntimeException("Você não pode alterar status de anúncio de outro usuário");
+                throw new RuntimeException("Você não pode alterar status de anúncio de outro usuário");
+        }
+
+        if (novoStatus == Anuncio.StatusAnuncio.ATIVO || novoStatus == Anuncio.StatusAnuncio.REPROVADO) {
+                throw new RuntimeException("Esse status só pode ser alterado pela moderação");
         }
 
         anuncio.setStatus(novoStatus);
@@ -213,6 +232,60 @@ public class AnuncioService {
         }
 
         anuncioRepository.deleteById(id);
+    }
+
+    private Usuario buscarUsuarioPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
+
+    private void validarModerador(String emailModerador) {
+        Usuario moderador = buscarUsuarioPorEmail(emailModerador);
+
+        String perfil = moderador.getPerfil().name();
+
+        if (!"MODERADOR".equals(perfil) && !"ADMIN".equals(perfil)) {
+            throw new RuntimeException("Você não tem permissão para moderar anúncios");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AnuncioRespostaDTO> listarAnunciosPendentes(Pageable pageable) {
+        return anuncioRepository
+                .findByStatusOrderByCriadoEmDesc(Anuncio.StatusAnuncio.PENDENTE, pageable)
+                .map(this::mapearParaRespostaDTO);
+    }
+
+    public AnuncioRespostaDTO aprovarAnuncio(UUID id, String emailModerador) {
+        validarModerador(emailModerador);
+
+        Anuncio anuncio = anuncioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Anúncio não encontrado"));
+
+        if (anuncio.getStatus() != Anuncio.StatusAnuncio.PENDENTE) {
+            throw new RuntimeException("Somente anúncios pendentes podem ser aprovados");
+        }
+
+        anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
+        Anuncio atualizado = anuncioRepository.save(anuncio);
+
+        return mapearParaRespostaDTO(atualizado);
+    }
+
+    public AnuncioRespostaDTO reprovarAnuncio(UUID id, String emailModerador) {
+        validarModerador(emailModerador);
+
+        Anuncio anuncio = anuncioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Anúncio não encontrado"));
+
+        if (anuncio.getStatus() != Anuncio.StatusAnuncio.PENDENTE) {
+            throw new RuntimeException("Somente anúncios pendentes podem ser reprovados");
+        }
+
+        anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
+        Anuncio atualizado = anuncioRepository.save(anuncio);
+
+        return mapearParaRespostaDTO(atualizado);
     }
 
     private AnuncioRespostaDTO mapearParaRespostaDTO(Anuncio anuncio) {

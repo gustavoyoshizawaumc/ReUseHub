@@ -135,7 +135,7 @@ public class AuthService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(usuario.getEmail())
                 .password(usuario.getPasswordHash())
-                .authorities(usuario.getPerfil().name())
+                .authorities("ROLE_" + usuario.getPerfil().name())
                 .build();
     }
 

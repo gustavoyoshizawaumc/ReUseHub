@@ -12,6 +12,8 @@ import { EditProfilePage } from "./pages/Profile/EditProfilePage";
 import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
 import { ChatPage } from "./pages/Chat/ChatPage";
 import { PrivateRoute } from "./components/PrivateRoute";
+import { ModeracaoPage } from './pages/Moderacao/ModeracaoPage';
+import { ModeratorRoute } from './components/ModeratorRoute';
 
 function App() {
   return (
@@ -43,7 +45,7 @@ function App() {
         />
 
         <Route
-          path="/my-listings"
+          path="/meus-anuncios"
           element={
             <PrivateRoute>
               <ListaAnunciosPage />
@@ -84,6 +86,14 @@ function App() {
             <PrivateRoute>
               <DeleteAccountPage />
             </PrivateRoute>
+          }
+        />
+        <Route
+          path="/moderacao"
+          element={
+            <ModeratorRoute>
+              <ModeracaoPage />
+            </ModeratorRoute>
           }
         />
 

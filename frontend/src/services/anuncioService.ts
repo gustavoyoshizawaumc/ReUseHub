@@ -111,7 +111,7 @@ export const atualizarAnuncio = async (
 
 export const alterarStatus = async (
   id: string,
-  status: "ATIVO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO",
+  status: "RESERVADO" | "CONCLUIDO" | "CANCELADO",
 ): Promise<Anuncio> => {
   const response = await api.patch(`/${id}/status`, null, {
     params: { status },

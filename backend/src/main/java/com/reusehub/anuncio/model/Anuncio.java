@@ -53,7 +53,7 @@ public class Anuncio {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
-    private StatusAnuncio status = StatusAnuncio.ATIVO;
+    private StatusAnuncio status = StatusAnuncio.PENDENTE;
 
     @Column(name = "total_visualizacoes")
     @Builder.Default
@@ -87,6 +87,11 @@ public class Anuncio {
     }
 
     public enum StatusAnuncio {
-        ATIVO, RESERVADO, CONCLUIDO, CANCELADO
+        PENDENTE,
+        ATIVO,
+        REPROVADO,
+        RESERVADO,
+        CONCLUIDO,
+        CANCELADO
     }
 }

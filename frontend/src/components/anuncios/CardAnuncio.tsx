@@ -1,7 +1,18 @@
 import React from "react";
 import type { Anuncio } from "../../types/anuncio.types";
-import { Link } from "react-router-dom";
-import { Eye, Tag, Trash2, ArrowRight, Box } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Eye,
+  Tag,
+  Trash2,
+  ArrowRight,
+  Box,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  PackageCheck,
+} from "lucide-react";
 
 const BASE_URL = "http://localhost:8080";
 
@@ -11,13 +22,20 @@ interface CardAnuncioProps {
 }
 
 export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) => {
+  const navigate = useNavigate();
+
   const getCondicaoColor = (condicao: string) => {
     switch (condicao) {
-      case "NOVO": return "bg-emerald-50 text-emerald-700 border-emerald-100";
-      case "BOM": return "bg-blue-50 text-blue-700 border-blue-100";
-      case "REGULAR": return "bg-amber-50 text-amber-700 border-amber-100";
-      case "RUIM": return "bg-red-50 text-red-700 border-red-100";
-      default: return "bg-slate-50 text-slate-700 border-slate-100";
+      case "NOVO":
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      case "BOM":
+        return "bg-blue-50 text-blue-700 border-blue-100";
+      case "REGULAR":
+        return "bg-amber-50 text-amber-700 border-amber-100";
+      case "RUIM":
+        return "bg-red-50 text-red-700 border-red-100";
+      default:
+        return "bg-slate-50 text-slate-700 border-slate-100";
     }
   };
 
@@ -26,15 +44,82 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
       ? "bg-teal-50 text-teal-700 border-teal-100"
       : "bg-orange-50 text-orange-700 border-orange-100";
 
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "PENDENTE":
+        return {
+          label: "Pendente",
+          className: "bg-amber-50 text-amber-700 border-amber-100",
+          icon: Clock3,
+          helper: "Aguardando aprovação da moderação",
+        };
+      case "ATIVO":
+        return {
+          label: "Publicado",
+          className: "bg-emerald-50 text-emerald-700 border-emerald-100",
+          icon: CheckCircle2,
+          helper: "Disponível publicamente",
+        };
+      case "REPROVADO":
+        return {
+          label: "Reprovado",
+          className: "bg-rose-50 text-rose-700 border-rose-100",
+          icon: XCircle,
+          helper: "Revise as informações do anúncio",
+        };
+      case "RESERVADO":
+        return {
+          label: "Reservado",
+          className: "bg-blue-50 text-blue-700 border-blue-100",
+          icon: PackageCheck,
+          helper: "Negociação em andamento",
+        };
+      case "CONCLUIDO":
+        return {
+          label: "Concluído",
+          className: "bg-violet-50 text-violet-700 border-violet-100",
+          icon: CheckCircle2,
+          helper: "Anúncio finalizado",
+        };
+      case "CANCELADO":
+        return {
+          label: "Cancelado",
+          className: "bg-slate-100 text-slate-700 border-slate-200",
+          icon: Ban,
+          helper: "Anúncio desativado",
+        };
+      default:
+        return {
+          label: status,
+          className: "bg-slate-50 text-slate-700 border-slate-100",
+          icon: Tag,
+          helper: "",
+        };
+    }
+  };
+
   const fotoCapa = anuncio.imagensUrls?.[0];
   const fotoCapaUrl = fotoCapa
     ? fotoCapa.startsWith("http") ? fotoCapa : `${BASE_URL}${fotoCapa}`
     : null;
 
+  const statusConfig = getStatusConfig(anuncio.status);
+  const StatusIcon = statusConfig.icon;
+
+  const handlePrimaryAction = () => {
+    if (anuncio.status === "ATIVO") {
+      navigate(`/anuncios/${anuncio.id}`);
+      return;
+    }
+
+    navigate("/meus-anuncios");
+  };
+
+  const primaryButtonLabel =
+    anuncio.status === "ATIVO" ? "Ver anúncio" : "Acompanhar status";
+
   return (
     <div className="group bg-white rounded-[24px] border border-slate-100 p-5 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 flex flex-col md:flex-row gap-6">
-
-      {/* FOTO DE CAPA */}
       <div className="w-full md:w-40 h-40 rounded-2xl shrink-0 overflow-hidden bg-slate-50 flex items-center justify-center text-slate-300">
         {fotoCapaUrl ? (
           <img
@@ -53,8 +138,14 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getTipoBadge(anuncio.tipo)}`}>
               {anuncio.tipo === "DOACAO" ? "Doação" : "Troca"}
             </span>
+
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getCondicaoColor(anuncio.condicao)}`}>
               {anuncio.condicao}
+            </span>
+
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border inline-flex items-center gap-1 ${statusConfig.className}`}>
+              <StatusIcon size={12} />
+              {statusConfig.label}
             </span>
           </div>
 
@@ -65,13 +156,20 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
           <p className="text-slate-500 text-sm mt-2 line-clamp-2 leading-relaxed">
             {anuncio.descricao}
           </p>
+
+          {statusConfig.helper && (
+            <p className="mt-3 text-xs font-bold text-slate-500">
+              {statusConfig.helper}
+            </p>
+          )}
         </div>
 
-        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50 text-[12px] font-bold text-slate-400">
+        <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-slate-50 text-[12px] font-bold text-slate-400">
           <div className="flex items-center gap-1.5">
             <Tag size={14} className="text-blue-500" />
             <span className="text-slate-600">{anuncio.nomeCategoria}</span>
           </div>
+
           <div className="flex items-center gap-1.5">
             <Eye size={14} />
             <span>{anuncio.totalVisualizacoes} vistas</span>
@@ -80,13 +178,13 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
       </div>
 
       <div className="flex md:flex-col justify-end gap-2 shrink-0 md:border-l md:border-slate-50 md:pl-6">
-        <Link
-          to={`/anuncios/${anuncio.id}`}
-          className="flex-1 md:flex-none bg-slate-50 hover:bg-blue-600 hover:text-white text-slate-600 p-3 rounded-xl transition-all flex items-center justify-center gap-2 group/btn active:scale-95"
+        <button
+          onClick={handlePrimaryAction}
+          className="flex-1 md:flex-none bg-slate-50 hover:bg-blue-600 hover:text-white text-slate-600 p-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95"
         >
-          <span className="text-xs font-bold md:hidden">Ver Detalhes</span>
+          <span className="text-xs font-bold md:hidden">{primaryButtonLabel}</span>
           <ArrowRight size={18} />
-        </Link>
+        </button>
 
         {onDelete && (
           <button
