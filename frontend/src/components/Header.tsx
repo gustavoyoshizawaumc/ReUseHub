@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../services/authService";
 import type { UsuarioRespostaDTO } from "../types/auth.types";
+import { ShieldCheck } from 'lucide-react';
 import {
   User,
   LogOut,
@@ -203,7 +204,7 @@ export const Header: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      navigate("/my-listings");
+                      navigate("/meus-anuncios");
                       setIsDropdownOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm font-semibold"
@@ -217,6 +218,17 @@ export const Header: React.FC = () => {
                   >
                     <LogOut size={18} /> Sair
                   </button>
+                  {(user.perfil === 'MODERADOR' || user.perfil === 'ADMIN') && (
+                    <button
+                      onClick={() => {
+                        navigate('/moderacao');
+                        setIsDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-blue-600 hover:bg-blue-50 transition-colors text-sm font-semibold"
+                    >
+                      <ShieldCheck size={18} /> Moderação
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -15,7 +15,11 @@ import java.util.UUID;
 @Repository
 public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
 
+    Page<Anuncio> findByUsuarioIdOrderByCriadoEmDesc(UUID usuarioId, Pageable pageable);
+
     Optional<Anuncio> findByIdAndStatusNot(UUID id, Anuncio.StatusAnuncio status);
+
+    Optional<Anuncio> findByIdAndStatus(UUID id, Anuncio.StatusAnuncio status);
 
     Page<Anuncio> findByUsuarioId(UUID usuarioId, Pageable pageable);
 
@@ -28,6 +32,14 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
     Page<Anuncio> findByTipoAndStatus(
         Anuncio.TipoAnuncio tipo,
         Anuncio.StatusAnuncio status,
+        Pageable pageable
+    );
+
+    Page<Anuncio> findByStatus(Anuncio.StatusAnuncio status, Pageable pageable);
+
+    @Query("SELECT a FROM Anuncio a WHERE a.status = :status ORDER BY a.criadoEm DESC")
+    Page<Anuncio> findByStatusOrderByCriadoEmDesc(
+        @Param("status") Anuncio.StatusAnuncio status,
         Pageable pageable
     );
 

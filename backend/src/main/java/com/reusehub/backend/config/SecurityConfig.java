@@ -43,36 +43,30 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                    
                     .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
 
-                    
                     .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
 
-                    
-                    .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated() 
+                    .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
+                    .requestMatchers("/uploads/**").permitAll()
+                    .requestMatchers("/error").permitAll()
+
+                    // moderação: precisa vir antes das regras genéricas de /api/anuncios/**
+                    .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+
+                    .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
+                    .requestMatchers("/api/anuncios/meus/**").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").authenticated()
                     .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").authenticated()
 
-                    
-                    .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
-
-                    
-                    .requestMatchers("/uploads/**").permitAll()
-
-                    
-                    .requestMatchers("/error").permitAll()
-
-                    
                     .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                
                 .addFilterBefore(
                     new JwtAuthenticationFilter(jwtService, userDetailsService()),
                     UsernamePasswordAuthenticationFilter.class
@@ -83,7 +77,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
-                .filter(u -> u.getIsActive()) 
+                .filter(u -> u.getIsActive())
                 .map(u -> User.withUsername(u.getEmail())
                         .password(u.getPasswordHash())
                         .authorities("ROLE_" + u.getPerfil().name())
@@ -112,25 +106,25 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-        
+
         config.setAllowedOrigins(java.util.List.of(
             "http://localhost:5173",
             "http://localhost:5174",
             "http://localhost:3000"
         ));
-        
+
         config.setAllowedMethods(java.util.List.of(
             "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
-        
+
         config.setAllowedHeaders(java.util.List.of("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
-        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = 
+        org.springframework.web.cors.UrlBasedCorsConfigurationSource source =
             new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        
+
         return source;
     }
 }

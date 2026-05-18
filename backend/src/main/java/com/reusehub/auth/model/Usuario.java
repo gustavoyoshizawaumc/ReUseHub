@@ -57,7 +57,8 @@ public class Usuario extends BaseEntity {
     @Column(name = "data_consentimento_lgpd")
     private LocalDateTime lgpdConsentAt;
 
-    @Transient
+    @Enumerated(EnumType.STRING)
+    @Column(name = "perfil", nullable = false, length = 50)
     @Builder.Default
     private Perfil perfil = Perfil.USUARIO;
 }
