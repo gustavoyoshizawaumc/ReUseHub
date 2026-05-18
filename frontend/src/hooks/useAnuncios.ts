@@ -16,12 +16,12 @@ export const useAnuncios = () => {
     setLoading(true);
     setErro(null);
     try {
-      const resposta = await anuncioService.listarAnuncios(page, size);
+      const resposta = await anuncioService.listarMeusAnuncios(page, size);
       setAnuncios(resposta.content);
       setPaginacao({
-        currentPage: resposta.currentPage || page,
-        totalPages: resposta.totalPages || 1,
-        totalElements: resposta.totalElements || 0,
+        currentPage: resposta.currentPage ?? page,
+        totalPages: resposta.totalPages ?? 1,
+        totalElements: resposta.totalElements ?? 0,
       });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao listar anúncios");
@@ -37,9 +37,9 @@ export const useAnuncios = () => {
       const resposta = await anuncioService.buscarAnuncios(termo, page);
       setAnuncios(resposta.content);
       setPaginacao({
-        currentPage: resposta.currentPage || page,
-        totalPages: resposta.totalPages || 1,
-        totalElements: resposta.totalElements || 0,
+        currentPage: resposta.currentPage ?? page,
+        totalPages: resposta.totalPages ?? 1,
+        totalElements: resposta.totalElements ?? 0,
       });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao buscar");
@@ -48,50 +48,41 @@ export const useAnuncios = () => {
     }
   }, []);
 
-  const filtrarCategoria = useCallback(
-    async (categoriaId: number, page = 0) => {
-      setLoading(true);
-      setErro(null);
-      try {
-        const resposta = await anuncioService.filtrarPorCategoria(
-          categoriaId,
-          page,
-        );
-        setAnuncios(resposta.content);
-        setPaginacao({
-          currentPage: resposta.currentPage || page,
-          totalPages: resposta.totalPages || 1,
-          totalElements: resposta.totalElements || 0,
-        });
-      } catch (err) {
-        setErro(err instanceof Error ? err.message : "Erro ao filtrar");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+  const filtrarCategoria = useCallback(async (categoriaId: number, page = 0) => {
+    setLoading(true);
+    setErro(null);
+    try {
+      const resposta = await anuncioService.filtrarPorCategoria(categoriaId, page);
+      setAnuncios(resposta.content);
+      setPaginacao({
+        currentPage: resposta.currentPage ?? page,
+        totalPages: resposta.totalPages ?? 1,
+        totalElements: resposta.totalElements ?? 0,
+      });
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Erro ao filtrar");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filtrarTipo = useCallback(
-    async (tipo: "DOACAO" | "TROCA", page = 0) => {
-      setLoading(true);
-      setErro(null);
-      try {
-        const resposta = await anuncioService.filtrarPorTipo(tipo, page);
-        setAnuncios(resposta.content);
-        setPaginacao({
-          currentPage: resposta.currentPage || page,
-          totalPages: resposta.totalPages || 1,
-          totalElements: resposta.totalElements || 0,
-        });
-      } catch (err) {
-        setErro(err instanceof Error ? err.message : "Erro ao filtrar");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+  const filtrarTipo = useCallback(async (tipo: "DOACAO" | "TROCA", page = 0) => {
+    setLoading(true);
+    setErro(null);
+    try {
+      const resposta = await anuncioService.filtrarPorTipo(tipo, page);
+      setAnuncios(resposta.content);
+      setPaginacao({
+        currentPage: resposta.currentPage ?? page,
+        totalPages: resposta.totalPages ?? 1,
+        totalElements: resposta.totalElements ?? 0,
+      });
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Erro ao filtrar");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
     anuncios,

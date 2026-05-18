@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,8 +85,15 @@ public class AnuncioController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AnuncioRespostaDTO> obterAnuncio(@PathVariable UUID id) {
-        AnuncioRespostaDTO resposta = anuncioService.obterAnuncioPorId(id);
+    public ResponseEntity<AnuncioRespostaDTO> obterAnuncio(
+            @PathVariable UUID id,
+            Authentication authentication) {
+
+        String email = (authentication != null && authentication.isAuthenticated())
+                ? authentication.getName()
+                : null;
+
+        AnuncioRespostaDTO resposta = anuncioService.obterAnuncioPorId(id, email);
         return ResponseEntity.ok(resposta);
     }
 
@@ -131,5 +139,37 @@ public class AnuncioController {
         String email = authentication.getName();
         anuncioService.deletarAnuncio(id, email);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('MODERADOR', 'ADMIN')")
+    @GetMapping("/moderacao/pendentes")
+    public ResponseEntity<Page<AnuncioRespostaDTO>> listarPendentes(
+            Pageable pageable,
+            Authentication authentication
+    ) {
+        Page<AnuncioRespostaDTO> resposta = anuncioService.listarAnunciosPendentes(pageable);
+        return ResponseEntity.ok(resposta);
+    }
+
+    @PreAuthorize("hasAnyRole('MODERADOR', 'ADMIN')")
+    @PatchMapping("/moderacao/{id}/aprovar")
+    public ResponseEntity<AnuncioRespostaDTO> aprovar(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        AnuncioRespostaDTO resposta = anuncioService.aprovarAnuncio(id, email);
+        return ResponseEntity.ok(resposta);
+    }
+
+    @PreAuthorize("hasAnyRole('MODERADOR', 'ADMIN')")
+    @PatchMapping("/moderacao/{id}/reprovar")
+    public ResponseEntity<AnuncioRespostaDTO> reprovar(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        AnuncioRespostaDTO resposta = anuncioService.reprovarAnuncio(id, email);
+        return ResponseEntity.ok(resposta);
     }
 }

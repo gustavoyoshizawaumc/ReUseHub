@@ -97,7 +97,9 @@ export const DetalhesAnuncioPage: React.FC = () => {
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
         <div className="bg-white p-8 rounded-[32px] shadow-xl text-center max-w-md">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Ops!</h2>
-          <p className="text-slate-500 mb-6">{erro || "Anúncio não encontrado"}</p>
+          <p className="text-slate-500 mb-6">
+            {erro || "Este anúncio não está disponível no momento."}
+          </p>
           <button
             onClick={() => navigate("/")}
             className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold transition-all active:scale-95"
