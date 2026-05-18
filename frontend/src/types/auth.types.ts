@@ -54,15 +54,18 @@ export interface UsuarioRespostaDTO {
   id: string;
   name: string;
   email: string;
-  phone?: string;
   cpf: string;
+  phone?: string;
   avatarUrl?: string;
   bio?: string;
-  reputationScore: number;
-  isActive: boolean;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  reputationScore?: number;
+  isActive?: boolean;
+  isVerified?: boolean;
+  lgpdConsent?: boolean;
+  lgpdConsentAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  perfil?: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }
 
 export interface UpdateProfileRequest {

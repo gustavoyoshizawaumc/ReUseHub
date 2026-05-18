@@ -82,7 +82,7 @@ export const Footer: React.FC = () => {
             </li>
             <li>
               <Link
-                to="/my-listings"
+                to="/meus-anuncios"
                 className="hover:text-blue-500 transition-colors"
               >
                 Meus anúncios
