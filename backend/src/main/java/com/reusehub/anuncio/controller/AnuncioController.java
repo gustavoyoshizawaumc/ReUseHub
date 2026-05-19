@@ -26,14 +26,11 @@ public class AnuncioController {
     private final AnuncioService anuncioService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AnuncioRespostaDTO> criarAnuncio(
             @RequestPart("dados") @Valid AnuncioCriacaoComEnderecoDTO dto,
             @RequestPart("imagens") List<MultipartFile> imagens,
             Authentication authentication) {
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         String email = authentication.getName();
         AnuncioRespostaDTO resposta = anuncioService.criarAnuncioComEndereco(email, dto, imagens);
@@ -47,13 +44,11 @@ public class AnuncioController {
     }
 
     @GetMapping("/meus")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<AnuncioRespostaDTO>> listarMeusAnuncios(
             Pageable pageable,
             Authentication authentication) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         String email = authentication.getName();
         Page<AnuncioRespostaDTO> resposta = anuncioService.listarAnunciosDoUsuario(email, pageable);
@@ -68,11 +63,11 @@ public class AnuncioController {
         return ResponseEntity.ok(resposta);
     }
 
-    @GetMapping("/categoria/{categoryId}")
+    @GetMapping("/categoria/{categoriaId}")
     public ResponseEntity<Page<AnuncioRespostaDTO>> listarPorCategoria(
-            @PathVariable Integer categoryId,
+            @PathVariable Integer categoriaId,
             Pageable pageable) {
-        Page<AnuncioRespostaDTO> resposta = anuncioService.listarPorCategoria(categoryId, pageable);
+        Page<AnuncioRespostaDTO> resposta = anuncioService.listarPorCategoria(categoriaId, pageable);
         return ResponseEntity.ok(resposta);
     }
 
@@ -98,14 +93,12 @@ public class AnuncioController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AnuncioRespostaDTO> atualizarAnuncio(
             @PathVariable UUID id,
             @Valid @RequestBody AnuncioAtualizacaoDTO dto,
             Authentication authentication) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         String email = authentication.getName();
         AnuncioRespostaDTO resposta = anuncioService.atualizarAnuncio(id, email, dto);
@@ -113,14 +106,12 @@ public class AnuncioController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AnuncioRespostaDTO> alterarStatus(
             @PathVariable UUID id,
             @RequestParam Anuncio.StatusAnuncio status,
             Authentication authentication) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         String email = authentication.getName();
         AnuncioRespostaDTO resposta = anuncioService.alterarStatus(id, email, status);
@@ -128,13 +119,11 @@ public class AnuncioController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deletarAnuncio(
             @PathVariable UUID id,
             Authentication authentication) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         String email = authentication.getName();
         anuncioService.deletarAnuncio(id, email);

@@ -7,14 +7,15 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: reusehub
-      POSTGRES_USER: reusehub
-      POSTGRES_PASSWORD: reusehub123
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U reusehub"]
+      # Rodando o pg_isready com o usuário injetado do .env
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,8 +25,8 @@ services:
     container_name: reusehub-mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: reusehub
-      MONGO_INITDB_ROOT_PASSWORD: reusehub123
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: reusehub
     ports:
       - "27017:27017"
@@ -48,24 +49,8 @@ services:
       - "5173:5173"
     environment:
       - WATCHPACK_POLLING=true
+      - VITE_API_URL=${VITE_API_URL}
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-
-  #  backend:
-  #  build: ./backend
-  #  container_name: reusehub-backend
-  #  restart: unless-stopped
-  #  ports:
-  #    - "8080:8080"
-  #  environment:
-  #    - SPRING_DATASOURCE_URL=jdbc:postgresql://reusehub-postgres:5432/reusehub
-  #    - SPRING_DATASOURCE_USERNAME=reusehub
-  #    - SPRING_DATASOURCE_PASSWORD=reusehub123
-  #    - SPRING_DATA_MONGODB_URI=mongodb://reusehub:reusehub123@reusehub-mongo:27017/reusehub?authSource=admin
-  #  depends_on:
-  #    postgres:
-  #      condition: service_healthy
-  #    mongodb:
-  #      condition: service_healthy
 
 volumes:
   postgres_data:

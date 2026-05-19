@@ -1,4 +1,3 @@
-// frontend/src/pages/register/RegisterPage.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
@@ -116,7 +115,6 @@ export const RegisterPage: React.FC = () => {
 
     try {
       await authService.register(formData);
-      // Rota corrigida aqui!
       navigate("/login");
     } catch (err: any) {
       setFormError(err.message || "Erro ao cadastrar. Tente novamente.");

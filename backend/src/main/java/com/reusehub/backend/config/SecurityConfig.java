@@ -3,7 +3,9 @@ package com.reusehub.backend.config;
 import com.reusehub.auth.filter.JwtAuthenticationFilter;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.auth.service.JwtService;
+import com.reusehub.auth.model.Usuario;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +25,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -32,6 +35,9 @@ public class SecurityConfig {
 
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
+    
+    @Qualifier("handlerExceptionResolver")
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,7 +48,6 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
                     .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
 
                     .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
@@ -55,7 +60,6 @@ public class SecurityConfig {
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers("/error").permitAll()
 
-                    // moderação: precisa vir antes das regras genéricas de /api/anuncios/**
                     .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
 
                     .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
@@ -68,7 +72,7 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
-                    new JwtAuthenticationFilter(jwtService, userDetailsService()),
+                    new JwtAuthenticationFilter(jwtService, userDetailsService(), handlerExceptionResolver),
                     UsernamePasswordAuthenticationFilter.class
                 )
                 .build();
@@ -77,7 +81,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
-                .filter(u -> u.getIsActive())
+                .filter(Usuario::getIsActive)
                 .map(u -> User.withUsername(u.getEmail())
                         .password(u.getPasswordHash())
                         .authorities("ROLE_" + u.getPerfil().name())
@@ -87,7 +91,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        var provider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService());
         provider.setPasswordEncoder(passwordEncoder());
         return provider;

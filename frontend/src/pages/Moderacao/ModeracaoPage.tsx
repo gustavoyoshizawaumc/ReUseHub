@@ -37,7 +37,6 @@ export const ModeracaoPage: React.FC = () => {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [total, setTotal] = useState(0);
 
-  // Estado para controlar o índice da imagem ativa de cada anúncio individualmente
   const [imagensAtivas, setImagensAtivas] = useState<Record<string, number>>({});
 
   const carregar = useCallback(async (p = 0) => {
@@ -50,7 +49,6 @@ export const ModeracaoPage: React.FC = () => {
       setTotal(data.totalElements ?? 0);
       setPagina(p);
       
-      // Inicializa o índice da imagem ativa como 0 para todos os anúncios carregados
       const iniciais: Record<string, number> = {};
       data.content?.forEach((anuncio: Anuncio) => {
         iniciais[anuncio.id] = 0;
@@ -113,7 +111,6 @@ export const ModeracaoPage: React.FC = () => {
     }
   };
 
-  // Funções auxiliares para navegar no carrossel de cada card
   const imagemAnteriorCarrossel = (anuncioId: string, totalImagens: number) => {
     setImagensAtivas((prev) => ({
       ...prev,
