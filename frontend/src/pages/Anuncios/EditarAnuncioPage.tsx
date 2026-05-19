@@ -15,7 +15,6 @@ export const EditarAnuncioPage: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">("BOM");
@@ -44,7 +43,6 @@ export const EditarAnuncioPage: React.FC = () => {
           setCategoriaId(String(dados.categoriaId));
           setExpiraEm(dados.expiraEm ? dados.expiraEm.split("T")[0] : "");
 
-          // Endereço direto do DTO
           setCep(dados.cep ?? "");
           setNumero(dados.numero ?? "");
           setComplemento(dados.complemento ?? "");
@@ -54,13 +52,11 @@ export const EditarAnuncioPage: React.FC = () => {
             );
           }
 
-          // Fotos existentes como previews
           if (dados.imagensUrls && dados.imagensUrls.length > 0) {
             const urls = dados.imagensUrls.map((url) =>
               url.startsWith("http") ? url : `http://localhost:8080${url}`
             );
             setPreviews(urls);
-            // imagens fica vazio — só envia novas fotos se o usuário trocar
           }
         }
       } catch (err) {
@@ -123,7 +119,7 @@ export const EditarAnuncioPage: React.FC = () => {
         cep: cep.replace(/\D/g, ""),
         numero,
         complemento: complemento || undefined,
-        enderecoId: anuncio.enderecoId, // ← vem do anúncio carregado
+        enderecoId: anuncio.enderecoId,
       };
 
       const anuncioAtualizado = await anuncioService.atualizarAnuncio(id, dadosAtualizacao);

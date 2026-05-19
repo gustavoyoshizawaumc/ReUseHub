@@ -1,15 +1,16 @@
 package com.reusehub.auth.service;
 
+import com.reusehub.anuncio.exception.OperacaoInvalidaException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -31,7 +32,11 @@ public class JwtService {
     }
 
     public boolean tokenValido(String token, UserDetails userDetails) {
-        return extrairEmail(token).equals(userDetails.getUsername()) && !tokenExpirado(token);
+        try {
+            return extrairEmail(token).equals(userDetails.getUsername()) && !tokenExpirado(token);
+        } catch (OperacaoInvalidaException e) {
+            return false;
+        }
     }
 
     public String extrairEmail(String token) {
@@ -43,22 +48,21 @@ public class JwtService {
     }
 
     private <T> T extrairClaim(String token, Function<Claims, T> resolver) {
-        return resolver.apply(
-            Jwts.parser().verifyWith(getChave()).build().parseSignedClaims(token).getPayload()
-        );
+        try {
+            return resolver.apply(
+                Jwts.parser().verifyWith(getChave()).build().parseSignedClaims(token).getPayload()
+            );
+        } catch (ExpiredJwtException e) {
+            throw new OperacaoInvalidaException("O token enviado está expirado.");
+        } catch (UnsupportedJwtException | MalformedJwtException | SignatureException e) {
+            throw new OperacaoInvalidaException("Token JWT inválido ou assinatura corrompida.");
+        } catch (IllegalArgumentException e) {
+            throw new OperacaoInvalidaException("As claims do token estão vazias.");
+        }
     }
 
     private SecretKey getChave() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
-    }
-
-    public UUID extrairUuidDoToken(String token) {
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        
-        String email = extrairEmail(token);
-        
-        throw new IllegalArgumentException("Use obterPerfilPorEmail em vez disso");
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

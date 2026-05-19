@@ -6,6 +6,9 @@ import com.reusehub.chat.dto.IniciarConversaDTO;
 import com.reusehub.chat.dto.ListaConversasDTO;
 import com.reusehub.chat.dto.MensagemCriacaoDTO;
 import com.reusehub.chat.repository.ChatRepository;
+import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
+import com.reusehub.anuncio.exception.RegraNegocioException;
+import com.reusehub.anuncio.exception.AcessoNegadoException;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.auth.model.Usuario;
@@ -34,180 +37,146 @@ public class ChatService {
 
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado para o email: " + email));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", email));
     }
 
     private Usuario buscarUsuarioPorId(String id) {
-        return usuarioRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado para o ID: " + id));
+        try {
+            return usuarioRepository.findById(UUID.fromString(id))
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", id));
+        } catch (IllegalArgumentException e) {
+            throw new RecursoNaoEncontradoException("Usuário", id);
+        }
     }
 
     private String resolverNomeUsuario(String usuarioId) {
-        if (usuarioId == null || usuarioId.isBlank()) {
-            return "Usuário";
-        }
-
+        if (usuarioId == null || usuarioId.isBlank()) return "Usuário";
+        
         try {
             return usuarioRepository.findById(UUID.fromString(usuarioId))
                     .map(Usuario::getName)
                     .orElse("Usuário");
         } catch (IllegalArgumentException e) {
-            log.warn("ID de usuário inválido ao resolver nome no chat: {}", usuarioId);
+            log.warn("Formato de ID inválido ao resolver nome do usuário no chat: {}", usuarioId);
             return "Usuário";
         }
     }
 
     private String resolverTituloAnuncio(String anuncioId) {
         if (anuncioId == null || anuncioId.isBlank()) return "Anúncio";
-
+        
         try {
             return anuncioRepository.findById(UUID.fromString(anuncioId))
                     .map(Anuncio::getTitulo)
                     .orElse("Anúncio");
         } catch (IllegalArgumentException e) {
+            log.warn("Formato de ID inválido ao resolver título do anúncio no chat: {}", anuncioId);
             return "Anúncio";
         }
     }
 
     @Transactional
     public void enviarMensagem(String emailRemetente, String conversaId, MensagemCriacaoDTO dto) {
-        try {
-            Objects.requireNonNull(emailRemetente, "O remetente não pode ser nulo");
-            Objects.requireNonNull(conversaId, "O ID da conversa não pode ser nulo");
-            Objects.requireNonNull(dto, "Os dados da mensagem não podem ser nulos");
-            Objects.requireNonNull(dto.conteudo(), "O conteúdo da mensagem não pode ser nulo");
+        Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
+        String remetenteId = remetenteUsuario.getId().toString();
 
-            Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
-            String remetenteId = remetenteUsuario.getId().toString();
+        Conversa conversa = chatRepository.findById(conversaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
 
-            Conversa conversa = chatRepository.findById(conversaId)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Conversa não encontrada para o ID informado: " + conversaId));
-
-            if (!conversa.getRemetente().equals(remetenteId) && !conversa.getDestinatario().equals(remetenteId)) {
-                throw new IllegalArgumentException("Você não tem permissão para enviar mensagem nesta conversa");
-            }
-
-            Conversa.Mensagem mensagem = new Conversa.Mensagem();
-            mensagem.setConteudo(dto.conteudo());
-            mensagem.setTimestamp(LocalDateTime.now());
-            mensagem.setRemetente(remetenteId);
-
-            if (conversa.getHistoricoMensagens() == null) {
-                conversa.setHistoricoMensagens(new java.util.ArrayList<>());
-            }
-
-            conversa.getHistoricoMensagens().add(mensagem);
-            conversa.setLido(false);
-
-            chatRepository.save(conversa);
-            log.info("Mensagem salva com sucesso na conversa ID: {} por {}", conversaId, remetenteId);
-        } catch (IllegalArgumentException e) {
-            log.error("Erro de validação ao enviar mensagem: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("Erro ao enviar mensagem na conversa {}: {}", conversaId, e.getMessage(), e);
-            throw new RuntimeException("Falha ao enviar mensagem", e);
+        if (!conversa.getRemetente().equals(remetenteId) && !conversa.getDestinatario().equals(remetenteId)) {
+            throw new AcessoNegadoException("Acesso negado: você não tem permissão para enviar mensagens nesta conversa.");
         }
+
+        Conversa.Mensagem mensagem = new Conversa.Mensagem();
+        mensagem.setConteudo(dto.conteudo());
+        mensagem.setTimestamp(LocalDateTime.now());
+        mensagem.setRemetente(remetenteId);
+
+        if (conversa.getHistoricoMensagens() == null) {
+            conversa.setHistoricoMensagens(new java.util.ArrayList<>());
+        }
+
+        conversa.getHistoricoMensagens().add(mensagem);
+        conversa.setLido(false);
+
+        chatRepository.save(conversa);
+        log.info("Mensagem salva com sucesso na conversa ID: {} por {}", conversaId, remetenteId);
     }
 
     @Transactional
     public ConversaRespostaDTO iniciarOuRecuperarConversa(String emailRemetente, IniciarConversaDTO dto) {
-        try {
-            Objects.requireNonNull(emailRemetente, "O remetente não pode ser nulo");
-            Objects.requireNonNull(dto, "Os dados para iniciar a conversa não podem ser nulos");
-            Objects.requireNonNull(dto.anuncioId(), "O ID do anúncio não pode ser nulo");
-            Objects.requireNonNull(dto.destinatarioId(), "O ID do destinatário não pode ser nulo");
+        Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
+        String remetenteId = remetenteUsuario.getId().toString();
+        String destinatarioId = dto.destinatarioId();
 
-            Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
-            String remetenteId = remetenteUsuario.getId().toString();
-            String destinatarioId = dto.destinatarioId();
+        if (remetenteId.equals(destinatarioId)) {
+            throw new RegraNegocioException("Você não pode iniciar uma conversa com você mesmo.");
+        }
 
-            if (remetenteId.equals(destinatarioId)) {
-                throw new IllegalArgumentException("Você não pode iniciar uma conversa com você mesmo");
-            }
+        Conversa conversa = chatRepository
+                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, destinatarioId)
+                .orElseGet(() -> {
+                    Conversa novaConversa = Conversa.builder()
+                            .anuncioId(dto.anuncioId())
+                            .remetente(remetenteId)
+                            .destinatario(destinatarioId)
+                            .historicoMensagens(new java.util.ArrayList<>())
+                            .dataCriacao(LocalDateTime.now())
+                            .lido(false)
+                            .build();
 
-            Conversa conversa = chatRepository
-                    .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, destinatarioId)
-                    .orElseGet(() -> {
-                        Conversa novaConversa = Conversa.builder()
-                                .anuncioId(dto.anuncioId())
-                                .remetente(remetenteId)
-                                .destinatario(destinatarioId)
-                                .historicoMensagens(new java.util.ArrayList<>())
-                                .dataCriacao(LocalDateTime.now())
-                                .lido(false)
-                                .build();
+                    return chatRepository.save(novaConversa);
+                });
 
-                        return chatRepository.save(novaConversa);
-                    });
-
-            List<ConversaRespostaDTO.MensagemDto> mensagens = conversa.getHistoricoMensagens() == null
-                    ? List.of()
-                    : conversa.getHistoricoMensagens().stream()
-                    .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
-                    .map(m -> new ConversaRespostaDTO.MensagemDto(
-                            m.getConteudo(),
-                            m.getRemetente(),
-                            m.getTimestamp()
-                    ))
-                    .toList();
+        List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
+                .orElse(Collections.emptyList())
+                .stream()
+                .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
+                .map(m -> new ConversaRespostaDTO.MensagemDto(
+                        m.getConteudo(),
+                        m.getRemetente(),
+                        m.getTimestamp()
+                ))
+                .toList();
 
         return new ConversaRespostaDTO(
-            conversa.getId(),
-            destinatarioId,
-            resolverNomeUsuario(destinatarioId),
-            resolverTituloAnuncio(conversa.getAnuncioId()),
-            mensagens
-        );
-        } catch (IllegalArgumentException e) {
-            log.error("Erro de validação ao iniciar conversa: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("Erro ao iniciar ou recuperar conversa: {}", e.getMessage(), e);
-            throw new RuntimeException("Falha ao iniciar conversa", e);
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public ConversaRespostaDTO recuperarHistoricoConversa(String emailRemetente, String destinatarioId) {
-        try {
-            Objects.requireNonNull(emailRemetente, "O remetente não pode ser nulo");
-            Objects.requireNonNull(destinatarioId, "O destinatário não pode ser nulo");
-
-            Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
-            String remetenteId = remetenteUsuario.getId().toString();
-
-            Conversa conversa = chatRepository.findByRemetenteAndDestinatario(remetenteId, destinatarioId)
-                    .or(() -> chatRepository.findByRemetenteAndDestinatario(destinatarioId, remetenteId))
-                    .orElseThrow(() -> new RuntimeException(
-                            "Histórico de conversa não encontrado entre " + remetenteId + " e " + destinatarioId));
-
-            List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
-                    .map(m -> new ConversaRespostaDTO.MensagemDto(
-                            m.getConteudo(),
-                            m.getRemetente(),
-                            m.getTimestamp()
-                    ))
-                    .toList();
-
-            log.debug("Histórico unificado recuperado para conversa entre {} e {}", remetenteId, destinatarioId);
-
-            return new ConversaRespostaDTO(
                 conversa.getId(),
                 destinatarioId,
                 resolverNomeUsuario(destinatarioId),
                 resolverTituloAnuncio(conversa.getAnuncioId()),
                 mensagens
-            );
+        );
+    }
 
-        } catch (Exception e) {
-            log.error("Erro ao recuperar histórico: {}", e.getMessage(), e);
-            throw new RuntimeException("Falha ao recuperar histórico", e);
-        }
+    @Transactional(readOnly = true)
+    public ConversaRespostaDTO recuperarHistoricoConversa(String emailRemetente, String destinatarioId) {
+        Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
+        String remetenteId = remetenteUsuario.getId().toString();
+
+        Conversa conversa = chatRepository.findByRemetenteAndDestinatario(remetenteId, destinatarioId)
+                .or(() -> chatRepository.findByRemetenteAndDestinatario(destinatarioId, remetenteId))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Histórico de conversa", remetenteId + " e " + destinatarioId));
+
+        List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
+                .orElse(Collections.emptyList())
+                .stream()
+                .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
+                .map(m -> new ConversaRespostaDTO.MensagemDto(
+                        m.getConteudo(),
+                        m.getRemetente(),
+                        m.getTimestamp()
+                ))
+                .toList();
+
+        log.debug("Histórico unificado recuperado para conversa entre {} e {}", remetenteId, destinatarioId);
+
+        return new ConversaRespostaDTO(
+                conversa.getId(),
+                destinatarioId,
+                resolverNomeUsuario(destinatarioId),
+                resolverTituloAnuncio(conversa.getAnuncioId()),
+                mensagens
+        );
     }
 
     @Transactional(readOnly = true)
@@ -216,15 +185,15 @@ public class ChatService {
         String usuarioId = usuario.getId().toString();
 
         Conversa conversa = chatRepository.findById(conversaId)
-                .orElseThrow(() -> new RuntimeException("Conversa não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
 
         if (!conversa.getRemetente().equals(usuarioId) && !conversa.getDestinatario().equals(usuarioId)) {
-            throw new IllegalArgumentException("Você não tem permissão para acessar esta conversa");
+            throw new AcessoNegadoException("Acesso negado: você não faz parte desta conversa.");
         }
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = conversa.getHistoricoMensagens() == null
-                ? List.of()
-                : conversa.getHistoricoMensagens().stream()
+        List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
+                .orElse(Collections.emptyList())
+                .stream()
                 .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
                 .map(m -> new ConversaRespostaDTO.MensagemDto(
                         m.getConteudo(),
@@ -238,47 +207,38 @@ public class ChatService {
                 : conversa.getRemetente();
 
         return new ConversaRespostaDTO(
-            conversa.getId(),
-            outroUsuarioId,
-            resolverNomeUsuario(outroUsuarioId),
-            resolverTituloAnuncio(conversa.getAnuncioId()),
-            mensagens
+                conversa.getId(),
+                outroUsuarioId,
+                resolverNomeUsuario(outroUsuarioId),
+                resolverTituloAnuncio(conversa.getAnuncioId()),
+                mensagens
         );
     }
 
     @Transactional(readOnly = true)
     public ListaConversasDTO listarConversasUsuario(String emailUsuario) {
-        try {
-            Objects.requireNonNull(emailUsuario, "O ID do usuário não pode ser nulo");
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        String usuarioId = usuario.getId().toString();
 
-            Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
-            String usuarioId = usuario.getId().toString();
+        List<Conversa> conversas = chatRepository.findByUsuario(usuarioId);
 
-            List<Conversa> conversas = chatRepository.findByUsuario(usuarioId);
-
-            List<ListaConversasDTO.ConversaResumo> resumos = conversas.stream()
-            .map(c -> {
-                try {
-                    String outroUsuarioId = c.getRemetente().equals(usuarioId)
-                            ? c.getDestinatario()
-                            : c.getRemetente();
-
+        List<ListaConversasDTO.ConversaResumo> resumos = conversas.stream()
+                .map(c -> {
+                    String outroUsuarioId = c.getRemetente().equals(usuarioId) ? c.getDestinatario() : c.getRemetente();
                     String nomeOutroUsuario = resolverNomeUsuario(outroUsuarioId);
+                    String tituloAnuncio = resolverTituloAnuncio(c.getAnuncioId());
 
-                    String ultimaMensagem = (c.getHistoricoMensagens() == null || c.getHistoricoMensagens().isEmpty())
-                            ? ""
-                            : c.getHistoricoMensagens()
-                                .get(c.getHistoricoMensagens().size() - 1)
-                                .getConteudo();
-
-                    LocalDateTime ultimaAtualizacao = (c.getHistoricoMensagens() == null || c.getHistoricoMensagens().isEmpty())
-                            ? c.getDataCriacao()
-                            : c.getHistoricoMensagens()
-                                .get(c.getHistoricoMensagens().size() - 1)
-                                .getTimestamp();
+                    boolean temMensagens = c.getHistoricoMensagens() != null && !c.getHistoricoMensagens().isEmpty();
+                    
+                    String ultimaMensagem = temMensagens 
+                            ? c.getHistoricoMensagens().get(c.getHistoricoMensagens().size() - 1).getConteudo() 
+                            : "";
+                    
+                    LocalDateTime ultimaAtualizacao = temMensagens 
+                            ? c.getHistoricoMensagens().get(c.getHistoricoMensagens().size() - 1).getTimestamp() 
+                            : c.getDataCriacao();
 
                     long naoLidas = c.getDestinatario().equals(usuarioId) && !c.isLido() ? 1 : 0;
-                    String tituloAnuncio = resolverTituloAnuncio(c.getAnuncioId());
 
                     return new ListaConversasDTO.ConversaResumo(
                             c.getId(),
@@ -289,36 +249,24 @@ public class ChatService {
                             ultimaAtualizacao,
                             naoLidas
                     );
-                } catch (Exception ex) {
-                    log.warn("Erro ao montar resumo da conversa {}: {}", c.getId(), ex.getMessage());
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .sorted((a, b) -> b.dataUltimaAtualizacao().compareTo(a.dataUltimaAtualizacao()))
-            .toList();
+                })
+                .sorted((a, b) -> b.dataUltimaAtualizacao().compareTo(a.dataUltimaAtualizacao()))
+                .toList();
 
-            log.debug("Conversas listadas para usuário {}: {} conversas encontradas", usuarioId, resumos.size());
-            return new ListaConversasDTO(resumos);
-        } catch (Exception e) {
-            log.error("Erro ao listar conversas para o usuário {}: {}", emailUsuario, e.getMessage(), e);
-            throw new RuntimeException("Falha ao listar conversas", e);
-        }
+        log.debug("Conversas listadas para usuário {}: {} conversas encontradas", usuarioId, resumos.size());
+        return new ListaConversasDTO(resumos);
     }
 
     @Transactional
     public void marcarComoLido(String conversaId, String emailUsuario) {
-        Objects.requireNonNull(conversaId, "O ID da conversa não pode ser nulo");
-        Objects.requireNonNull(emailUsuario, "O ID do usuário não pode ser nulo");
-
         Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
         String usuarioId = usuario.getId().toString();
 
         Conversa conversa = chatRepository.findById(conversaId)
-                .orElseThrow(() -> new RuntimeException("Conversa não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
 
         if (!conversa.getDestinatario().equals(usuarioId)) {
-            throw new IllegalArgumentException("Você não tem permissão para marcar esta conversa");
+            throw new AcessoNegadoException("Acesso negado: você não tem permissão para marcar esta conversa como lida.");
         }
 
         conversa.setLido(true);

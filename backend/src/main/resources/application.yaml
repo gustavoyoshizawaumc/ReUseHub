@@ -54,7 +54,7 @@ server:
     context-path: /
 
 jwt:
-  secret: "9aPq8bRs7cTu6vWx5yZa4bCd3eEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGh"
+  secret: ${JWT_SECRET:9aPq8bRs7cTu6vWx5yZa4bCd3eEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGh}
   expiration: 86400000
 
 logging:
