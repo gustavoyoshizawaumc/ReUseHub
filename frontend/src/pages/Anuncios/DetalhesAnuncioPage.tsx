@@ -32,12 +32,14 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [isEDono, setIsEDono] = useState(false);
   const [imagemAtual, setImagemAtual] = useState(0);
 
+
+
   useEffect(() => {
     const carregarDados = async () => {
       try {
         const token = localStorage.getItem("token");
         if (token) {
-          const response = await fetch(`${BASE_URL}/api/auth/me`, {
+          const response = await fetch(`${BASE_URL}/api/auth/minha-conta`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (response.ok) {
@@ -110,7 +112,11 @@ export const DetalhesAnuncioPage: React.FC = () => {
       </div>
     );
 
-  const imagens = anuncio.imagensUrls ?? [];
+    const imagens = anuncio.imagensUrls ?? [];
+
+    const anuncioEstaAtivo = anuncio.status === "ATIVO";
+    const podeEntrarEmContato = !isEDono && anuncioEstaAtivo;
+    const mostrarFavoritos = !isEDono && anuncioEstaAtivo;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
@@ -293,26 +299,37 @@ export const DetalhesAnuncioPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <button
-                      onClick={() =>
-                        navigate("/chat", {
-                          state: {
-                            destinatarioId: anuncio.usuarioId,
-                            destinatarioNome: anuncio.nomeUsuario,
-                            anuncioId: anuncio.id,
-                            anuncioTitulo: anuncio.titulo,
-                          },
-                        })
-                      }
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
-                    >
-                      <MessageCircle size={18} />
-                      Entrar em Contato
-                    </button>
-                    <button className="w-full bg-slate-200 hover:bg-slate-300 text-slate-900 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
-                      <Heart size={18} />
-                      Salvar nos Favoritos
-                    </button>
+                    {podeEntrarEmContato ? (
+                      <>
+                        <button
+                          onClick={() =>
+                            navigate("/chat", {
+                              state: {
+                                destinatarioId: anuncio.usuarioId,
+                                destinatarioNome: anuncio.nomeUsuario,
+                                anuncioId: anuncio.id,
+                                anuncioTitulo: anuncio.titulo,
+                              },
+                            })
+                          }
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
+                        >
+                          <MessageCircle size={18} />
+                          Entrar em Contato
+                        </button>
+
+                        {mostrarFavoritos && (
+                          <button className="w-full bg-slate-200 hover:bg-slate-300 text-slate-900 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
+                            <Heart size={18} />
+                            Salvar nos Favoritos
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                        Este anúncio não está disponível para contato no momento.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -324,7 +341,9 @@ export const DetalhesAnuncioPage: React.FC = () => {
                 <p className="text-blue-700/70 text-xs leading-relaxed">
                   {isEDono
                     ? "Mantenha seu anúncio atualizado para garantir maior relevância nas buscas!"
-                    : "Envie uma mensagem para o anunciante e negocie os termos da troca!"}
+                    : anuncioEstaAtivo
+                      ? "Envie uma mensagem para o anunciante e negocie os termos da troca!"
+                      : "Este anúncio não está disponível para novas interações no momento."}
                 </p>
               </div>
             </div>

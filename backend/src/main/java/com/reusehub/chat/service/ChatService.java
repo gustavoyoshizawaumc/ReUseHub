@@ -49,9 +49,22 @@ public class ChatService {
         }
     }
 
+    private Anuncio buscarAnuncioPorId(String id) {
+        if (id == null || id.isBlank()) {
+            throw new RecursoNaoEncontradoException("Anúncio", id);
+        }
+
+        try {
+            return anuncioRepository.findById(UUID.fromString(id))
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Anúncio", id));
+        } catch (IllegalArgumentException e) {
+            throw new RecursoNaoEncontradoException("Anúncio", id);
+        }
+    }
+
     private String resolverNomeUsuario(String usuarioId) {
         if (usuarioId == null || usuarioId.isBlank()) return "Usuário";
-        
+
         try {
             return usuarioRepository.findById(UUID.fromString(usuarioId))
                     .map(Usuario::getName)
@@ -64,7 +77,7 @@ public class ChatService {
 
     private String resolverTituloAnuncio(String anuncioId) {
         if (anuncioId == null || anuncioId.isBlank()) return "Anúncio";
-        
+
         try {
             return anuncioRepository.findById(UUID.fromString(anuncioId))
                     .map(Anuncio::getTitulo)
@@ -107,19 +120,29 @@ public class ChatService {
     public ConversaRespostaDTO iniciarOuRecuperarConversa(String emailRemetente, IniciarConversaDTO dto) {
         Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
         String remetenteId = remetenteUsuario.getId().toString();
-        String destinatarioId = dto.destinatarioId();
 
-        if (remetenteId.equals(destinatarioId)) {
-            throw new RegraNegocioException("Você não pode iniciar uma conversa com você mesmo.");
+        Anuncio anuncio = buscarAnuncioPorId(dto.anuncioId());
+        String donoAnuncioId = anuncio.getUsuario().getId().toString();
+
+        if (!Objects.equals(dto.destinatarioId(), donoAnuncioId)) {
+            throw new RegraNegocioException("O destinatário informado não corresponde ao dono do anúncio.");
+        }
+
+        if (remetenteId.equals(donoAnuncioId)) {
+            throw new RegraNegocioException("Você não pode iniciar uma conversa no seu próprio anúncio.");
+        }
+
+        if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
+            throw new RegraNegocioException("Só é possível iniciar conversa em anúncios ativos.");
         }
 
         Conversa conversa = chatRepository
-                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, destinatarioId)
+                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, donoAnuncioId)
                 .orElseGet(() -> {
                     Conversa novaConversa = Conversa.builder()
                             .anuncioId(dto.anuncioId())
                             .remetente(remetenteId)
-                            .destinatario(destinatarioId)
+                            .destinatario(donoAnuncioId)
                             .historicoMensagens(new java.util.ArrayList<>())
                             .dataCriacao(LocalDateTime.now())
                             .lido(false)
@@ -141,9 +164,9 @@ public class ChatService {
 
         return new ConversaRespostaDTO(
                 conversa.getId(),
-                destinatarioId,
-                resolverNomeUsuario(destinatarioId),
-                resolverTituloAnuncio(conversa.getAnuncioId()),
+                donoAnuncioId,
+                anuncio.getUsuario().getName(),
+                anuncio.getTitulo(),
                 mensagens
         );
     }
@@ -229,13 +252,13 @@ public class ChatService {
                     String tituloAnuncio = resolverTituloAnuncio(c.getAnuncioId());
 
                     boolean temMensagens = c.getHistoricoMensagens() != null && !c.getHistoricoMensagens().isEmpty();
-                    
-                    String ultimaMensagem = temMensagens 
-                            ? c.getHistoricoMensagens().get(c.getHistoricoMensagens().size() - 1).getConteudo() 
+
+                    String ultimaMensagem = temMensagens
+                            ? c.getHistoricoMensagens().get(c.getHistoricoMensagens().size() - 1).getConteudo()
                             : "";
-                    
-                    LocalDateTime ultimaAtualizacao = temMensagens 
-                            ? c.getHistoricoMensagens().get(c.getHistoricoMensagens().size() - 1).getTimestamp() 
+
+                    LocalDateTime ultimaAtualizacao = temMensagens
+                            ? c.getHistoricoMensagens().get(c.getHistoricoMensagens().size() - 1).getTimestamp()
                             : c.getDataCriacao();
 
                     long naoLidas = c.getDestinatario().equals(usuarioId) && !c.isLido() ? 1 : 0;

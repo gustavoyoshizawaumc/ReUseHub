@@ -56,7 +56,7 @@ export const authService = {
       throw new Error("Token não encontrado. Faça login novamente.");
     }
 
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/minha-conta`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -89,7 +89,7 @@ export const authService = {
       formData.append("bio", data.bio || "");
       formData.append("avatarFile", avatarFile);
 
-      const response = await fetch(`${API_URL}/me`, {
+      const response = await fetch(`${API_URL}/minha-conta`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -107,7 +107,7 @@ export const authService = {
       return result;
     }
 
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/minha-conta`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -133,7 +133,7 @@ export const authService = {
       throw new Error("Token não encontrado. Faça login novamente.");
     }
 
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/minha-conta`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
