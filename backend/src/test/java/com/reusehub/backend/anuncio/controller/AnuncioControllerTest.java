@@ -74,7 +74,6 @@ class AnuncioControllerTest {
         return new MockMultipartFile("imagens", "foto.png", "image/png", "bytes".getBytes());
     }
 
-        //  POST /api/anuncios
     @Nested
     @DisplayName("Cenários para criarAnuncio")
     class CriarAnuncio {
@@ -132,7 +131,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // GET /api/anuncios
     @Nested
     @DisplayName("cenários para listarAnuncios")
     class ListarAnuncios {
@@ -177,7 +175,6 @@ class AnuncioControllerTest {
         }
     }
 
-    //GET /api/anuncios/buscar
     @Nested
     @DisplayName("cenários para buscarAnuncios")
     class BuscarAnuncios {
@@ -196,7 +193,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // GET /api/anuncios/categoria/{categoriaId}
     @Nested
     @DisplayName("cenários para listarPorCategoria")
     class ListarPorCategoria {
@@ -208,7 +204,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // GET /api/anuncios/tipo/{tipo}
     @Nested
     @DisplayName("cenários para listarPorTipo")
     class ListarPorTipo {
@@ -227,7 +222,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // GET /api/anuncios/{id}
     @Nested
     @DisplayName("cenários para obterAnuncio")
     class ObterAnuncio {
@@ -240,7 +234,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // PUT /api/anuncios/{id}
     @Nested
     @DisplayName("cenários para atualizarAnuncio")
     class AtualizarAnuncio {
@@ -270,7 +263,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // PATCH /api/anuncios/{id}/status
     @Nested
     @DisplayName("cenários para alterarStatus")
     class AlterarStatus {
@@ -292,7 +284,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // DELETE /api/anuncios/{id}
     @Nested
     @DisplayName("cenários para deletarAnuncio")
     class DeletarAnuncio {
@@ -312,7 +303,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // GET /api/anuncios/moderacao/pendentes
     @Nested
     @DisplayName("cenários para listarPendentes")
     class ListarPendentes {
@@ -333,7 +323,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // PATCH /api/anuncios/moderacao/{id}/aprovar
     @Nested
     @DisplayName("cenários para aprovar")
     class AprovarAnuncio {
@@ -354,7 +343,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // PATCH /api/anuncios/moderacao/{id}/reprovar
     @Nested
     @DisplayName("cenários para reprovar")
     class ReprovarAnuncio {
