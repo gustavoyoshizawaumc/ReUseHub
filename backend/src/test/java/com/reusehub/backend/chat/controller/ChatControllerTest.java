@@ -51,7 +51,6 @@ class ChatControllerTest {
     @MockBean
     private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
 
-    // POST /api/chat/enviar
     @Nested
     @DisplayName("Cenários para /enviar")
     class EnviarMensagemCenarios {
@@ -73,7 +72,6 @@ class ChatControllerTest {
         }
     }
 
-    // POST /api/chat/iniciar
     @Nested
     @DisplayName("Cenários para /iniciar")
     class IniciarConversaCenarios {
@@ -97,7 +95,6 @@ class ChatControllerTest {
         }
     }
 
-    // GET /api/chat/minhas-conversas
     @Nested
     @DisplayName("Cenários para /minhas-conversas")
     class MinhasConversasCenarios {
@@ -123,7 +120,6 @@ class ChatControllerTest {
         }
     }
 
-    // PATCH /api/chat/{conversaId}/lido
     @Nested
     @DisplayName("Cenários para /{conversaId}/lido")
     class MarcarComoLidoCenarios {
