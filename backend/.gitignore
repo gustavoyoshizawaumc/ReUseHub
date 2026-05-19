@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+.vscode-test/
+
+### VARIAVEIS DE AMBIENTE ###
+.env
+.env.*
+!.env.example
+
+### NODE / FRONT-END ###
+# Ignora a pasta node_modules (que é pesada e não deve ir pro git)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+### DOCKER / OS ###
+.DS_Store
