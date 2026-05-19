@@ -68,6 +68,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").authenticated()
                     .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").authenticated()
 
+                    .requestMatchers("/api/interesses/**").authenticated()
+
                     .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

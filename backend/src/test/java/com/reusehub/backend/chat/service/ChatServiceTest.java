@@ -70,7 +70,7 @@ class ChatServiceTest {
                 .build();
     }
 
-    // enviarMensagem
+    // enviarMensagem (Mínimo 3 Cenários)
     @Nested
     @DisplayName("Cenários para enviarMensagem")
     class EnviarMensagemCenarios {
@@ -114,7 +114,7 @@ class ChatServiceTest {
         }
     }
 
-    // 2. MÉTODO: iniciarOuRecuperarConversa
+    // 2. MÉTODO: iniciarOuRecuperarConversa (Mínimo 3 Cenários)
     @Nested
     @DisplayName("Cenários para iniciarOuRecuperarConversa")
     class IniciarConversaCenarios {
@@ -128,7 +128,7 @@ class ChatServiceTest {
 
             Mockito.when(usuarioRepository.findByEmail("remetente@reusehub.com")).thenReturn(Optional.of(remetente));
             Mockito.when(chatRepository.findByAnuncioIdAndUsuarios(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
-                   .thenReturn(Optional.of(conversaModelo));
+            .thenReturn(List.of(conversaModelo));
 
             ConversaRespostaDTO resposta = chatService.iniciarOuRecuperarConversa("remetente@reusehub.com", dto);
             assertNotNull(resposta);
@@ -144,7 +144,7 @@ class ChatServiceTest {
 
             Mockito.when(usuarioRepository.findByEmail("remetente@reusehub.com")).thenReturn(Optional.of(remetente));
             Mockito.when(chatRepository.findByAnuncioIdAndUsuarios("novo-anuncio", remetente.getId().toString(), destinatario.getId().toString()))
-                   .thenReturn(Optional.empty());
+       .thenReturn(java.util.Collections.emptyList());
             Mockito.when(chatRepository.save(Mockito.any(Conversa.class))).thenReturn(conversaModelo);
 
             ConversaRespostaDTO resposta = chatService.iniciarOuRecuperarConversa("remetente@reusehub.com", dto);
@@ -163,7 +163,7 @@ class ChatServiceTest {
         }
     }
 
-    // 3. MÉTODO: recuperarHistoricoConversa
+    // 3. MÉTODO: recuperarHistoricoConversa (Mínimo 3 Cenários)
     @Nested
     @DisplayName("Cenários para recuperarHistoricoConversa")
     class RecuperarHistoricoCenarios {
@@ -204,7 +204,7 @@ class ChatServiceTest {
         }
     }
 
-    // 4. MÉTODO: recuperarConversaPorId
+    // 4. MÉTODO: recuperarConversaPorId (Mínimo 3 Cenários)
     @Nested
     @DisplayName("Cenários para recuperarConversaPorId")
     class RecuperarPorIdCenarios {
@@ -242,7 +242,7 @@ class ChatServiceTest {
         }
     }
 
-    // 5. MÉTODO: listarConversasUsuario
+    // 5. MÉTODO: listarConversasUsuario (Mínimo 3 Cenários)
     @Nested
     @DisplayName("Cenários para listarConversasUsuario")
     class ListarConversasCenarios {
@@ -278,7 +278,7 @@ class ChatServiceTest {
         }
     }
 
-    // 6. MÉTODO: marcarComoLido
+    // 6. MÉTODO: marcarComoLido (Mínimo 3 Cenários)
     @Nested
     @DisplayName("Cenários para marcarComoLido")
     class MarcarComoLidoCenarios {
