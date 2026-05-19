@@ -136,8 +136,12 @@ public class ChatService {
             throw new RegraNegocioException("Só é possível iniciar conversa em anúncios ativos.");
         }
 
-        Conversa conversa = chatRepository
-                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, donoAnuncioId)
+        List<Conversa> conversasExistentes = chatRepository
+                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, donoAnuncioId);
+
+        Conversa conversa = conversasExistentes.stream()
+                .sorted(java.util.Comparator.comparing(Conversa::getDataCriacao))
+                .findFirst()
                 .orElseGet(() -> {
                     Conversa novaConversa = Conversa.builder()
                             .anuncioId(dto.anuncioId())

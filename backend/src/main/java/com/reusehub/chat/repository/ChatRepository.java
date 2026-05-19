@@ -27,5 +27,5 @@ public interface ChatRepository extends MongoRepository<Conversa, String> {
     ]
     }
     """)
-    Optional<Conversa> findByAnuncioIdAndUsuarios(String anuncioId, String usuarioA, String usuarioB);
+    List<Conversa> findByAnuncioIdAndUsuarios(String anuncioId, String usuarioA, String usuarioB);
 }

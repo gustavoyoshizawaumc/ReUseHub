@@ -11,11 +11,13 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @ComponentScan(basePackages = "com.reusehub")
 @EnableJpaRepositories(basePackages = {
     "com.reusehub.anuncio.repository",
-    "com.reusehub.auth.repository"
+    "com.reusehub.auth.repository",
+    "com.reusehub.interesse.repository"
 })
 @EntityScan(basePackages = {
     "com.reusehub.anuncio.model",
-    "com.reusehub.auth.model"
+    "com.reusehub.auth.model",
+    "com.reusehub.interesse.model"
 })
 @EnableMongoRepositories(basePackages = "com.reusehub.chat.repository")
 public class BackendApplication {
