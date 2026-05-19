@@ -9,8 +9,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/reusehub
-    username: ${DB_USER:reusehub}
-    password: ${DB_PASSWORD:reusehub123}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   flyway:
@@ -54,7 +54,7 @@ server:
     context-path: /
 
 jwt:
-  secret: ${JWT_SECRET:9aPq8bRs7cTu6vWx5yZa4bCd3eEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGh}
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 logging:
