@@ -99,7 +99,6 @@ class AnuncioServiceTest {
                 .build();
     }
 
-    // criarAnuncioComEndereco
     @Nested
     @DisplayName("Cenários para criarAnuncioComEndereco")
     class CriarAnuncioCenarios {
@@ -158,8 +157,7 @@ class AnuncioServiceTest {
             });
         }
     }
-
-    // obterAnuncioPorId
+    
     @Nested
     @DisplayName("Cenários para obterAnuncioPorId")
     class ObterAnuncioCenarios {
@@ -207,7 +205,6 @@ class AnuncioServiceTest {
         }
     }
 
-    // atualizarAnuncio
     @Nested
     @DisplayName("Cenários para atualizarAnuncio")
     class AtualizarAnuncioCenarios {
@@ -268,7 +265,6 @@ class AnuncioServiceTest {
         }
     }
 
-    // alterarStatus
     @Nested
     @DisplayName("Cenários para alterarStatus (Usuário)")
     class AlterarStatusCenarios {
@@ -315,7 +311,6 @@ class AnuncioServiceTest {
         }
     }
 
-    // aprovarAnuncio
     @Nested
     @DisplayName("Cenários para aprovarAnuncio")
     class AprovarAnuncioCenarios {
@@ -365,7 +360,6 @@ class AnuncioServiceTest {
         }
     }
 
-    // reprovarAnuncio
     @Nested
     @DisplayName("Cenários para reprovarAnuncio")
     class ReprovarAnuncioCenarios {
