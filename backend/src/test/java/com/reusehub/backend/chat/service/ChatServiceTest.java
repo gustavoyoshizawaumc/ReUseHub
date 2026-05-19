@@ -70,7 +70,6 @@ class ChatServiceTest {
                 .build();
     }
 
-    // enviarMensagem
     @Nested
     @DisplayName("Cenários para enviarMensagem")
     class EnviarMensagemCenarios {
@@ -114,7 +113,6 @@ class ChatServiceTest {
         }
     }
 
-    // 2. MÉTODO: iniciarOuRecuperarConversa
     @Nested
     @DisplayName("Cenários para iniciarOuRecuperarConversa")
     class IniciarConversaCenarios {
@@ -163,7 +161,6 @@ class ChatServiceTest {
         }
     }
 
-    // 3. MÉTODO: recuperarHistoricoConversa
     @Nested
     @DisplayName("Cenários para recuperarHistoricoConversa")
     class RecuperarHistoricoCenarios {
@@ -204,7 +201,6 @@ class ChatServiceTest {
         }
     }
 
-    // 4. MÉTODO: recuperarConversaPorId
     @Nested
     @DisplayName("Cenários para recuperarConversaPorId")
     class RecuperarPorIdCenarios {
@@ -242,7 +238,6 @@ class ChatServiceTest {
         }
     }
 
-    // 5. MÉTODO: listarConversasUsuario
     @Nested
     @DisplayName("Cenários para listarConversasUsuario")
     class ListarConversasCenarios {
@@ -278,7 +273,6 @@ class ChatServiceTest {
         }
     }
 
-    // 6. MÉTODO: marcarComoLido
     @Nested
     @DisplayName("Cenários para marcarComoLido")
     class MarcarComoLidoCenarios {
