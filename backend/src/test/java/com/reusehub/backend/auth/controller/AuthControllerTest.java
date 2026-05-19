@@ -91,7 +91,6 @@ class AuthControllerTest {
         }
     }
 
-    // POST /api/auth/login
     @Nested
     @DisplayName("Cenários para /login")
     class LoginCenarios {
@@ -126,7 +125,6 @@ class AuthControllerTest {
         }
     }
 
-    // GET /api/auth/minha-conta
     @Nested
     @DisplayName("Cenários para /minha-conta (GET)")
     class ObterPerfilCenarios {
@@ -161,7 +159,6 @@ class AuthControllerTest {
         }
     }
 
-    // PUT /api/auth/minha-conta
     @Nested
     @DisplayName("Cenários para /minha-conta (PUT Multipart)")
     class FluxoAtualizarPerfil {
@@ -215,7 +212,6 @@ class AuthControllerTest {
         }
     }
 
-    // DELETE /api/auth/minha-conta
     @Nested
     @DisplayName("Cenários para /minha-conta (DELETE)")
     class DeletarContaCenarios {
