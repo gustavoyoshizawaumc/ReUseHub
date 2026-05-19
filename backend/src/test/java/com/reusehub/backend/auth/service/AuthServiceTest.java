@@ -60,7 +60,6 @@ class AuthServiceTest {
         usuarioModelo.setIsActive(true);
     }
 
-    // registrar
     @Nested
     @DisplayName("Cenários para Registro")
     class RegistroCenarios {
@@ -115,7 +114,6 @@ class AuthServiceTest {
         }
     }
 
-    // login
     @Nested
     @DisplayName("Cenários para Login")
     class LoginCenarios {
@@ -149,7 +147,6 @@ class AuthServiceTest {
         }
     }
 
-    // obterPerfilPorEmail
     @Nested
     @DisplayName("Cenários para obterPerfilPorEmail")
     class ObterPerfilCenarios {
