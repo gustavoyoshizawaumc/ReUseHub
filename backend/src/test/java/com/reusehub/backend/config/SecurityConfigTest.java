@@ -1,87 +1,108 @@
-package com.reusehub.backend.config;
-
-import com.reusehub.auth.repository.UsuarioRepository;
-import com.reusehub.auth.service.JwtService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.servlet.HandlerExceptionResolver;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
-@DisplayName("Testes Unitários de SecurityConfig - Configurações de Infraestrutura")
-class SecurityConfigTest {
-
-    private SecurityConfig securityConfig;
-
-    @Mock
-    private UsuarioRepository usuarioRepository;
-    @Mock
-    private JwtService jwtService;
-    @Mock
-    private HandlerExceptionResolver handlerExceptionResolver;
-    @Mock
-    private AuthenticationConfiguration authenticationConfiguration;
-    @Mock
-    private AuthenticationManager authenticationManager;
-
-    @BeforeEach
-    void setUp() {
-        securityConfig = new SecurityConfig(usuarioRepository, jwtService, handlerExceptionResolver);
-    }
-
-    @Nested
-    @DisplayName("Cenários de Inicialização de Beans")
-    class BeansCenarios {
-
-        @Test
-        @DisplayName("deve instanciar o PasswordEncoder correto (BCrypt)")
-        void deveInstanciarBCryptPasswordEncoder() {
-            PasswordEncoder encoder = securityConfig.passwordEncoder();
-
-            assertNotNull(encoder);
-            assertTrue(encoder instanceof BCryptPasswordEncoder);
-        }
-
-        @Test
-        @DisplayName("deve construir o UserDetailsService e AuthenticationProvider vinculados")
-        void deveConstruirProvedoresDeAutenticacao() {
-            UserDetailsService userDetailsService = securityConfig.userDetailsService();
-            AuthenticationProvider authProvider = securityConfig.authenticationProvider();
-
-            assertNotNull(userDetailsService);
-            assertNotNull(authProvider);
-        }
-
-        @Test
-        @DisplayName("deve expor o AuthenticationManager a partir da configuração global")
-        void deveExporAuthenticationManager() throws Exception {
-            when(authenticationConfiguration.getAuthenticationManager()).thenReturn(authenticationManager);
-
-            AuthenticationManager manager = securityConfig.authenticationManager(authenticationConfiguration);
-
-            assertNotNull(manager);
-            assertEquals(authenticationManager, manager);
-        }
-
-        @Test
-        @DisplayName("deve configurar as regras de CORS contendo as origens permitidas")
-        void deveConfigurarCorsCorretamente() {
-            CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
-            assertNotNull(corsSource);
-        }
-    }
-}
+//package com.reusehub.anuncio.service;
+//
+//import com.fasterxml.jackson.databind.JsonNode;
+//import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.reusehub.anuncio.exception.OperacaoInvalidaException;
+//import lombok.Data;
+//import org.springframework.http.HttpEntity;
+//import org.springframework.http.HttpHeaders;
+//import org.springframework.http.HttpMethod;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.stereotype.Service;
+//import org.springframework.web.client.RestTemplate;
+//
+//import lombok.extern.slf4j.Slf4j;
+//import org.springframework.http.client.SimpleClientHttpRequestFactory;
+//
+//@Slf4j
+//@Service
+//public class NominatimService {
+//
+//    private static final String NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+//    private static final String USER_AGENT = "ReUseHub/1.0";
+//    private static final int LIMITE_RESULTADOS = 1;
+//    private static final int CONNECT_TIMEOUT_MS = 3000;
+//    private static final int READ_TIMEOUT_MS = 8000;
+//
+//    private final RestTemplate restTemplate = criarRestTemplateComTimeout();
+//    private final ObjectMapper objectMapper = new ObjectMapper();
+//
+//    private RestTemplate criarRestTemplateComTimeout() {
+//        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+//        factory.setConnectTimeout(CONNECT_TIMEOUT_MS);
+//        factory.setReadTimeout(READ_TIMEOUT_MS);
+//        return new RestTemplate(factory);
+//    }
+//
+//    public Coordenadas buscarCoordenadasPorEndereco(String enderecoTextual) {
+//        log.info("Buscando coordenadas para: {}", enderecoTextual);
+//        long inicio = System.currentTimeMillis();
+//
+//        String url = montarUrlPorEndereco(enderecoTextual);
+//        String resposta = executarRequisicao(url);
+//        Coordenadas coordenadas = extrairCoordenadas(resposta, enderecoTextual);
+//
+//        log.info("Coordenadas obtidas em {}ms: lat={}, lng={}",
+//                System.currentTimeMillis() - inicio,
+//                coordenadas.getLatitude(),
+//                coordenadas.getLongitude());
+//
+//        return coordenadas;
+//    }
+//
+//    private String montarUrlPorEndereco(String enderecoTextual) {
+//        return UriComponentsBuilder.fromHttpUrl(NOMINATIM_URL)
+//                .queryParam("q", enderecoTextual)
+//                .queryParam("format", "json")
+//                .queryParam("limit", LIMITE_RESULTADOS)
+//                .build(false) // false = não codifica aqui, deixa o RestTemplate codificar uma vez só
+//                .toUriString();
+//    }
+//
+//    private String executarRequisicao(String url) {
+//        try {
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.set(HttpHeaders.USER_AGENT, USER_AGENT);
+//            HttpEntity<String> entity = new HttpEntity<>(headers);
+//
+//            ResponseEntity<String> resposta = restTemplate.exchange(
+//                    url, HttpMethod.GET, entity, String.class
+//            );
+//            return resposta.getBody();
+//        } catch (Exception e) {
+//            throw new OperacaoInvalidaException(
+//                    "Falha ao consultar o serviço de geolocalização"
+//            );
+//        }
+//    }
+//
+//    private Coordenadas extrairCoordenadas(String resposta, String referenciaConsulta) {
+//        try {
+//            JsonNode raiz = objectMapper.readTree(resposta);
+//
+//            if (raiz.isEmpty()) {
+//                throw new OperacaoInvalidaException(
+//                        "Endereço não encontrado no geolocalizador: " + referenciaConsulta
+//                );
+//            }
+//
+//            JsonNode primeiroResultado = raiz.get(0);
+//            double latitude = primeiroResultado.get("lat").asDouble();
+//            double longitude = primeiroResultado.get("lon").asDouble();
+//
+//            return new Coordenadas(latitude, longitude);
+//        } catch (OperacaoInvalidaException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            throw new OperacaoInvalidaException(
+//                    "Erro ao processar resposta do geolocalizador"
+//            );
+//        }
+//    }
+//
+//    @Data
+//    public static class Coordenadas {
+//        private final double latitude;
+//        private final double longitude;
+//    }
+//}

@@ -20,7 +20,7 @@ public class StorageService {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    private static final List<String> EXTENSOES_PERMITIDAS = Arrays.asList(".jpg", ".jpeg", ".png", ".webp");
+    private static final List<String> EXTENSOES_PERMITIDAS = Arrays.asList(".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".bmp");
 
     public List<String> salvarImagens(List<MultipartFile> imagens) {
         List<String> urls = new ArrayList<>();

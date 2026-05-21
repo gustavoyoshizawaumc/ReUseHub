@@ -83,3 +83,5 @@ Desktop.ini
 # Não ignorar docker-compose.yml (necessário para o projeto)
 # Ignorar apenas overrides locais
 docker-compose.override.yml
+
+/uploads/

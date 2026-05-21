@@ -10,8 +10,10 @@ import java.util.UUID;
 
 @Repository
 public interface EnderecoRepository extends JpaRepository<Endereco, UUID> {
-    
+
     Optional<Endereco> findByIdAndUsuarioId(UUID id, UUID usuarioId);
-    
+
     List<Endereco> findByUsuarioIdOrderByPrincipalDescCriadoEmDesc(UUID usuarioId);
+
+    Optional<Endereco> findFirstByUsuarioIdAndPrincipalTrue(UUID usuarioId);
 }

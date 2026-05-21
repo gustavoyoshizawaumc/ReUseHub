@@ -3,11 +3,11 @@ package com.reusehub.backend.config;
 import com.reusehub.auth.filter.JwtAuthenticationFilter;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.auth.service.JwtService;
-import com.reusehub.auth.model.Usuario;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -25,7 +25,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -35,9 +34,10 @@ public class SecurityConfig {
 
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
-    
-    @Qualifier("handlerExceptionResolver")
-    private final HandlerExceptionResolver handlerExceptionResolver;
+
+    @Lazy
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -47,33 +47,37 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
+                        .requestMatchers("/api/auth/registrar", "/api/auth/login").permitAll()
 
-                    .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
-                    .requestMatchers("/uploads/**").permitAll()
-                    .requestMatchers("/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/filtrar").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
 
-                    .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").authenticated()
 
-                    .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
-                    .requestMatchers("/api/anuncios/meus/**").authenticated()
-                    .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").authenticated()
-                    .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").authenticated()
-                    .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
 
-                    .anyRequest().authenticated()
+                        .requestMatchers("/api/chat/**").authenticated()
+                        .requestMatchers("/ws/**").permitAll()
+
+                        .requestMatchers("/uploads/**").permitAll()
+
+                        .requestMatchers("/error").permitAll()
+
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
-                    new JwtAuthenticationFilter(jwtService, userDetailsService(), handlerExceptionResolver),
-                    UsernamePasswordAuthenticationFilter.class
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 )
                 .build();
     }
@@ -81,7 +85,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
-                .filter(Usuario::getIsActive)
+                .filter(u -> u.getIsActive())
                 .map(u -> User.withUsername(u.getEmail())
                         .password(u.getPasswordHash())
                         .authorities("ROLE_" + u.getPerfil().name())
@@ -91,7 +95,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        var provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService());
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
@@ -112,13 +116,13 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
 
         config.setAllowedOrigins(java.util.List.of(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000"
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:3000"
         ));
 
         config.setAllowedMethods(java.util.List.of(
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
 
         config.setAllowedHeaders(java.util.List.of("*"));
@@ -126,7 +130,7 @@ public class SecurityConfig {
         config.setMaxAge(3600L);
 
         org.springframework.web.cors.UrlBasedCorsConfigurationSource source =
-            new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+                new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         return source;

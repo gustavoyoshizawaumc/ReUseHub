@@ -49,7 +49,6 @@ public class AnuncioController {
             Pageable pageable,
             Authentication authentication) {
 
-
         String email = authentication.getName();
         Page<AnuncioRespostaDTO> resposta = anuncioService.listarAnunciosDoUsuario(email, pageable);
         return ResponseEntity.ok(resposta);
@@ -60,6 +59,17 @@ public class AnuncioController {
             @RequestParam String termo,
             Pageable pageable) {
         Page<AnuncioRespostaDTO> resposta = anuncioService.buscarAnuncios(termo, pageable);
+        return ResponseEntity.ok(resposta);
+    }
+
+    @GetMapping("/filtrar")
+    public ResponseEntity<Page<AnuncioRespostaDTO>> filtrarAnuncios(
+            @ModelAttribute BuscaFiltroDTO filtro,
+            Pageable pageable,
+            Authentication authentication) {
+
+        String email = obterEmailUsuarioLogado(authentication);
+        Page<AnuncioRespostaDTO> resposta = anuncioService.buscarComFiltros(filtro, email, pageable);
         return ResponseEntity.ok(resposta);
     }
 
@@ -84,10 +94,7 @@ public class AnuncioController {
             @PathVariable UUID id,
             Authentication authentication) {
 
-        String email = (authentication != null && authentication.isAuthenticated())
-                ? authentication.getName()
-                : null;
-
+        String email = obterEmailUsuarioLogado(authentication);
         AnuncioRespostaDTO resposta = anuncioService.obterAnuncioPorId(id, email);
         return ResponseEntity.ok(resposta);
     }
@@ -98,7 +105,6 @@ public class AnuncioController {
             @PathVariable UUID id,
             @Valid @RequestBody AnuncioAtualizacaoDTO dto,
             Authentication authentication) {
-
 
         String email = authentication.getName();
         AnuncioRespostaDTO resposta = anuncioService.atualizarAnuncio(id, email, dto);
@@ -112,7 +118,6 @@ public class AnuncioController {
             @RequestParam Anuncio.StatusAnuncio status,
             Authentication authentication) {
 
-
         String email = authentication.getName();
         AnuncioRespostaDTO resposta = anuncioService.alterarStatus(id, email, status);
         return ResponseEntity.ok(resposta);
@@ -123,7 +128,6 @@ public class AnuncioController {
     public ResponseEntity<Void> deletarAnuncio(
             @PathVariable UUID id,
             Authentication authentication) {
-
 
         String email = authentication.getName();
         anuncioService.deletarAnuncio(id, email);
@@ -160,5 +164,11 @@ public class AnuncioController {
         String email = authentication.getName();
         AnuncioRespostaDTO resposta = anuncioService.reprovarAnuncio(id, email);
         return ResponseEntity.ok(resposta);
+    }
+
+    private String obterEmailUsuarioLogado(Authentication authentication) {
+        return (authentication != null && authentication.isAuthenticated())
+                ? authentication.getName()
+                : null;
     }
 }
