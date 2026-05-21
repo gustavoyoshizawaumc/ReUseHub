@@ -3,23 +3,34 @@ import { Search, X } from "lucide-react";
 
 interface BuscaAnunciosProps {
   onBuscar: (termo: string) => void;
+  termoInicial?: string;
 }
 
-export const BuscaAnuncios: React.FC<BuscaAnunciosProps> = ({ onBuscar }) => {
-  const [termo, setTermo] = useState("");
+const SUGESTOES = ["Cadeira", "iPhone", "Livros"];
+
+export const BuscaAnuncios: React.FC<BuscaAnunciosProps> = ({
+  onBuscar,
+  termoInicial = "",
+}) => {
+  const [termo, setTermo] = useState(termoInicial);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onBuscar(termo.trim());
   };
 
-  const handleClear = () => {
+  const handleLimpar = () => {
     setTermo("");
     onBuscar("");
   };
 
+  const handleSugestao = (sugestao: string) => {
+    setTermo(sugestao);
+    onBuscar(sugestao);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="w-full mb-8">
+    <form onSubmit={handleSubmit} className="w-full">
       <div className="relative group">
         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
           <Search
@@ -40,7 +51,7 @@ export const BuscaAnuncios: React.FC<BuscaAnunciosProps> = ({ onBuscar }) => {
           {termo && (
             <button
               type="button"
-              onClick={handleClear}
+              onClick={handleLimpar}
               className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
             >
               <X size={18} />
@@ -59,14 +70,11 @@ export const BuscaAnuncios: React.FC<BuscaAnunciosProps> = ({ onBuscar }) => {
         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
           Sugestões:
         </span>
-        {["Cadeira", "iPhone", "Livros"].map((item) => (
+        {SUGESTOES.map((item) => (
           <button
             key={item}
             type="button"
-            onClick={() => {
-              setTermo(item);
-              onBuscar(item);
-            }}
+            onClick={() => handleSugestao(item)}
             className="text-[11px] font-bold text-blue-600 hover:underline"
           >
             {item}

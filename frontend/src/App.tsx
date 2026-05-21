@@ -5,7 +5,8 @@ import { RegisterPage } from "./pages/Register/RegisterPage";
 import { LoginPage } from "./pages/Login/LoginPage";
 import { CriarAnuncioPage } from "./pages/Anuncios/CriarAnuncioPage";
 import { EditarAnuncioPage } from "./pages/Anuncios/EditarAnuncioPage";
-import { ListaAnunciosPage } from "./pages/Anuncios/ListaAnunciosPage";
+import { ExplorarAnunciosPage } from "./pages/Anuncios/ExplorarAnunciosPage";
+import { MeusAnunciosPage } from "./pages/Anuncios/MeusAnunciosPage";
 import { DetalhesAnuncioPage } from "./pages/Anuncios/DetalhesAnuncioPage";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { EditProfilePage } from "./pages/Profile/EditProfilePage";
@@ -20,10 +21,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/registrar" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        <Route path="/anuncios" element={<ListaAnunciosPage />} />
+        <Route path="/anuncios" element={<ExplorarAnunciosPage />} />
         <Route path="/anuncios/:id" element={<DetalhesAnuncioPage />} />
 
         <Route
@@ -48,7 +49,7 @@ function App() {
           path="/meus-anuncios"
           element={
             <PrivateRoute>
-              <ListaAnunciosPage />
+              <MeusAnunciosPage />
             </PrivateRoute>
           }
         />

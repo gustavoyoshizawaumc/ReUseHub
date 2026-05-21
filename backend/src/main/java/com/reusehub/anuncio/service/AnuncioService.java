@@ -34,6 +34,8 @@ public class AnuncioService {
     private final CategoriaRepository categoriaRepository;
     private final EnderecoRepository enderecoRepository;
     private final ViaCepService viaCepService;
+    private final NominatimService nominatimService;
+    private final LocalizacaoService localizacaoService;
     private final StorageService storageService;
     private final ImagemAnuncioRepository imagemAnuncioRepository;
 
@@ -43,22 +45,10 @@ public class AnuncioService {
             List<MultipartFile> imagens
     ) {
         Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
-        Endereco enderecoSalvo = cadastrarEnderecoViaCep(usuario, dto);
+        Endereco enderecoSalvo = cadastrarEnderecoEnriquecido(usuario, dto);
         Categoria categoria = buscarCategoriaPorId(dto.getCategoriaId());
 
-        Anuncio anuncio = Anuncio.builder()
-                .usuario(usuario)
-                .categoria(categoria)
-                .endereco(enderecoSalvo)
-                .titulo(dto.getTitulo())
-                .descricao(dto.getDescricao())
-                .tipo(dto.getTipo())
-                .condicao(dto.getCondicao())
-                .status(Anuncio.StatusAnuncio.PENDENTE)
-                .totalVisualizacoes(0)
-                .expiraEm(dto.getExpiraEm())
-                .build();
-
+        Anuncio anuncio = construirAnuncio(usuario, categoria, enderecoSalvo, dto);
         Anuncio salvo = anuncioRepository.save(anuncio);
         salvarImagensDoAnuncio(salvo, imagens);
 
@@ -95,6 +85,28 @@ public class AnuncioService {
     public Page<AnuncioRespostaDTO> buscarAnuncios(String termo, Pageable pageable) {
         return anuncioRepository.buscarPorTermo(termo, pageable)
                 .map(this::mapearParaRespostaDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AnuncioRespostaDTO> buscarComFiltros(
+            BuscaFiltroDTO filtro,
+            String emailUsuario,
+            Pageable pageable
+    ) {
+        localizacaoService.resolverLocalizacaoEmCascata(filtro, emailUsuario);
+        TipoOrdenacao ordenacaoFinal = determinarOrdenacaoPadrao(filtro);
+
+        return anuncioRepository.buscarComFiltros(
+                normalizarTermo(filtro.getTermo()),
+                filtro.getCategoriaId(),
+                converterEnumParaString(filtro.getTipo()),
+                converterEnumParaString(filtro.getCondicao()),
+                filtro.getLatitude(),
+                filtro.getLongitude(),
+                filtro.getRaioKm(),
+                ordenacaoFinal.name(),
+                pageable
+        ).map(this::mapearParaRespostaDTO);
     }
 
     @Transactional(readOnly = true)
@@ -168,6 +180,50 @@ public class AnuncioService {
         return mapearParaRespostaDTO(atualizado);
     }
 
+    private Anuncio construirAnuncio(
+            Usuario usuario,
+            Categoria categoria,
+            Endereco endereco,
+            AnuncioCriacaoComEnderecoDTO dto
+    ) {
+        return Anuncio.builder()
+                .usuario(usuario)
+                .categoria(categoria)
+                .endereco(endereco)
+                .titulo(dto.getTitulo())
+                .descricao(dto.getDescricao())
+                .tipo(dto.getTipo())
+                .condicao(dto.getCondicao())
+                .status(Anuncio.StatusAnuncio.PENDENTE)
+                .totalVisualizacoes(0)
+                .expiraEm(dto.getExpiraEm())
+                .build();
+    }
+
+    private TipoOrdenacao determinarOrdenacaoPadrao(BuscaFiltroDTO filtro) {
+        if (filtro.getOrdenacao() != null) {
+            return filtro.getOrdenacao();
+        }
+
+        if (filtro.possuiCoordenadas()) {
+            return TipoOrdenacao.DISTANCIA;
+        }
+
+        if (filtro.possuiTermoBusca()) {
+            return TipoOrdenacao.RELEVANCIA;
+        }
+
+        return TipoOrdenacao.RELEVANCIA;
+    }
+
+    private String normalizarTermo(String termo) {
+        return (termo == null || termo.isBlank()) ? null : termo.trim();
+    }
+
+    private String converterEnumParaString(Enum<?> valor) {
+        return valor == null ? null : valor.name();
+    }
+
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", email));
@@ -183,10 +239,21 @@ public class AnuncioService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Anúncio", id));
     }
 
-    private Endereco cadastrarEnderecoViaCep(Usuario usuario, AnuncioCriacaoComEnderecoDTO dto) {
+    private Endereco cadastrarEnderecoEnriquecido(Usuario usuario, AnuncioCriacaoComEnderecoDTO dto) {
         ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(dto.getCep());
+        NominatimService.Coordenadas coordenadas = obterCoordenadasDoEndereco(dadosCEP, dto);
 
-        Endereco endereco = Endereco.builder()
+        Endereco endereco = construirEndereco(usuario, dto, dadosCEP, coordenadas);
+        return enderecoRepository.save(endereco);
+    }
+
+    private Endereco construirEndereco(
+            Usuario usuario,
+            AnuncioCriacaoComEnderecoDTO dto,
+            ViaCepService.DadosCEP dadosCEP,
+            NominatimService.Coordenadas coordenadas
+    ) {
+        return Endereco.builder()
                 .usuario(usuario)
                 .cep(dto.getCep())
                 .rua(dadosCEP.getRua())
@@ -195,12 +262,32 @@ public class AnuncioService {
                 .bairro(dadosCEP.getBairro())
                 .cidade(dadosCEP.getCidade())
                 .uf(dadosCEP.getUf())
-                .latitude(BigDecimal.ZERO)
-                .longitude(BigDecimal.ZERO)
+                .latitude(BigDecimal.valueOf(coordenadas.getLatitude()))
+                .longitude(BigDecimal.valueOf(coordenadas.getLongitude()))
                 .principal(false)
                 .build();
+    }
 
-        return enderecoRepository.save(endereco);
+    private NominatimService.Coordenadas obterCoordenadasDoEndereco(
+            ViaCepService.DadosCEP dadosCEP,
+            AnuncioCriacaoComEnderecoDTO dto
+    ) {
+        try {
+            String enderecoCompleto = montarEnderecoCompleto(dadosCEP, dto.getNumero());
+            return nominatimService.buscarCoordenadasPorEndereco(enderecoCompleto);
+        } catch (Exception e) {
+            return new NominatimService.Coordenadas(0.0, 0.0);
+        }
+    }
+
+    private String montarEnderecoCompleto(ViaCepService.DadosCEP dadosCEP, String numero) {
+        return String.format("%s, %s, %s, %s, %s, Brasil",
+                dadosCEP.getRua(),
+                numero,
+                dadosCEP.getBairro(),
+                dadosCEP.getCidade(),
+                dadosCEP.getUf()
+        );
     }
 
     private void salvarImagensDoAnuncio(Anuncio anuncio, List<MultipartFile> imagens) {
@@ -208,14 +295,18 @@ public class AnuncioService {
 
         List<String> urlsImagens = storageService.salvarImagens(imagens);
         for (int i = 0; i < urlsImagens.size(); i++) {
-            ImagemAnuncio imagem = ImagemAnuncio.builder()
-                    .anuncio(anuncio)
-                    .urlImagem(urlsImagens.get(i))
-                    .capa(i == 0)
-                    .ordemExibicao((short) i)
-                    .build();
+            ImagemAnuncio imagem = construirImagemAnuncio(anuncio, urlsImagens.get(i), i);
             imagemAnuncioRepository.save(imagem);
         }
+    }
+
+    private ImagemAnuncio construirImagemAnuncio(Anuncio anuncio, String url, int indice) {
+        return ImagemAnuncio.builder()
+                .anuncio(anuncio)
+                .urlImagem(url)
+                .capa(indice == 0)
+                .ordemExibicao((short) indice)
+                .build();
     }
 
     private void validarPropriedadeDoAnuncio(Anuncio anuncio, String emailUsuario) {
@@ -260,11 +351,7 @@ public class AnuncioService {
     }
 
     private AnuncioRespostaDTO mapearParaRespostaDTO(Anuncio anuncio) {
-        List<String> urlsImagens = imagemAnuncioRepository
-                .findByAnuncioIdOrderByOrdemExibicaoAsc(anuncio.getId())
-                .stream()
-                .map(ImagemAnuncio::getUrlImagem)
-                .toList();
+        List<String> urlsImagens = buscarUrlsImagens(anuncio.getId());
 
         return AnuncioRespostaDTO.builder()
                 .id(anuncio.getId())
@@ -292,5 +379,13 @@ public class AnuncioService {
                 .cidade(anuncio.getEndereco().getCidade())
                 .uf(anuncio.getEndereco().getUf())
                 .build();
+    }
+
+    private List<String> buscarUrlsImagens(UUID anuncioId) {
+        return imagemAnuncioRepository
+                .findByAnuncioIdOrderByOrdemExibicaoAsc(anuncioId)
+                .stream()
+                .map(ImagemAnuncio::getUrlImagem)
+                .toList();
     }
 }

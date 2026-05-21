@@ -1,36 +1,35 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { authService } from "../services/authService";
-import type { UsuarioRespostaDTO } from "../types/auth.types";
-import { ShieldCheck } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShieldCheck } from "lucide-react";
 import {
-  User,
-  LogOut,
   ChevronDown,
   Heart,
-  MessageCircle,
-  PlusCircle,
-  Settings,
   LayoutDashboard,
   LogIn,
+  LogOut,
+  MessageCircle,
+  PlusCircle,
+  User,
   UserPlus,
 } from "lucide-react";
+import { authService } from "../services/authService";
+import type { UsuarioRespostaDTO } from "../types/auth.types";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 const CATEGORIES_BAR = [
-  { icon: "🏠", label: "Imóveis" },
-  { icon: "🛋️", label: "Móveis" },
-  { icon: "📱", label: "Eletrônicos" },
-  { icon: "👗", label: "Roupas" },
-  { icon: "🚲", label: "Esportes" },
-  { icon: "📚", label: "Livros" },
-  { icon: "🧒", label: "Infantil" },
-  { icon: "🍳", label: "Cozinha" },
-  { icon: "🎮", label: "Games" },
-  { icon: "🌱", label: "Jardinagem" },
-  { icon: "🐾", label: "Pets" },
-  { icon: "🔧", label: "Ferramentas" },
+  { icon: "🏠", label: "Imóveis", categoriaId: 1 },
+  { icon: "🛋️", label: "Móveis", categoriaId: 21 },
+  { icon: "📱", label: "Eletrônicos", categoriaId: 20 },
+  { icon: "👗", label: "Roupas", categoriaId: 8 },
+  { icon: "🚲", label: "Esportes", categoriaId: 6 },
+  { icon: "📚", label: "Livros", categoriaId: 11 },
+  { icon: "🧒", label: "Infantil", categoriaId: 9 },
+  { icon: "🍳", label: "Cozinha", categoriaId: 5 },
+  { icon: "🎮", label: "Games", categoriaId: 16 },
+  { icon: "🌱", label: "Jardinagem", categoriaId: 5 },
+  { icon: "🐾", label: "Pets", categoriaId: 10 },
+  { icon: "🔧", label: "Ferramentas", categoriaId: 22 },
 ];
 
 const Logo: React.FC = () => (
@@ -47,11 +46,7 @@ interface NavActionIconProps {
   onClick?: () => void;
 }
 
-const NavActionIcon: React.FC<NavActionIconProps> = ({
-  icon,
-  label,
-  onClick,
-}) => (
+const NavActionIcon: React.FC<NavActionIconProps> = ({ icon, label, onClick }) => (
   <button
     onClick={onClick}
     className="flex flex-col items-center gap-0.5 text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-50 hover:text-reusehub-blue transition-colors cursor-pointer min-w-[56px]"
@@ -63,15 +58,38 @@ const NavActionIcon: React.FC<NavActionIconProps> = ({
   </button>
 );
 
+const criarParamsBusca = (termo?: string, categoriaId?: number) => {
+  const params = new URLSearchParams();
+
+  if (termo && termo.trim()) {
+    params.set("termo", termo.trim());
+  }
+
+  if (categoriaId) {
+    params.set("categoriaId", String(categoriaId));
+  }
+
+  return params;
+};
+
 export const Header: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<UsuarioRespostaDTO | null>(null);
-  const [activeCategory, setActiveCategory] = useState(0);
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setUser(authService.getUser());
+
+    const params = new URLSearchParams(location.search);
+    const termoAtual = params.get("termo") ?? "";
+    const categoriaAtual = params.get("categoriaId");
+
+    setSearchTerm(termoAtual);
+    setActiveCategory(categoriaAtual ? Number(categoriaAtual) : null);
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -81,9 +99,10 @@ export const Header: React.FC = () => {
         setIsDropdownOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [location.search]);
 
   const handleLogout = () => {
     authService.logout();
@@ -98,6 +117,21 @@ export const Header: React.FC = () => {
     return `http://localhost:8080${url.startsWith("/") ? url : `/${url}`}`;
   };
 
+  const navegarParaBusca = (params: URLSearchParams) => {
+    const query = params.toString();
+    navigate(query ? `/anuncios?${query}` : "/anuncios");
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    navegarParaBusca(criarParamsBusca(searchTerm));
+  };
+
+  const handleCategoryClick = (categoriaId: number) => {
+    setActiveCategory(categoriaId);
+    navegarParaBusca(criarParamsBusca(undefined, categoriaId));
+  };
+
   return (
     <header className="bg-white border-b border-slate-100 sticky top-0 z-50 font-plus-jakarta-sans">
       <div className="max-w-[1200px] mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -107,13 +141,21 @@ export const Header: React.FC = () => {
           </Link>
         </div>
 
-        <div className="hidden md:flex flex-1 max-w-[400px] items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-10 focus-within:border-reusehub-blue focus-within:bg-white transition-all">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="hidden md:flex flex-1 max-w-[400px] items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-10 focus-within:border-reusehub-blue focus-within:bg-white transition-all"
+        >
           <input
             type="text"
             placeholder="Buscar item..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 bg-transparent px-4 text-[14px] text-slate-700 outline-none"
           />
-          <button className="bg-reusehub-blue hover:bg-blue-700 text-white px-5 h-full transition-colors">
+          <button
+            type="submit"
+            className="bg-reusehub-blue hover:bg-blue-700 text-white px-5 h-full transition-colors"
+          >
             <svg
               className="w-4 h-4"
               fill="none"
@@ -125,7 +167,7 @@ export const Header: React.FC = () => {
               <path d="M21 21l-4.35-4.35" />
             </svg>
           </button>
-        </div>
+        </form>
 
         <div className="flex items-center gap-1 sm:gap-2 ml-auto">
           <div className="flex items-center gap-1">
@@ -218,10 +260,10 @@ export const Header: React.FC = () => {
                   >
                     <LogOut size={18} /> Sair
                   </button>
-                  {(user.perfil === 'MODERADOR' || user.perfil === 'ADMIN') && (
+                  {(user.perfil === "MODERADOR" || user.perfil === "ADMIN") && (
                     <button
                       onClick={() => {
-                        navigate('/moderacao');
+                        navigate("/moderacao");
                         setIsDropdownOpen(false);
                       }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-blue-600 hover:bg-blue-50 transition-colors text-sm font-semibold"
@@ -248,19 +290,19 @@ export const Header: React.FC = () => {
 
       <div className="border-t border-slate-50 bg-white">
         <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-hide py-1.5">
-          {CATEGORIES_BAR.map((cat, i) => (
+          {CATEGORIES_BAR.map((cat) => (
             <button
               key={cat.label}
-              onClick={() => setActiveCategory(i)}
+              onClick={() => handleCategoryClick(cat.categoriaId)}
               className={`flex flex-col items-center gap-1 px-4 border-b-2 transition-all flex-shrink-0 pb-1 ${
-                activeCategory === i
+                activeCategory === cat.categoriaId
                   ? "border-reusehub-blue text-reusehub-blue font-bold"
                   : "border-transparent text-slate-400 font-bold hover:text-reusehub-blue"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-lg flex items-center justify-center text-[16px] transition-colors ${
-                  activeCategory === i ? "bg-blue-50" : "bg-slate-50"
+                  activeCategory === cat.categoriaId ? "bg-blue-50" : "bg-slate-50"
                 }`}
               >
                 {cat.icon}
