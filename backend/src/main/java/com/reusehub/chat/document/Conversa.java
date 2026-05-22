@@ -28,6 +28,8 @@ public class Conversa {
     @NotBlank(message = "Anúncio ID é obrigatório")
     private String anuncioId;
 
+    private String anuncioOferecidoId;
+
     @NotBlank(message = "Remetente é obrigatório")
     private String remetente;
 

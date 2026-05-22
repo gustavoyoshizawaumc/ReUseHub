@@ -19,6 +19,8 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
 
     Page<Anuncio> findByUsuarioIdOrderByCriadoEmDesc(UUID usuarioId, Pageable pageable);
 
+    List<Anuncio> findByUsuarioIdAndStatusOrderByCriadoEmDesc(UUID usuarioId, Anuncio.StatusAnuncio status);
+
     Page<Anuncio> findByCategoriaIdAndStatus(
             Integer categoriaId,
             Anuncio.StatusAnuncio status,
@@ -32,6 +34,12 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
     );
 
     Page<Anuncio> findByStatusOrderByCriadoEmDesc(Anuncio.StatusAnuncio status, Pageable pageable);
+
+    long countByStatus(Anuncio.StatusAnuncio status);
+
+    long countByTipo(Anuncio.TipoAnuncio tipo);
+
+    Page<Anuncio> findByStatus(Anuncio.StatusAnuncio status, Pageable pageable);
 
     @Query(value = """
         SELECT * FROM anuncios
@@ -122,6 +130,8 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
     Page<Anuncio> findAnunciosAtivosOrdenadosPorRelevancia(Pageable pageable);
 
     long countByUsuarioIdAndStatus(UUID usuarioId, Anuncio.StatusAnuncio status);
+
+    List<Anuncio> findTop5ByOrderByTotalVisualizacoesDesc();
 
     @Query("SELECT a FROM Anuncio a WHERE a.status = 'ATIVO' " +
             "AND a.expiraEm IS NOT NULL " +

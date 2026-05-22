@@ -60,11 +60,16 @@ async function listarConversas(): Promise<Conversa[]> {
 
   const data = await parseJsonSafely<{ conversas?: Conversa[] } | Conversa[]>(response);
 
-  if (Array.isArray(data)) {
-    return data;
-  }
+  const conversas = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.conversas)
+      ? data.conversas
+      : [];
 
-  return Array.isArray(data?.conversas) ? data.conversas : [];
+  return conversas.map((conversa) => ({
+    ...conversa,
+    naoLidas: conversa.naoLidas ?? conversa.mensagensNaoLidas ?? 0,
+  }));
 }
 
 async function obterMensagensPorDestinatario(destinatario: string): Promise<Mensagem[]> {
@@ -81,7 +86,7 @@ async function obterMensagensPorDestinatario(destinatario: string): Promise<Mens
 
   const data = await parseJsonSafely<ConversaDetalhe>(response);
 
-  return Array.isArray(data?.historico) ? data.historico : [];
+  return Array.isArray(data?.mensagens) ? data.mensagens : [];
 }
 
 async function obterConversaPorId(conversaId: string): Promise<ConversaDetalhe> {
@@ -101,7 +106,7 @@ async function obterConversaPorId(conversaId: string): Promise<ConversaDetalhe> 
 
 async function obterMensagens(conversaId: string): Promise<Mensagem[]> {
   const conversa = await obterConversaPorId(conversaId);
-  return Array.isArray(conversa?.historico) ? conversa.historico : [];
+  return Array.isArray(conversa?.mensagens) ? conversa.mensagens : [];
 }
 
 async function iniciarConversa(payload: {

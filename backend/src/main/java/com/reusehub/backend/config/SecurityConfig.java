@@ -48,8 +48,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        .requestMatchers("/api/auth/registrar", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/registrar", "/api/auth/register", "/api/auth/login").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
@@ -57,40 +56,43 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/perfis/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/avaliacoes/usuario/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/static/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+
+                        .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                        .requestMatchers("/api/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
+                        .requestMatchers("/api/anuncios/meus/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").authenticated()
-
-                        .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
-
                         .requestMatchers("/api/chat/**").authenticated()
-                        .requestMatchers("/ws/**").permitAll()
-
-                        .requestMatchers("/uploads/**").permitAll()
-
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/interesses/**").authenticated()
+                        .requestMatchers("/api/denuncias/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
-                .filter(u -> u.getIsActive())
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()) && !Boolean.TRUE.equals(u.getBanido()))
                 .map(u -> User.withUsername(u.getEmail())
                         .password(u.getPasswordHash())
                         .authorities("ROLE_" + u.getPerfil().name())
                         .build())
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado ou conta deletada"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado ou conta indisponivel"));
     }
 
     @Bean

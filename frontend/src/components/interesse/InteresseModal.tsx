@@ -1,0 +1,156 @@
+import React, { useEffect, useState } from "react";
+import * as anuncioService from "../../services/anuncioService";
+import * as interesseService from "../../services/interesseService";
+import type { Anuncio } from "../../types/anuncio.types";
+
+type InteresseModalProps = {
+  open: boolean;
+  onClose: () => void;
+  anuncio: Anuncio;
+  onSuccess?: () => void;
+};
+
+export const InteresseModal: React.FC<InteresseModalProps> = ({
+  open,
+  onClose,
+  anuncio,
+  onSuccess,
+}) => {
+  const [mensagem, setMensagem] = useState("");
+  const [anuncioOferecidoId, setAnuncioOferecidoId] = useState("");
+  const [meusAnuncios, setMeusAnuncios] = useState<Anuncio[]>([]);
+  const [loadingAnuncios, setLoadingAnuncios] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isTroca = anuncio.tipo === "TROCA";
+
+  useEffect(() => {
+    const carregarMeusAnuncios = async () => {
+      if (!open || !isTroca) return;
+
+      try {
+        setLoadingAnuncios(true);
+        const resposta = await anuncioService.listarMeusAnuncios();
+        setMeusAnuncios(
+          (resposta.content ?? []).filter(
+            (item: Anuncio) => item.id !== anuncio.id && item.status === "ATIVO"
+          )
+        );
+      } catch {
+        setMeusAnuncios([]);
+      } finally {
+        setLoadingAnuncios(false);
+      }
+    };
+
+    carregarMeusAnuncios();
+  }, [open, isTroca, anuncio.id]);
+
+  useEffect(() => {
+    if (!open) {
+      setMensagem("");
+      setAnuncioOferecidoId("");
+    }
+  }, [open]);
+
+  const handleSubmit = async () => {
+    if (!mensagem.trim()) {
+      alert("Escreva uma mensagem para enviar sua proposta.");
+      return;
+    }
+
+    if (isTroca && !anuncioOferecidoId) {
+      alert("Selecione qual anúncio você quer oferecer na troca.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      await interesseService.criarInteresse({
+        anuncioDesejadoId: anuncio.id,
+        anuncioOferecidoId: isTroca ? anuncioOferecidoId : null,
+        mensagem: mensagem.trim(),
+      });
+
+      alert("Interesse enviado com sucesso!");
+      onClose();
+      onSuccess?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erro ao enviar interesse");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-lg rounded-lg border border-slate-200 p-6 shadow-sm shadow-slate-900/10">
+        <h3 className="text-xl font-bold text-slate-900 mb-2">
+          {isTroca ? "Quero trocar" : "Tenho interesse"}
+        </h3>
+
+        <p className="text-sm text-slate-500 mb-4">
+          Envie uma proposta para o anunciante de <strong>{anuncio.titulo}</strong>.
+        </p>
+
+        {isTroca && (
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Qual anúncio você quer oferecer?
+            </label>
+
+            <select
+              value={anuncioOferecidoId}
+              onChange={(e) => setAnuncioOferecidoId(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
+              disabled={loadingAnuncios}
+            >
+              <option value="">
+                {loadingAnuncios ? "Carregando seus anúncios..." : "Selecione um anúncio"}
+              </option>
+              {meusAnuncios.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.titulo}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="mb-5">
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Mensagem
+          </label>
+          <textarea
+            value={mensagem}
+            onChange={(e) => setMensagem(e.target.value)}
+            rows={5}
+            className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-blue-200"
+            placeholder="Escreva sua proposta..."
+          />
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-5 py-3 rounded-lg bg-slate-100 text-slate-700 font-bold"
+            disabled={submitting}
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="px-5 py-3 rounded-lg bg-blue-600 text-white font-bold disabled:opacity-60"
+          >
+            {submitting ? "Enviando..." : "Enviar proposta"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

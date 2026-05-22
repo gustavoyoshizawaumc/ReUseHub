@@ -15,6 +15,16 @@ public interface ChatRepository extends MongoRepository<Conversa, String> {
     @Query("{ $or: [ { 'remetente': ?0 }, { 'destinatario': ?0 } ] }")
     List<Conversa> findByUsuario(String usuarioId);
 
+    @Query("""
+    {
+    '$or': [
+        { 'remetente': ?0, 'destinatario': ?1 },
+        { 'remetente': ?1, 'destinatario': ?0 }
+    ]
+    }
+    """)
+    List<Conversa> findByUsuarios(String usuarioA, String usuarioB);
+
     @Query("{ 'destinatario': ?0, 'lido': false }")
     List<Conversa> findNaoLidasPorDestinatario(String destinatario);
 
@@ -27,5 +37,5 @@ public interface ChatRepository extends MongoRepository<Conversa, String> {
     ]
     }
     """)
-    Optional<Conversa> findByAnuncioIdAndUsuarios(String anuncioId, String usuarioA, String usuarioB);
+    List<Conversa> findByAnuncioIdAndUsuarios(String anuncioId, String usuarioA, String usuarioB);
 }

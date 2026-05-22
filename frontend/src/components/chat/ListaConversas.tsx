@@ -2,6 +2,13 @@ import React from 'react';
 import { Inbox, User2 } from 'lucide-react';
 import type { Conversa } from '../../types/chat.types';
 
+const BASE_URL = 'http://localhost:8080';
+
+const montarUrlImagem = (url?: string | null) => {
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
+
 interface ListaConversasProps {
   conversas: Conversa[];
   conversaAtiva: Conversa | null;
@@ -55,7 +62,7 @@ const ListaConversas: React.FC<ListaConversasProps> = ({
       <div className="flex-1 overflow-y-auto">
         {sortedConversas.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-6 py-12 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 shadow-sm">
               <Inbox size={22} className="text-zinc-500" />
             </div>
             <p className="text-sm font-medium text-zinc-800">Nenhuma conversa</p>
@@ -68,6 +75,7 @@ const ListaConversas: React.FC<ListaConversasProps> = ({
             const isAtiva = conversaAtiva?.id === conversa.id;
             const nome = conversa.nomeOutroUsuario || 'Usuário';
             const tituloAnuncio = conversa.tituloAnuncio || 'Anúncio';
+            const avatarUrl = montarUrlImagem(conversa.avatarOutroUsuario);
             const ultimaMsg = conversa.ultimaMensagem || 'Sem mensagens';
             const data = formatarData(
               conversa.dataUltimaAtualizacao || conversa.dataCriacao
@@ -87,13 +95,24 @@ const ListaConversas: React.FC<ListaConversasProps> = ({
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    className={`mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border transition-colors ${
                       isAtiva
                         ? 'border-blue-200 bg-blue-50 text-blue-600'
                         : 'border-zinc-200 bg-zinc-50 text-zinc-500'
                     }`}
                   >
-                    <User2 size={17} />
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={nome}
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <User2 size={17} />
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
