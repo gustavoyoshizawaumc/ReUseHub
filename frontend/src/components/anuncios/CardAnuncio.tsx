@@ -1,6 +1,6 @@
 import React from "react";
 import type { Anuncio } from "../../types/anuncio.types";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Eye,
   Tag,
@@ -119,8 +119,8 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
     anuncio.status === "ATIVO" ? "Ver anúncio" : "Acompanhar status";
 
   return (
-    <div className="group bg-white rounded-[24px] border border-slate-100 p-5 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 flex flex-col md:flex-row gap-6">
-      <div className="w-full md:w-40 h-40 rounded-2xl shrink-0 overflow-hidden bg-slate-50 flex items-center justify-center text-slate-300">
+    <div className="group flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-200 sm:p-4 md:flex-row md:gap-5">
+      <div className="flex h-36 w-full shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 text-slate-300 sm:h-40 md:w-40">
         {fotoCapaUrl ? (
           <img
             src={fotoCapaUrl}
@@ -149,7 +149,7 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
             </span>
           </div>
 
-          <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+          <h3 className="text-lg font-extrabold text-reusehub-navy transition-colors line-clamp-2 group-hover:text-blue-600 sm:text-xl md:line-clamp-1">
             {anuncio.titulo}
           </h3>
 
@@ -164,7 +164,7 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-slate-50 text-[12px] font-bold text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-4 text-[12px] font-bold text-slate-400">
           <div className="flex items-center gap-1.5">
             <Tag size={14} className="text-blue-500" />
             <span className="text-slate-600">{anuncio.nomeCategoria}</span>
@@ -177,10 +177,10 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
         </div>
       </div>
 
-      <div className="flex md:flex-col justify-end gap-2 shrink-0 md:border-l md:border-slate-50 md:pl-6">
+      <div className="flex md:flex-col justify-end gap-2 shrink-0 md:border-l md:border-slate-100 md:pl-5">
         <button
           onClick={handlePrimaryAction}
-          className="flex-1 md:flex-none bg-slate-50 hover:bg-blue-600 hover:text-white text-slate-600 p-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95"
+          className="flex-1 md:flex-none bg-slate-50 hover:bg-blue-600 hover:text-white text-slate-600 p-3 rounded-lg transition-colors flex items-center justify-center gap-2 active:scale-[0.99]"
         >
           <span className="text-xs font-bold md:hidden">{primaryButtonLabel}</span>
           <ArrowRight size={18} />
@@ -189,7 +189,7 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({ anuncio, onDelete }) =
         {onDelete && (
           <button
             onClick={() => onDelete(anuncio.id)}
-            className="flex-1 md:flex-none bg-red-50 hover:bg-red-500 text-red-500 hover:text-white p-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 md:flex-none bg-red-50 hover:bg-red-500 text-red-500 hover:text-white p-3 rounded-lg transition-colors flex items-center justify-center gap-2 active:scale-[0.99]"
             title="Deletar Anúncio"
           >
             <span className="text-xs font-bold md:hidden">Deletar</span>

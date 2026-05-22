@@ -124,6 +124,9 @@ public class AuthService {
     }
 
     private void validarUsuarioAtivo(Usuario usuario) {
+        if (Boolean.TRUE.equals(usuario.getBanido())) {
+            throw new RegraNegocioException("Esta conta foi banida permanentemente.");
+        }
         if (Boolean.FALSE.equals(usuario.getIsActive())) {
             throw new RegraNegocioException("Esta conta foi desativada e não pode mais ser acessada.");
         }
@@ -183,6 +186,7 @@ public class AuthService {
         dto.setBio(usuario.getBio());
         dto.setReputationScore(usuario.getReputationScore());
         dto.setIsActive(usuario.getIsActive());
+        dto.setBanido(usuario.getBanido());
         dto.setIsVerified(usuario.getIsVerified());
         dto.setCreatedAt(usuario.getCreatedAt());
         dto.setUpdatedAt(usuario.getUpdatedAt());

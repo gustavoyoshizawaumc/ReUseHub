@@ -149,8 +149,8 @@ export const ListaAnunciosPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmc+')] py-10 md:py-12">
-        <div className="max-w-6xl mx-auto px-4">
+      <main className="flex-grow bg-[#f1f5f9] py-7 md:py-12">
+        <div className="mx-auto max-w-6xl px-3 sm:px-4">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur px-3 py-1.5 border border-slate-200 text-slate-600 text-sm font-semibold shadow-sm mb-4">
@@ -158,7 +158,7 @@ export const ListaAnunciosPage: React.FC = () => {
                 Painel do anunciante
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
                 Meus Anúncios
               </h1>
 
@@ -170,7 +170,7 @@ export const ListaAnunciosPage: React.FC = () => {
 
             <button
               onClick={() => navigate("/create-listing")}
-              className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-2xl font-bold transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-2 active:scale-95"
+              className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-lg font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
             >
               <PlusCircle size={20} />
               Novo Anúncio
@@ -180,7 +180,7 @@ export const ListaAnunciosPage: React.FC = () => {
           {(anuncioCriado || anuncioAtualizado || anuncioExcluido) && (
             <div className="mb-8">
               {anuncioCriado && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-[24px] px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                       <Sparkles size={18} />
@@ -206,7 +206,7 @@ export const ListaAnunciosPage: React.FC = () => {
               )}
 
               {anuncioAtualizado && (
-                <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-[24px] px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                       <CheckCircle2 size={18} />
@@ -229,7 +229,7 @@ export const ListaAnunciosPage: React.FC = () => {
               )}
 
               {anuncioExcluido && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-[24px] px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-lg px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
                       <Ban size={18} />
@@ -260,7 +260,7 @@ export const ListaAnunciosPage: React.FC = () => {
               return (
                 <div
                   key={item.label}
-                  className={`rounded-[24px] border p-5 shadow-sm ${item.wrapper}`}
+                  className={`rounded-lg border p-5 shadow-sm ${item.wrapper}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -276,7 +276,7 @@ export const ListaAnunciosPage: React.FC = () => {
                     </div>
 
                     <div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center ${item.iconBox}`}
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${item.iconBox}`}
                     >
                       <Icon size={22} />
                     </div>
@@ -292,7 +292,7 @@ export const ListaAnunciosPage: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
             <aside className="lg:col-span-1 lg:sticky lg:top-24">
-              <div className="bg-white rounded-[24px] p-6 shadow-xl shadow-slate-200/50 border border-slate-100">
+              <div className="bg-white rounded-lg p-6 shadow-sm shadow-slate-200/50 border border-slate-100">
                 <div className="mb-4">
                   <h2 className="text-lg font-extrabold text-slate-900">
                     Filtros
@@ -312,7 +312,7 @@ export const ListaAnunciosPage: React.FC = () => {
 
             <div className="lg:col-span-3 space-y-6">
               {loading && (
-                <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center justify-center text-center">
+                <div className="flex flex-col items-center justify-center rounded-lg border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
                   <p className="text-slate-700 font-bold">
                     Carregando seus anúncios...
@@ -324,7 +324,7 @@ export const ListaAnunciosPage: React.FC = () => {
               )}
 
               {erro && (
-                <div className="bg-red-50 border border-red-200 p-4 rounded-[24px] flex items-start gap-3 text-red-700 shadow-sm">
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-start gap-3 text-red-700 shadow-sm">
                   <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                     <AlertCircle size={18} />
                   </div>
@@ -336,7 +336,7 @@ export const ListaAnunciosPage: React.FC = () => {
               )}
 
               {!loading && !erro && anuncios.length === 0 && (
-                <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center text-center">
+                <div className="flex flex-col items-center rounded-lg border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
                   <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                     <Package size={40} />
                   </div>
@@ -352,7 +352,7 @@ export const ListaAnunciosPage: React.FC = () => {
 
                   <button
                     onClick={() => navigate("/create-listing")}
-                    className="mt-6 bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-2xl font-bold transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-2 active:scale-95"
+                    className="mt-6 bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-lg font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
                   >
                     <PlusCircle size={18} />
                     Criar meu primeiro anúncio
@@ -361,7 +361,7 @@ export const ListaAnunciosPage: React.FC = () => {
               )}
 
               {!loading && anuncios.length > 0 && (
-                <div className="bg-white border border-slate-100 rounded-[24px] px-5 py-4 shadow-sm">
+                <div className="bg-white border border-slate-100 rounded-lg px-5 py-4 shadow-sm">
                   <p className="text-sm text-slate-500">
                     Exibindo{" "}
                     <span className="font-extrabold text-slate-800">
@@ -376,7 +376,7 @@ export const ListaAnunciosPage: React.FC = () => {
                 {anuncios.map((anuncio) => (
                   <div
                     key={anuncio.id}
-                    className="transition-all hover:translate-x-1"
+                    className="transition-all md:hover:translate-x-1"
                   >
                     <CardAnuncio anuncio={anuncio} onDelete={handleDelete} />
                   </div>
@@ -384,11 +384,11 @@ export const ListaAnunciosPage: React.FC = () => {
               </div>
 
               {!loading && paginacao.totalPages > 1 && (
-                <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mt-8">
+                <div className="mt-8 flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-white p-3 shadow-sm sm:p-4">
                   <button
                     onClick={handleAnterior}
                     disabled={paginacao.currentPage === 0}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent sm:gap-2 sm:px-4"
                   >
                     <ChevronLeft size={20} />
                     Anterior
@@ -407,7 +407,7 @@ export const ListaAnunciosPage: React.FC = () => {
                   <button
                     onClick={handleProxima}
                     disabled={paginacao.currentPage >= paginacao.totalPages - 1}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-bold text-blue-600 transition-all hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent sm:gap-2 sm:px-4"
                   >
                     Próxima
                     <ChevronRight size={20} />

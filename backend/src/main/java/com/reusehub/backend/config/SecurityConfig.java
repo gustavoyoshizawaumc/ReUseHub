@@ -57,10 +57,14 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
 
                     .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/perfis/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/avaliacoes/usuario/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers("/error").permitAll()
 
                     .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                    .requestMatchers("/api/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                     .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
                     .requestMatchers("/api/anuncios/meus/**").authenticated()
@@ -83,7 +87,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
-                .filter(Usuario::getIsActive)
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()) && !Boolean.TRUE.equals(u.getBanido()))
                 .map(u -> User.withUsername(u.getEmail())
                         .password(u.getPasswordHash())
                         .authorities("ROLE_" + u.getPerfil().name())

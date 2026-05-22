@@ -60,6 +60,7 @@ export interface UsuarioRespostaDTO {
   bio?: string;
   reputationScore?: number;
   isActive?: boolean;
+  banido?: boolean;
   isVerified?: boolean;
   lgpdConsent?: boolean;
   lgpdConsentAt?: string;

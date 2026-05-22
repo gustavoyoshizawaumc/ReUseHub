@@ -1,0 +1,15 @@
+package com.reusehub.avaliacao.dto;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+import java.util.UUID;
+
+public record AvaliacaoCriacaoDTO(
+        @NotNull UUID anuncioId,
+        @NotNull UUID avaliadoId,
+        @NotNull @Min(1) @Max(5) Short nota,
+        String comentario
+) {
+}

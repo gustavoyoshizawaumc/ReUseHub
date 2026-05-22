@@ -31,7 +31,11 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
       try {
         setLoadingAnuncios(true);
         const resposta = await anuncioService.listarMeusAnuncios();
-        setMeusAnuncios((resposta.content ?? []).filter((item: Anuncio) => item.id !== anuncio.id));
+        setMeusAnuncios(
+          (resposta.content ?? []).filter(
+            (item: Anuncio) => item.id !== anuncio.id && item.status === "ATIVO"
+          )
+        );
       } catch {
         setMeusAnuncios([]);
       } finally {
@@ -83,7 +87,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-[32px] p-6 shadow-2xl">
+      <div className="bg-white w-full max-w-lg rounded-lg border border-slate-200 p-6 shadow-sm shadow-slate-900/10">
         <h3 className="text-xl font-bold text-slate-900 mb-2">
           {isTroca ? "Quero trocar" : "Tenho interesse"}
         </h3>
@@ -101,7 +105,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
             <select
               value={anuncioOferecidoId}
               onChange={(e) => setAnuncioOferecidoId(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-200"
               disabled={loadingAnuncios}
             >
               <option value="">
@@ -124,7 +128,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
             value={mensagem}
             onChange={(e) => setMensagem(e.target.value)}
             rows={5}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-blue-200"
+            className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-blue-200"
             placeholder="Escreva sua proposta..."
           />
         </div>
@@ -132,7 +136,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-2xl bg-slate-100 text-slate-700 font-bold"
+            className="px-5 py-3 rounded-lg bg-slate-100 text-slate-700 font-bold"
             disabled={submitting}
           >
             Cancelar
@@ -141,7 +145,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="px-5 py-3 rounded-2xl bg-blue-600 text-white font-bold disabled:opacity-60"
+            className="px-5 py-3 rounded-lg bg-blue-600 text-white font-bold disabled:opacity-60"
           >
             {submitting ? "Enviando..." : "Enviar proposta"}
           </button>

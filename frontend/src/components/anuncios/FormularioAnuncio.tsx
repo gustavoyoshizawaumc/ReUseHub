@@ -89,7 +89,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
 
   const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider ml-1";
   const inputClass =
-    "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
+    "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -222,7 +222,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
                 type="button"
                 onClick={handleBuscarCep}
                 disabled={buscandoCep}
-                className="px-4 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all disabled:opacity-50"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
               >
                 {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
@@ -325,7 +325,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
       <button
         type="submit"
         disabled={loading || imagens.length < 5}
-        className="w-full py-5 bg-orange-600 text-white font-bold rounded-[24px] shadow-lg shadow-orange-200 hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-5 bg-orange-600 text-white font-bold rounded-lg shadow-sm hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <>

@@ -1,32 +1,28 @@
-/* src/index.css */
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 * {
-  font-family: "Poppins", sans-serif;
+  box-sizing: border-box;
 }
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --text: #3d4560;
+  --text-h: #1a1f3a;
+  --bg: #f8fafc;
+  --border: #e5e7eb;
+  --accent: #0066ff;
+  --accent-strong: #ff6b2b;
+  --surface: #ffffff;
+  --shadow: 0 1px 2px rgba(15, 20, 25, 0.06), 0 10px 30px rgba(26, 31, 58, 0.06);
 
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
+  --sans: "Plus Jakarta Sans", "Poppins", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "Plus Jakarta Sans", "Poppins", system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  font: 16px/150% var(--sans);
+  letter-spacing: 0;
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
@@ -35,36 +31,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
 }
 
 #root {
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  text-align: initial;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -72,9 +44,18 @@
 }
 
 body {
-  font-family: "DM Sans", sans-serif;
-  color: #333333;
-  @apply bg-white;
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--text);
+  background: #f8fafc;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 /* Esconder scrollbar mantendo funcionalidade */
@@ -89,27 +70,18 @@ body {
 h1,
 h2 {
   font-family: var(--heading);
-  font-weight: 500;
+  font-weight: 800;
   color: var(--text-h);
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+  letter-spacing: 0;
+  margin: 0;
 }
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+  line-height: 1.2;
+  letter-spacing: 0;
+  margin: 0;
 }
 p {
   margin: 0;
@@ -127,15 +99,11 @@ code {
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;
-  background: var(--code-bg);
+  background: #f1f5f9;
 }
 
 .register-page-bg {
-  background-color: #eef0f5;
-  background-image:
-    linear-gradient(rgba(180, 190, 210, 0.45) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(180, 190, 210, 0.45) 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-color: #f8fafc;
 }
 
 .logo {
@@ -176,4 +144,14 @@ code {
 .field-input:focus {
   box-shadow: 0 0 0 3px rgba(22, 92, 240, 0.15);
   border-color: #165cf0;
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+  }
+
+  .premium-button {
+    @apply rounded-lg font-bold transition-colors active:scale-[0.99];
+  }
 }

@@ -73,7 +73,7 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
         <div className="flex flex-col gap-2">
           <button
             onClick={() => handleTipoChange("DOACAO")}
-            className={`flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all border ${
+            className={`flex items-center justify-between px-4 py-3 rounded-lg font-bold text-sm transition-all border ${
               tipo === "DOACAO"
                 ? "bg-teal-50 border-teal-200 text-teal-700 shadow-sm shadow-teal-50"
                 : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
@@ -87,7 +87,7 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
 
           <button
             onClick={() => handleTipoChange("TROCA")}
-            className={`flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all border ${
+            className={`flex items-center justify-between px-4 py-3 rounded-lg font-bold text-sm transition-all border ${
               tipo === "TROCA"
                 ? "bg-orange-50 border-orange-200 text-orange-700 shadow-sm shadow-orange-50"
                 : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
@@ -109,7 +109,7 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
           <select
             value={categoria}
             onChange={(e) => handleCategoriaChange(Number(e.target.value))}
-            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all appearance-none cursor-pointer"
           >
             <option value="">Todas as categorias</option>
             {CATEGORIAS.map((cat) => (
@@ -126,7 +126,7 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
 
       <button
         onClick={handleLimpar}
-        className="mt-4 py-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 text-xs font-bold hover:border-blue-200 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
+        className="mt-4 py-4 border-2 border-dashed border-slate-100 rounded-lg text-slate-400 text-xs font-bold hover:border-blue-200 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
       >
         <RotateCcw size={14} /> Resetar preferências
       </button>

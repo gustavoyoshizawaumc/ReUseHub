@@ -43,6 +43,12 @@ public class InteresseTroca {
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;
 
+    @Column(name = "entregue_pelo_dono_em")
+    private LocalDateTime entreguePeloDonoEm;
+
+    @Column(name = "recebimento_confirmado_em")
+    private LocalDateTime recebimentoConfirmadoEm;
+
     public enum StatusInteresse {
         PENDENTE,
         ACEITO,
