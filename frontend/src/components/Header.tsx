@@ -1,40 +1,54 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../services/authService";
+import { listarConversas } from "../services/chatService";
+import { listarInteressesRecebidos } from "../services/interesseService";
 import type { UsuarioRespostaDTO } from "../types/auth.types";
 import { ShieldCheck } from 'lucide-react';
 import {
+  Armchair,
+  Baby,
+  Bike,
+  BookOpen,
+  Building2,
   User,
+  CookingPot,
+  Gamepad2,
   LogOut,
   ChevronDown,
   Heart,
   MessageCircle,
+  PawPrint,
   PlusCircle,
-  Settings,
+  Repeat2,
   LayoutDashboard,
   LogIn,
+  Shirt,
+  Smartphone,
+  Sprout,
   UserPlus,
+  Wrench,
 } from "lucide-react";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 const CATEGORIES_BAR = [
-  { icon: "🏠", label: "Imóveis" },
-  { icon: "🛋️", label: "Móveis" },
-  { icon: "📱", label: "Eletrônicos" },
-  { icon: "👗", label: "Roupas" },
-  { icon: "🚲", label: "Esportes" },
-  { icon: "📚", label: "Livros" },
-  { icon: "🧒", label: "Infantil" },
-  { icon: "🍳", label: "Cozinha" },
-  { icon: "🎮", label: "Games" },
-  { icon: "🌱", label: "Jardinagem" },
-  { icon: "🐾", label: "Pets" },
-  { icon: "🔧", label: "Ferramentas" },
+  { icon: Building2, label: "Imóveis" },
+  { icon: Armchair, label: "Móveis" },
+  { icon: Smartphone, label: "Eletrônicos" },
+  { icon: Shirt, label: "Roupas" },
+  { icon: Bike, label: "Esportes" },
+  { icon: BookOpen, label: "Livros" },
+  { icon: Baby, label: "Infantil" },
+  { icon: CookingPot, label: "Cozinha" },
+  { icon: Gamepad2, label: "Games" },
+  { icon: Sprout, label: "Jardinagem" },
+  { icon: PawPrint, label: "Pets" },
+  { icon: Wrench, label: "Ferramentas" },
 ];
 
 const Logo: React.FC = () => (
-  <span className="font-bold text-[20px] leading-none select-none tracking-tight font-plus-jakarta-sans">
+  <span className="font-bold text-[18px] leading-none select-none tracking-tight font-plus-jakarta-sans sm:text-[20px]">
     <span className="text-reusehub-blue">Re</span>
     <span className="text-reusehub-orange">Use</span>
     <span className="text-reusehub-navy">Hub</span>
@@ -45,19 +59,24 @@ interface NavActionIconProps {
   icon: React.ReactNode;
   label: string;
   onClick?: () => void;
+  showBadge?: boolean;
 }
 
 const NavActionIcon: React.FC<NavActionIconProps> = ({
   icon,
   label,
   onClick,
+  showBadge = false,
 }) => (
   <button
     onClick={onClick}
-    className="flex flex-col items-center gap-0.5 text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-50 hover:text-reusehub-blue transition-colors cursor-pointer min-w-[56px]"
+    className="relative flex h-10 w-9 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-slate-600 transition-colors hover:bg-slate-50 hover:text-reusehub-blue sm:w-12 sm:px-2 md:min-w-[56px]"
   >
+    {showBadge && (
+      <span className="absolute right-1.5 top-1 h-2.5 w-2.5 rounded-full bg-reusehub-orange ring-2 ring-white sm:right-2" />
+    )}
     {icon}
-    <span className="font-normal text-reusehub-gray-dark tracking-tighter text-[11px] hidden sm:block">
+    <span className="hidden font-normal text-reusehub-gray-dark tracking-tighter text-[11px] md:block">
       {label}
     </span>
   </button>
@@ -68,6 +87,8 @@ export const Header: React.FC = () => {
   const [user, setUser] = useState<UsuarioRespostaDTO | null>(null);
   const [activeCategory, setActiveCategory] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [temChatPendente, setTemChatPendente] = useState(false);
+  const [temTrocaPendente, setTemTrocaPendente] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +106,31 @@ export const Header: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setTemChatPendente(false);
+      setTemTrocaPendente(false);
+      return;
+    }
+
+    const carregarIndicadores = async () => {
+      try {
+        const [conversas, interesses] = await Promise.all([
+          listarConversas(),
+          listarInteressesRecebidos(),
+        ]);
+
+        setTemChatPendente(conversas.some((conversa) => (conversa.naoLidas ?? 0) > 0));
+        setTemTrocaPendente(interesses.some((interesse) => interesse.status === "PENDENTE"));
+      } catch {
+        setTemChatPendente(false);
+        setTemTrocaPendente(false);
+      }
+    };
+
+    carregarIndicadores();
+  }, [user]);
+
   const handleLogout = () => {
     authService.logout();
     setUser(null);
@@ -99,15 +145,15 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white border-b border-slate-100 sticky top-0 z-50 font-plus-jakarta-sans">
-      <div className="max-w-[1200px] mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 font-plus-jakarta-sans backdrop-blur">
+      <div className="max-w-[1200px] mx-auto h-14 px-3 sm:px-4 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-2">
           <Link to="/" className="flex-shrink-0">
             <Logo />
           </Link>
         </div>
 
-        <div className="hidden md:flex flex-1 max-w-[400px] items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden h-10 focus-within:border-reusehub-blue focus-within:bg-white transition-all">
+        <div className="hidden md:flex flex-1 max-w-[400px] items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden h-10 focus-within:border-reusehub-blue focus-within:bg-white transition-all">
           <input
             type="text"
             placeholder="Buscar item..."
@@ -127,7 +173,7 @@ export const Header: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2 ml-auto">
+        <div className="flex min-w-0 items-center gap-0.5 sm:gap-2 ml-auto">
           <div className="flex items-center gap-1">
             {user ? (
               <>
@@ -140,6 +186,13 @@ export const Header: React.FC = () => {
                   onClick={() => navigate("/chat")}
                   icon={<MessageCircle size={19} />}
                   label="Chat"
+                  showBadge={temChatPendente}
+                />
+                <NavActionIcon
+                  onClick={() => navigate("/interesses")}
+                  icon={<Repeat2 size={19} />}
+                  label="Trocas"
+                  showBadge={temTrocaPendente}
                 />
               </>
             ) : (
@@ -159,12 +212,12 @@ export const Header: React.FC = () => {
           </div>
 
           {user && (
-            <div className="relative ml-2" ref={dropdownRef}>
+            <div className="relative ml-0.5 sm:ml-2" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
+                className="flex items-center gap-1 rounded-lg border border-transparent p-0.5 pr-1 transition-colors hover:border-slate-200 hover:bg-slate-50 sm:gap-2 sm:p-1 sm:pr-3"
               >
-                <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-reusehub-blue">
+                <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-200 sm:h-9 sm:w-9">
                   <img
                     src={getAvatarUrl(user.avatarUrl)}
                     alt={user.name}
@@ -179,12 +232,12 @@ export const Header: React.FC = () => {
                 </span>
                 <ChevronDown
                   size={14}
-                  className={`text-slate-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                  className={`hidden text-slate-400 transition-transform sm:block ${isDropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-150 origin-top-right">
+                <div className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-2 shadow-lg shadow-slate-200/60 animate-in fade-in zoom-in duration-150 origin-top-right">
                   <div className="px-4 py-3 border-b border-slate-50 mb-1">
                     <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest text-left">
                       Sua Conta
@@ -238,7 +291,7 @@ export const Header: React.FC = () => {
             onClick={() =>
               user ? navigate("/create-listing") : navigate("/login")
             }
-            className="ml-2 bg-reusehub-orange hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-[13px] font-extrabold flex items-center gap-2 shadow-lg shadow-orange-100 transition-all active:scale-95"
+            className="ml-0.5 flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-reusehub-orange p-0 text-[13px] font-extrabold text-white transition-colors hover:bg-orange-600 active:scale-[0.99] sm:ml-2 sm:w-auto sm:px-5 sm:py-2.5"
           >
             <PlusCircle size={18} />
             <span className="hidden sm:inline">Anunciar</span>
@@ -247,27 +300,29 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="border-t border-slate-50 bg-white">
-        <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-hide py-1.5">
-          {CATEGORIES_BAR.map((cat, i) => (
+        <div className="max-w-[1200px] mx-auto px-3 sm:px-4 flex items-center justify-start gap-1 overflow-x-auto scrollbar-hide py-2">
+          {CATEGORIES_BAR.map((cat, i) => {
+            const Icon = cat.icon;
+            return (
             <button
               key={cat.label}
               onClick={() => setActiveCategory(i)}
-              className={`flex flex-col items-center gap-1 px-4 border-b-2 transition-all flex-shrink-0 pb-1 ${
+              className={`flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-b-2 px-1 pb-1 transition-colors sm:w-[78px] sm:px-2 ${
                 activeCategory === i
                   ? "border-reusehub-blue text-reusehub-blue font-bold"
                   : "border-transparent text-slate-400 font-bold hover:text-reusehub-blue"
               }`}
             >
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[16px] transition-colors ${
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   activeCategory === i ? "bg-blue-50" : "bg-slate-50"
                 }`}
               >
-                {cat.icon}
+                <Icon size={16} strokeWidth={2} />
               </div>
               <span className="text-[10px] tracking-wide">{cat.label}</span>
             </button>
-          ))}
+          )})}
         </div>
       </div>
     </header>

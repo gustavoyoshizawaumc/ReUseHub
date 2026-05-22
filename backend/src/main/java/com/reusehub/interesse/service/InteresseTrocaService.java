@@ -5,9 +5,12 @@ import com.reusehub.anuncio.exception.OperacaoInvalidaException;
 import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
 import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.model.Anuncio;
+import com.reusehub.anuncio.model.ImagemAnuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.chat.dto.ConversaRespostaDTO;
 import com.reusehub.chat.dto.IniciarConversaDTO;
 import com.reusehub.chat.service.ChatService;
@@ -15,10 +18,12 @@ import com.reusehub.interesse.dto.InteresseCriacaoDTO;
 import com.reusehub.interesse.dto.InteresseRespostaDTO;
 import com.reusehub.interesse.model.InteresseTroca;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.notificacao.service.NotificacaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,7 +35,10 @@ public class InteresseTrocaService {
     private final InteresseTrocaRepository interesseTrocaRepository;
     private final UsuarioRepository usuarioRepository;
     private final AnuncioRepository anuncioRepository;
+    private final ImagemAnuncioRepository imagemAnuncioRepository;
     private final ChatService chatService;
+    private final NotificacaoService notificacaoService;
+    private final AvaliacaoRepository avaliacaoRepository;
 
     public InteresseRespostaDTO criarInteresse(String emailInteressado, InteresseCriacaoDTO dto) {
         Usuario interessado = buscarUsuarioPorEmail(emailInteressado);
@@ -69,6 +77,14 @@ public class InteresseTrocaService {
                 .build();
 
         InteresseTroca salvo = interesseTrocaRepository.save(interesse);
+        notificacaoService.criar(
+                anuncioDesejado.getUsuario(),
+                "INTERESSE_RECEBIDO",
+                "Novo interesse no seu anúncio",
+                interessado.getName() + " demonstrou interesse em " + anuncioDesejado.getTitulo() + ".",
+                salvo.getId(),
+                "INTERESSE"
+        );
         return mapear(salvo, null);
     }
 
@@ -106,18 +122,111 @@ public class InteresseTrocaService {
             throw new RegraNegocioException("Somente interesses pendentes podem ser aceitos.");
         }
 
+        if (interesse.getAnuncioDesejado().getStatus() != Anuncio.StatusAnuncio.ATIVO) {
+            throw new RegraNegocioException("Este anuncio nao esta mais disponivel para aceitar propostas.");
+        }
+
+        if (interesseTrocaRepository.existsByAnuncioDesejadoIdAndStatus(
+                interesse.getAnuncioDesejado().getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        )) {
+            throw new RegraNegocioException("Este anuncio ja possui uma negociacao aceita.");
+        }
+
         interesse.setStatus(InteresseTroca.StatusInteresse.ACEITO);
 
-        ConversaRespostaDTO conversa = chatService.iniciarOuRecuperarConversa(
+        ConversaRespostaDTO conversa = chatService.iniciarOuRecuperarConversaComOferta(
                 dono.getEmail(),
                 new IniciarConversaDTO(
-                        interesse.getInteressado().getId().toString(),
-                        interesse.getAnuncioDesejado().getId().toString()
-                )
+                        interesse.getAnuncioDesejado().getId().toString(),
+                        interesse.getInteressado().getId().toString()
+                ),
+                interesse.getAnuncioOferecido() != null ? interesse.getAnuncioOferecido().getId().toString() : null
         );
 
         InteresseTroca salvo = interesseTrocaRepository.save(interesse);
+        notificacaoService.criar(
+                interesse.getInteressado(),
+                "INTERESSE_ACEITO",
+                "Seu interesse foi aceito",
+                dono.getName() + " aceitou sua proposta para " + interesse.getAnuncioDesejado().getTitulo() + ".",
+                salvo.getId(),
+                "INTERESSE"
+        );
         return mapear(salvo, conversa.id());
+    }
+
+    public InteresseRespostaDTO marcarComoEntregue(UUID interesseId, String emailUsuario) {
+        Usuario dono = buscarUsuarioPorEmail(emailUsuario);
+        InteresseTroca interesse = buscarInteresse(interesseId);
+
+        if (!interesse.getAnuncioDesejado().getUsuario().getId().equals(dono.getId())) {
+            throw new AcessoNegadoException("Somente o dono do anuncio pode marcar como entregue.");
+        }
+
+        if (interesse.getStatus() != InteresseTroca.StatusInteresse.ACEITO) {
+            throw new RegraNegocioException("Somente uma negociacao aceita pode ser marcada como entregue.");
+        }
+
+        if (interesse.getRecebimentoConfirmadoEm() != null
+                || interesse.getAnuncioDesejado().getStatus() == Anuncio.StatusAnuncio.CONCLUIDO) {
+            throw new RegraNegocioException("Esta negociacao ja foi concluida.");
+        }
+
+        if (interesse.getEntreguePeloDonoEm() == null) {
+            interesse.setEntreguePeloDonoEm(LocalDateTime.now());
+        }
+
+        interesse.getAnuncioDesejado().setStatus(Anuncio.StatusAnuncio.RESERVADO);
+        anuncioRepository.save(interesse.getAnuncioDesejado());
+
+        InteresseTroca salvo = interesseTrocaRepository.save(interesse);
+        notificacaoService.criar(
+                interesse.getInteressado(),
+                "ENTREGA_MARCADA",
+                "Entrega aguardando confirmacao",
+                dono.getName() + " marcou " + interesse.getAnuncioDesejado().getTitulo() + " como entregue. Confirme o recebimento para concluir.",
+                salvo.getId(),
+                "INTERESSE"
+        );
+        return mapear(salvo, null);
+    }
+
+    public InteresseRespostaDTO confirmarRecebimento(UUID interesseId, String emailUsuario) {
+        Usuario interessado = buscarUsuarioPorEmail(emailUsuario);
+        InteresseTroca interesse = buscarInteresse(interesseId);
+
+        if (!interesse.getInteressado().getId().equals(interessado.getId())) {
+            throw new AcessoNegadoException("Somente o interessado pode confirmar o recebimento.");
+        }
+
+        if (interesse.getStatus() != InteresseTroca.StatusInteresse.ACEITO) {
+            throw new RegraNegocioException("Somente uma negociacao aceita pode ser confirmada.");
+        }
+
+        if (interesse.getEntreguePeloDonoEm() == null
+                || interesse.getAnuncioDesejado().getStatus() != Anuncio.StatusAnuncio.RESERVADO) {
+            throw new RegraNegocioException("O dono precisa marcar o item como entregue antes da confirmacao.");
+        }
+
+        if (interesse.getRecebimentoConfirmadoEm() != null) {
+            throw new RegraNegocioException("O recebimento desta negociacao ja foi confirmado.");
+        }
+
+        interesse.setRecebimentoConfirmadoEm(LocalDateTime.now());
+        interesse.getAnuncioDesejado().setStatus(Anuncio.StatusAnuncio.CONCLUIDO);
+        anuncioRepository.save(interesse.getAnuncioDesejado());
+
+        InteresseTroca salvo = interesseTrocaRepository.save(interesse);
+        notificacaoService.criar(
+                interesse.getAnuncioDesejado().getUsuario(),
+                "NEGOCIACAO_CONCLUIDA",
+                "Negociacao concluida",
+                interessado.getName() + " confirmou o recebimento de " + interesse.getAnuncioDesejado().getTitulo() + ". As avaliacoes ja estao liberadas.",
+                salvo.getId(),
+                "INTERESSE"
+        );
+        return mapear(salvo, null);
     }
 
     public InteresseRespostaDTO rejeitarInteresse(UUID interesseId, String emailUsuario) {
@@ -137,6 +246,14 @@ public class InteresseTrocaService {
         interesse.setStatus(InteresseTroca.StatusInteresse.REJEITADO);
 
         InteresseTroca salvo = interesseTrocaRepository.save(interesse);
+        notificacaoService.criar(
+                interesse.getInteressado(),
+                "INTERESSE_REJEITADO",
+                "Seu interesse foi recusado",
+                dono.getName() + " recusou sua proposta para " + interesse.getAnuncioDesejado().getTitulo() + ".",
+                salvo.getId(),
+                "INTERESSE"
+        );
         return mapear(salvo, null);
     }
 
@@ -150,6 +267,11 @@ public class InteresseTrocaService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Anúncio", id));
     }
 
+    private InteresseTroca buscarInteresse(UUID id) {
+        return interesseTrocaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Interesse", id));
+    }
+
     private void validarAnuncioDisponivelParaInteresse(Anuncio anuncio) {
         if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
             throw new OperacaoInvalidaException("Só é possível demonstrar interesse em anúncios ativos.");
@@ -161,14 +283,33 @@ public class InteresseTrocaService {
                 interesse.getId(),
                 interesse.getAnuncioDesejado().getId(),
                 interesse.getAnuncioDesejado().getTitulo(),
+                buscarImagemCapa(interesse.getAnuncioDesejado()),
+                interesse.getAnuncioDesejado().getStatus(),
                 interesse.getInteressado().getId(),
                 interesse.getInteressado().getName(),
+                interesse.getInteressado().getAvatarUrl(),
+                interesse.getInteressado().getReputationScore(),
                 interesse.getAnuncioOferecido() != null ? interesse.getAnuncioOferecido().getId() : null,
                 interesse.getAnuncioOferecido() != null ? interesse.getAnuncioOferecido().getTitulo() : null,
+                interesse.getAnuncioOferecido() != null ? buscarImagemCapa(interesse.getAnuncioOferecido()) : null,
                 interesse.getMensagem(),
                 interesse.getStatus(),
                 interesse.getCriadoEm(),
+                interesse.getEntreguePeloDonoEm(),
+                interesse.getRecebimentoConfirmadoEm(),
+                avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(
+                        interesse.getAnuncioDesejado().getUsuario().getId(),
+                        interesse.getAnuncioDesejado().getId()
+                ),
                 conversaId
         );
+    }
+
+    private String buscarImagemCapa(Anuncio anuncio) {
+        return imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(anuncio.getId())
+                .stream()
+                .findFirst()
+                .map(ImagemAnuncio::getUrlImagem)
+                .orElse(null);
     }
 }

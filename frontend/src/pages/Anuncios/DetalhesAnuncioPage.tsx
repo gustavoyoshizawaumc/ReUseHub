@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
+import { iniciarConversa } from "../../services/chatService";
 import type { Anuncio } from "../../types/anuncio.types";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
+import { InteresseModal } from "../../components/interesse/InteresseModal";
+import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
 import {
   ArrowLeft,
   Calendar,
@@ -18,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ImageOff,
+  Info,
 } from "lucide-react";
 
 const BASE_URL = "http://localhost:8080";
@@ -31,6 +35,9 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [usuarioAtual, setUsuarioAtual] = useState<{ id: string; nome: string } | null>(null);
   const [isEDono, setIsEDono] = useState(false);
   const [imagemAtual, setImagemAtual] = useState(0);
+  const [modalInteresseAberto, setModalInteresseAberto] = useState(false);
+  const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
+  const [iniciandoChat, setIniciandoChat] = useState(false);
 
 
 
@@ -44,7 +51,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
           });
           if (response.ok) {
             const usuario = await response.json();
-            setUsuarioAtual({ id: usuario.id, nome: usuario.nome });
+            setUsuarioAtual({ id: usuario.id, nome: usuario.name || usuario.nome });
           }
         }
 
@@ -87,6 +94,46 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const irParaProxima = () =>
     setImagemAtual((prev) => (prev === imagens.length - 1 ? 0 : prev + 1));
 
+  const exigirLogin = () => {
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleAbrirInteresse = () => {
+    if (!exigirLogin()) return;
+    setModalInteresseAberto(true);
+  };
+
+  const handleFalarComAnunciante = async () => {
+    if (!anuncio || !exigirLogin()) return;
+
+    try {
+      setIniciandoChat(true);
+      const conversa = await iniciarConversa({
+        anuncioId: anuncio.id,
+        destinatarioId: anuncio.usuarioId,
+      });
+
+      navigate("/chat", {
+        state: {
+          conversaId: conversa.id,
+          destinatarioId: anuncio.usuarioId,
+          destinatarioNome: anuncio.nomeUsuario,
+          anuncioId: anuncio.id,
+          anuncioTitulo: anuncio.titulo,
+        },
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erro ao iniciar conversa");
+    } finally {
+      setIniciandoChat(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
@@ -97,14 +144,14 @@ export const DetalhesAnuncioPage: React.FC = () => {
   if (erro || !anuncio)
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-[32px] shadow-xl text-center max-w-md">
+        <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 text-center max-w-md">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Ops!</h2>
           <p className="text-slate-500 mb-6">
             {erro || "Este anúncio não está disponível no momento."}
           </p>
           <button
             onClick={() => navigate("/")}
-            className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold transition-all active:scale-95"
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
           >
             Voltar para Home
           </button>
@@ -115,14 +162,18 @@ export const DetalhesAnuncioPage: React.FC = () => {
     const imagens = anuncio.imagensUrls ?? [];
 
     const anuncioEstaAtivo = anuncio.status === "ATIVO";
-    const podeEntrarEmContato = !isEDono && anuncioEstaAtivo;
+    const anuncioConcluido = anuncio.status === "CONCLUIDO";
+    const podeFalarComAnunciante = !isEDono && anuncioEstaAtivo && anuncio.tipo === "DOACAO";
+    const podeEnviarInteresse = !isEDono && anuncioEstaAtivo && anuncio.tipo === "TROCA";
+    const podeInteragir = podeFalarComAnunciante || podeEnviarInteresse;
     const mostrarFavoritos = !isEDono && anuncioEstaAtivo;
+    const podeAvaliarAnunciante = !isEDono && anuncioConcluido;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmc+')] py-12 px-4">
+      <main className="flex-grow bg-slate-50 px-3 py-6 sm:px-4 sm:py-12">
         <div className="max-w-5xl mx-auto">
           <button
             onClick={() => navigate(-1)}
@@ -132,9 +183,9 @@ export const DetalhesAnuncioPage: React.FC = () => {
             Voltar
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8">
             <div className="lg:col-span-8 space-y-6">
-              <div className="bg-white rounded-[32px] shadow-xl border border-slate-100 overflow-hidden">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
 
                 {/* CARROSSEL */}
                 {imagens.length > 0 ? (
@@ -151,24 +202,24 @@ export const DetalhesAnuncioPage: React.FC = () => {
                       <>
                         <button
                           onClick={irParaAnterior}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 shadow-lg transition-all hover:scale-110"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-slate-800 rounded-lg p-2 border border-slate-200 transition-colors"
                         >
                           <ChevronLeft size={20} />
                         </button>
                         <button
                           onClick={irParaProxima}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 shadow-lg transition-all hover:scale-110"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-slate-800 rounded-lg p-2 border border-slate-200 transition-colors"
                         >
                           <ChevronRight size={20} />
                         </button>
 
                         {/* MINIATURAS */}
-                        <div className="flex gap-2 p-4 overflow-x-auto">
+                        <div className="flex gap-2 overflow-x-auto p-3 sm:p-4">
                           {imagens.map((url: string, index: number) => (
                             <button
                               key={index}
                               onClick={() => setImagemAtual(index)}
-                              className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                              className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all sm:h-16 sm:w-16 ${
                                 imagemAtual === index
                                   ? "border-blue-600 ring-2 ring-blue-100"
                                   : "border-transparent opacity-60 hover:opacity-100"
@@ -207,7 +258,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="p-8">
+                <div className="p-5 sm:p-8">
                   <div className="flex flex-wrap gap-2 mb-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
                       anuncio.tipo === "DOACAO"
@@ -224,13 +275,17 @@ export const DetalhesAnuncioPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <h1 className="text-3xl font-extrabold text-slate-900 mb-4">{anuncio.titulo}</h1>
+                  <h1 className="mb-4 text-2xl font-extrabold leading-tight text-slate-900 sm:text-3xl">{anuncio.titulo}</h1>
 
-                  <div className="flex items-center gap-4 text-slate-500 text-sm mb-8">
-                    <div className="flex items-center gap-1.5">
+                  <div className="mb-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500 sm:mb-8">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/perfil/${anuncio.usuarioId}`)}
+                      className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+                    >
                       <User size={16} className="text-blue-600" />
                       <span className="font-semibold">{anuncio.nomeUsuario}</span>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-1.5">
                       <Calendar size={16} />
                       <span>{new Date(anuncio.criadoEm).toLocaleDateString("pt-BR")}</span>
@@ -250,25 +305,25 @@ export const DetalhesAnuncioPage: React.FC = () => {
             </div>
 
             <div className="lg:col-span-4 space-y-6">
-              <div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-100 space-y-6">
+              <div className="space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:space-y-6 sm:p-6">
                 <h3 className="font-bold text-slate-900">Detalhes Técnicos</h3>
 
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl">
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
                       <Tag size={16} /> <span>Categoria</span>
                     </div>
                     <span className="font-bold text-slate-900 text-sm">{anuncio.nomeCategoria}</span>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl">
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
                       <Eye size={16} /> <span>Vistas</span>
                     </div>
                     <span className="font-bold text-slate-900 text-sm">{anuncio.totalVisualizacoes}</span>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl">
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
                       <Star size={16} /> <span>Relevância</span>
                     </div>
@@ -277,7 +332,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl">
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2 text-slate-500 text-sm">
                       <Clock size={16} /> <span>Expira</span>
                     </div>
@@ -291,7 +346,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                   <div className="space-y-3">
                     <button
                       onClick={() => navigate(`/anuncios/${anuncio.id}/editar`)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-orange-100 transition-all active:scale-95"
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
                     >
                       <Edit3 size={18} />
                       Editar Anúncio
@@ -299,51 +354,71 @@ export const DetalhesAnuncioPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {podeEntrarEmContato ? (
+                    {podeInteragir ? (
                       <>
-                        <button
-                          onClick={() =>
-                            navigate("/chat", {
-                              state: {
-                                destinatarioId: anuncio.usuarioId,
-                                destinatarioNome: anuncio.nomeUsuario,
-                                anuncioId: anuncio.id,
-                                anuncioTitulo: anuncio.titulo,
-                              },
-                            })
-                          }
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
-                        >
-                          <MessageCircle size={18} />
-                          Entrar em Contato
-                        </button>
+                        {podeFalarComAnunciante && (
+                          <button
+                            onClick={handleFalarComAnunciante}
+                            disabled={iniciandoChat}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                          >
+                            <MessageCircle size={18} />
+                            {iniciandoChat ? "Abrindo conversa..." : "Falar com o anunciante"}
+                          </button>
+                        )}
+
+                        {podeEnviarInteresse && (
+                          <button
+                            onClick={handleAbrirInteresse}
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                          >
+                            <Heart size={18} />
+                            Quero trocar
+                          </button>
+                        )}
 
                         {mostrarFavoritos && (
-                          <button className="w-full bg-slate-200 hover:bg-slate-300 text-slate-900 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
+                          <button className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]">
                             <Heart size={18} />
                             Salvar nos Favoritos
                           </button>
                         )}
                       </>
                     ) : (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
                         Este anúncio não está disponível para contato no momento.
                       </div>
+                    )}
+
+                    {podeAvaliarAnunciante && (
+                      <button
+                        onClick={() => {
+                          if (!exigirLogin()) return;
+                          setModalAvaliacaoAberto(true);
+                        }}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                      >
+                        <Star size={18} />
+                        Avaliar anunciante
+                      </button>
                     )}
                   </div>
                 )}
               </div>
 
-              <div className="bg-blue-50 rounded-[32px] p-6 border border-blue-100">
+              <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 sm:p-6">
                 <h4 className="text-blue-800 font-bold text-sm mb-2 flex items-center gap-2">
-                  💡 Dica ReUseHub
+                  <Info size={16} />
+                  Dica ReUseHub
                 </h4>
                 <p className="text-blue-700/70 text-xs leading-relaxed">
-                  {isEDono
-                    ? "Mantenha seu anúncio atualizado para garantir maior relevância nas buscas!"
-                    : anuncioEstaAtivo
-                      ? "Envie uma mensagem para o anunciante e negocie os termos da troca!"
-                      : "Este anúncio não está disponível para novas interações no momento."}
+                    {isEDono
+                      ? "Mantenha seu anúncio atualizado para garantir maior relevância nas buscas!"
+                      : anuncioEstaAtivo
+                        ? anuncio.tipo === "DOACAO"
+                          ? "Fale com o anunciante para combinar os detalhes da doação."
+                          : "Envie uma proposta de troca; o chat será aberto quando a oferta for aceita."
+                        : "Este anúncio não está disponível para novas interações no momento."}
                 </p>
               </div>
             </div>
@@ -352,6 +427,20 @@ export const DetalhesAnuncioPage: React.FC = () => {
       </main>
 
       <Footer />
+
+      <InteresseModal
+        open={modalInteresseAberto}
+        onClose={() => setModalInteresseAberto(false)}
+        anuncio={anuncio}
+      />
+
+      <AvaliacaoModal
+        open={modalAvaliacaoAberto}
+        onClose={() => setModalAvaliacaoAberto(false)}
+        anuncioId={anuncio.id}
+        avaliadoId={anuncio.usuarioId}
+        avaliadoNome={anuncio.nomeUsuario}
+      />
     </div>
   );
 };

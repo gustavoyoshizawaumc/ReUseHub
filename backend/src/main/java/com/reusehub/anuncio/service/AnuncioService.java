@@ -13,6 +13,7 @@ import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.moderacao.service.ModeracaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ public class AnuncioService {
     private final ViaCepService viaCepService;
     private final StorageService storageService;
     private final ImagemAnuncioRepository imagemAnuncioRepository;
+    private final ModeracaoService moderacaoService;
 
     public AnuncioRespostaDTO criarAnuncioComEndereco(
             String emailUsuario,
@@ -149,22 +151,24 @@ public class AnuncioService {
     }
 
     public AnuncioRespostaDTO aprovarAnuncio(UUID id, String emailModerador) {
-        validarModerador(emailModerador);
+        Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarEstadoPendenteParaModerar(anuncio, "aprovados");
 
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
         Anuncio atualizado = anuncioRepository.save(anuncio);
+        moderacaoService.registrar(moderador, "ANUNCIO_APROVADO", "ANUNCIO", id, "Aprovado na fila de moderacao.");
         return mapearParaRespostaDTO(atualizado);
     }
 
     public AnuncioRespostaDTO reprovarAnuncio(UUID id, String emailModerador) {
-        validarModerador(emailModerador);
+        Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarEstadoPendenteParaModerar(anuncio, "reprovados");
 
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
         Anuncio atualizado = anuncioRepository.save(anuncio);
+        moderacaoService.registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", id, "Reprovado na fila de moderacao.");
         return mapearParaRespostaDTO(atualizado);
     }
 
@@ -224,13 +228,14 @@ public class AnuncioService {
         }
     }
 
-    private void validarModerador(String emailModerador) {
+    private Usuario validarModerador(String emailModerador) {
         Usuario moderador = buscarUsuarioPorEmail(emailModerador);
         String perfil = moderador.getPerfil().name();
 
         if (!"MODERADOR".equals(perfil) && !"ADMIN".equals(perfil)) {
             throw new AcessoNegadoException("Acesso negado: Você não tem permissão de moderação.");
         }
+        return moderador;
     }
 
     private void validarAcessoAnuncioInativo(Anuncio anuncio, String emailUsuario) {
@@ -254,7 +259,9 @@ public class AnuncioService {
     }
 
     private void validarRestricaoStatusDeUsuario(Anuncio.StatusAnuncio novoStatus) {
-        if (novoStatus == Anuncio.StatusAnuncio.ATIVO || novoStatus == Anuncio.StatusAnuncio.REPROVADO) {
+        if (novoStatus == Anuncio.StatusAnuncio.ATIVO
+                || novoStatus == Anuncio.StatusAnuncio.REPROVADO
+                || novoStatus == Anuncio.StatusAnuncio.SUSPENSO) {
             throw new RegraNegocioException("Esse status só pode ser alterado pela moderação.");
         }
     }

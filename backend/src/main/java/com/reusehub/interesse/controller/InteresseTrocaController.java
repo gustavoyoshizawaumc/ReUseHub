@@ -59,4 +59,22 @@ public class InteresseTrocaController {
         String email = authentication.getName();
         return ResponseEntity.ok(interesseTrocaService.rejeitarInteresse(id, email));
     }
+
+    @PatchMapping("/{id}/marcar-entregue")
+    public ResponseEntity<InteresseRespostaDTO> marcarEntregue(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(interesseTrocaService.marcarComoEntregue(id, email));
+    }
+
+    @PatchMapping("/{id}/confirmar-recebimento")
+    public ResponseEntity<InteresseRespostaDTO> confirmarRecebimento(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(interesseTrocaService.confirmarRecebimento(id, email));
+    }
 }

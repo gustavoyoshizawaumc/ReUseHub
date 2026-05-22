@@ -4,8 +4,21 @@ import {
   enviarMensagem,
   marcarComoLido,
 } from '../../services/chatService';
-import type { Conversa, Mensagem } from '../../types/chat.types';
-import { ArrowLeft, Send } from 'lucide-react';
+import type { Conversa, ConversaDetalhe, Mensagem } from '../../types/chat.types';
+import { ArrowLeft, CheckCircle2, ImageIcon, PackageCheck, Send, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  confirmarRecebimentoInteresse,
+  marcarInteresseComoEntregue,
+} from '../../services/interesseService';
+import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
+
+const BASE_URL = 'http://localhost:8080';
+
+const montarUrlImagem = (url?: string | null) => {
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
 
 interface JanelaChatProps {
   conversaAtiva: Conversa | null;
@@ -13,10 +26,14 @@ interface JanelaChatProps {
 }
 
 const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
+  const navigate = useNavigate();
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [novaMensagem, setNovaMensagem] = useState('');
+  const [conversaDetalhe, setConversaDetalhe] = useState<ConversaDetalhe | null>(null);
   const [carregandoMensagens, setCarregandoMensagens] = useState(false);
   const [enviandoMensagem, setEnviandoMensagem] = useState(false);
+  const [processandoFechamento, setProcessandoFechamento] = useState(false);
+  const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const usuarioLogado = useMemo(() => {
@@ -39,12 +56,14 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   const carregarMensagens = async () => {
     if (!conversaAtiva?.id) {
       setMensagens([]);
+      setConversaDetalhe(null);
       return;
     }
 
     setCarregandoMensagens(true);
     try {
       const conversaDetalhe = await obterConversaPorId(conversaAtiva.id);
+      setConversaDetalhe(conversaDetalhe);
       setMensagens(conversaDetalhe?.mensagens ?? []);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
@@ -69,7 +88,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   }, [conversaAtiva?.id]);
 
   const handleEnviarMensagem = async () => {
-    if (!conversaAtiva?.id || !novaMensagem.trim()) return;
+    if (!conversaAtiva?.id || !novaMensagem.trim() || conversaInfo.chatFechado) return;
 
     setEnviandoMensagem(true);
     try {
@@ -83,6 +102,34 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
     }
   };
 
+  const handleMarcarEntregue = async () => {
+    if (!conversaInfo.interesseId) return;
+
+    try {
+      setProcessandoFechamento(true);
+      await marcarInteresseComoEntregue(conversaInfo.interesseId);
+      await carregarMensagens();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erro ao marcar como entregue');
+    } finally {
+      setProcessandoFechamento(false);
+    }
+  };
+
+  const handleConfirmarRecebimento = async () => {
+    if (!conversaInfo.interesseId) return;
+
+    try {
+      setProcessandoFechamento(true);
+      await confirmarRecebimentoInteresse(conversaInfo.interesseId);
+      await carregarMensagens();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erro ao confirmar recebimento');
+    } finally {
+      setProcessandoFechamento(false);
+    }
+  };
+
   if (!conversaAtiva) {
     return (
       <div className="hidden flex-1 md:flex md:flex-col md:items-center md:justify-center md:bg-zinc-50 md:text-zinc-500">
@@ -92,6 +139,21 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   }
 
   const nomeExibicaoHeader = conversaAtiva.nomeOutroUsuario || 'Usuário';
+  const conversaInfo = conversaDetalhe ?? conversaAtiva;
+  const avatarUrl = montarUrlImagem(conversaInfo.avatarOutroUsuario);
+  const imagemAnuncio = montarUrlImagem(conversaInfo.imagemAnuncio);
+  const imagemAnuncioOferecido = montarUrlImagem(conversaInfo.imagemAnuncioOferecido);
+  const statusFechamento = conversaInfo.usuarioJaAvaliou
+    ? 'Você já avaliou esta negociação'
+    : conversaInfo.chatFechado
+      ? 'Chat fechado após avaliação'
+      : conversaInfo.statusAnuncio === 'RESERVADO'
+        ? 'Aguardando confirmação de recebimento'
+        : conversaInfo.statusAnuncio === 'CONCLUIDO'
+          ? 'Negócio concluído'
+          : conversaInfo.interesseId
+            ? 'Negociação aceita'
+            : null;
 
   return (
     <div className={`flex h-full min-w-0 flex-1 flex-col bg-zinc-50 ${
@@ -108,31 +170,155 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
             <ArrowLeft size={18} />
           </button>
 
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-500">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.7}
-                d="M15 19a4 4 0 0 0-8 0m4-8a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+          <button
+            type="button"
+            onClick={() => navigate(`/perfil/${conversaAtiva.outroUsuarioId}`)}
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 text-zinc-500 hover:border-blue-200 hover:text-blue-600 transition-colors"
+            aria-label={`Abrir perfil de ${nomeExibicaoHeader}`}
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={nomeExibicaoHeader}
+                className="h-full w-full object-cover"
               />
-            </svg>
-          </div>
+            ) : (
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.7}
+                  d="M15 19a4 4 0 0 0-8 0m4-8a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                />
+              </svg>
+            )}
+          </button>
 
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-zinc-900 sm:text-lg">
+            <button
+              type="button"
+              onClick={() => navigate(`/perfil/${conversaAtiva.outroUsuarioId}`)}
+              className="block max-w-full truncate text-base font-semibold text-zinc-900 hover:text-blue-600 sm:text-lg transition-colors"
+            >
               {nomeExibicaoHeader}
-            </h2>
+            </button>
             <p className="mt-0.5 truncate text-xs text-zinc-500 sm:text-sm font-medium">
-              {conversaAtiva.tituloAnuncio || 'Anúncio'}
+              {conversaInfo.tituloAnuncioOferecido
+                ? 'Negociação de troca'
+                : conversaInfo.tituloAnuncio || 'Anúncio'}
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="border-b border-zinc-200 bg-white px-4 py-3 sm:px-6">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white text-zinc-300">
+              {imagemAnuncio ? (
+                <img src={imagemAnuncio} alt={conversaInfo.tituloAnuncio} className="h-full w-full object-cover" />
+              ) : (
+                <ImageIcon size={20} />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-blue-600">Anúncio</p>
+              <p className="truncate text-sm font-semibold text-zinc-900">{conversaInfo.tituloAnuncio}</p>
+            </div>
+          </div>
+
+          {conversaInfo.tituloAnuncioOferecido && (
+            <div className="flex items-center gap-3 rounded-lg border border-orange-100 bg-orange-50 p-3">
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white text-orange-300">
+                {imagemAnuncioOferecido ? (
+                  <img
+                    src={imagemAnuncioOferecido}
+                    alt={conversaInfo.tituloAnuncioOferecido}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <ImageIcon size={20} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-orange-600">Oferta</p>
+                <p className="truncate text-sm font-semibold text-zinc-900">
+                  {conversaInfo.tituloAnuncioOferecido}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {conversaInfo.interesseId && (
+          <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
+                  Fechamento
+                </p>
+                <p className="mt-1 text-sm font-medium text-blue-950">
+                  {statusFechamento}
+                </p>
+                {conversaInfo.entreguePeloDonoEm && !conversaInfo.recebimentoConfirmadoEm && (
+                  <p className="mt-1 text-xs text-blue-700/70">
+                    Item marcado como entregue. Falta o interessado confirmar.
+                  </p>
+                )}
+                {conversaInfo.usuarioJaAvaliou && (
+                  <p className="mt-1 text-xs text-blue-700/70">
+                    Obrigado pela avaliação. O chat desta negociação foi fechado.
+                  </p>
+                )}
+                {!conversaInfo.usuarioJaAvaliou && conversaInfo.recebimentoConfirmadoEm && (
+                  <p className="mt-1 text-xs text-blue-700/70">
+                    Avaliações liberadas para os dois participantes.
+                  </p>
+                )}
+              </div>
+
+              {conversaInfo.podeMarcarEntregue && (
+                <button
+                  type="button"
+                  onClick={handleMarcarEntregue}
+                  disabled={processandoFechamento}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-60 sm:w-auto"
+                >
+                  <PackageCheck size={16} />
+                  {processandoFechamento ? 'Salvando...' : 'Marcar como entregue'}
+                </button>
+              )}
+
+              {conversaInfo.podeConfirmarRecebimento && (
+                <button
+                  type="button"
+                  onClick={handleConfirmarRecebimento}
+                  disabled={processandoFechamento}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60 sm:w-auto"
+                >
+                  <CheckCircle2 size={16} />
+                  {processandoFechamento ? 'Salvando...' : 'Confirmar recebimento'}
+                </button>
+              )}
+
+              {conversaInfo.podeAvaliarOutroUsuario && !conversaInfo.usuarioJaAvaliou && (
+                <button
+                  type="button"
+                  onClick={() => setModalAvaliacaoAberto(true)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-600 sm:w-auto"
+                >
+                  <Star size={16} />
+                  Avaliar usuário
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto bg-zinc-50 px-3 py-4 sm:px-5 lg:px-6">
@@ -142,10 +328,12 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-blue-600" />
             </div>
           ) : mensagens.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-300 bg-white px-6 text-center text-zinc-500">
-              <p className="text-sm font-medium text-zinc-700">Nenhuma mensagem ainda.</p>
+            <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-white px-6 text-center text-zinc-500">
+              <p className="text-sm font-medium text-zinc-700">Nenhuma mensagem registrada.</p>
               <p className="mt-1 text-xs text-zinc-500">
-                Inicie a conversa enviando a primeira mensagem.
+                {conversaInfo.chatFechado
+                  ? 'Esta negociação foi encerrada sem mensagens no histórico.'
+                  : 'Inicie a conversa enviando a primeira mensagem.'}
               </p>
             </div>
           ) : (
@@ -161,7 +349,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
                   className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[78%] lg:max-w-[68%] shadow-sm ${
+                    className={`max-w-[85%] rounded-lg px-4 py-3 sm:max-w-[78%] lg:max-w-[68%] shadow-sm ${
                       isMe
                         ? 'rounded-br-md bg-blue-600 text-white'
                         : 'rounded-bl-md border border-zinc-200 bg-white text-zinc-900'
@@ -194,7 +382,12 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
       {/* Input flutuante moderno */}
       <div className="border-t border-zinc-200 bg-white px-4 py-4 sm:px-5 lg:px-6">
         <div className="mx-auto w-full max-w-4xl">
-          <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-1.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all sm:gap-3 sm:rounded-2xl">
+          {conversaInfo.chatFechado ? (
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm font-medium text-zinc-500">
+              Chat fechado após a avaliação desta negociação.
+            </div>
+          ) : (
+          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-1.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all sm:gap-3 sm:rounded-lg">
             <input
               type="text"
               value={novaMensagem}
@@ -227,8 +420,20 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
               )}
             </button>
           </div>
+          )}
         </div>
       </div>
+
+      {conversaInfo.podeAvaliarOutroUsuario && !conversaInfo.usuarioJaAvaliou && conversaInfo.anuncioId && (
+        <AvaliacaoModal
+          open={modalAvaliacaoAberto}
+          onClose={() => setModalAvaliacaoAberto(false)}
+          anuncioId={conversaInfo.anuncioId}
+          avaliadoId={conversaAtiva.outroUsuarioId}
+          avaliadoNome={nomeExibicaoHeader}
+          onSuccess={carregarMensagens}
+        />
+      )}
     </div>
   );
 };

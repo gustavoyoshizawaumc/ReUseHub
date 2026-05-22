@@ -110,8 +110,8 @@ export const EditProfilePage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmciPg==')] py-12 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-[32px] shadow-xl w-full max-w-2xl p-8 md:p-12 border border-slate-100">
+      <main className="flex-grow bg-[#f1f5f9] py-12 px-4 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-sm w-full max-w-2xl p-8 md:p-12 border border-slate-100">
           <button
             onClick={() => navigate("/profile")}
             className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-8 transition-colors group"
@@ -192,7 +192,7 @@ export const EditProfilePage: React.FC = () => {
                   }
                   required
                   placeholder="Seu nome completo"
-                  className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 bg-slate-50/50 text-slate-800 outline-none transition-all text-[16px]"
+                  className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-50 focus:border-blue-500 bg-slate-50/50 text-slate-800 outline-none transition-all text-[16px]"
                 />
               </div>
             </div>
@@ -212,7 +212,7 @@ export const EditProfilePage: React.FC = () => {
                     setFormData((p) => ({ ...p, phone: e.target.value }))
                   }
                   placeholder="(11) 98765-4321"
-                  className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 bg-slate-50/50 text-slate-800 outline-none transition-all text-[16px]"
+                  className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-50 focus:border-blue-500 bg-slate-50/50 text-slate-800 outline-none transition-all text-[16px]"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@ export const EditProfilePage: React.FC = () => {
                   maxLength={500}
                   rows={4}
                   placeholder="Conte um pouco sobre você..."
-                  className="w-full pl-12 pr-4 py-4 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 bg-slate-50/50 text-slate-800 outline-none transition-all text-[16px] resize-none leading-relaxed"
+                  className="w-full pl-12 pr-4 py-4 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-50 focus:border-blue-500 bg-slate-50/50 text-slate-800 outline-none transition-all text-[16px] resize-none leading-relaxed"
                 />
               </div>
             </div>
@@ -248,14 +248,14 @@ export const EditProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate("/profile")}
-                className="flex-1 py-4 border-2 border-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98]"
+                className="flex-1 py-4 border-2 border-slate-100 text-slate-500 font-bold rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98]"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-orange-600 text-white font-bold py-4 rounded-2xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-100 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center space-x-2 active:scale-[0.98]"
+                className="flex-1 bg-orange-600 text-white font-bold py-4 rounded-lg hover:bg-orange-700 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center space-x-2 active:scale-[0.98]"
               >
                 {loading ? <Spinner /> : "Salvar Alterações"}
               </button>

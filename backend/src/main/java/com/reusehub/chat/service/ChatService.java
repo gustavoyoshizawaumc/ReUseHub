@@ -10,9 +10,14 @@ import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
 import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.exception.AcessoNegadoException;
 import com.reusehub.anuncio.model.Anuncio;
+import com.reusehub.anuncio.model.ImagemAnuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.avaliacao.repository.AvaliacaoRepository;
+import com.reusehub.interesse.model.InteresseTroca;
+import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +39,9 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final UsuarioRepository usuarioRepository;
     private final AnuncioRepository anuncioRepository;
+    private final ImagemAnuncioRepository imagemAnuncioRepository;
+    private final InteresseTrocaRepository interesseTrocaRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
 
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
@@ -75,6 +83,19 @@ public class ChatService {
         }
     }
 
+    private String resolverAvatarUsuario(String usuarioId) {
+        if (usuarioId == null || usuarioId.isBlank()) return null;
+
+        try {
+            return usuarioRepository.findById(UUID.fromString(usuarioId))
+                    .map(Usuario::getAvatarUrl)
+                    .orElse(null);
+        } catch (IllegalArgumentException e) {
+            log.warn("Formato de ID inválido ao resolver avatar do usuário no chat: {}", usuarioId);
+            return null;
+        }
+    }
+
     private String resolverTituloAnuncio(String anuncioId) {
         if (anuncioId == null || anuncioId.isBlank()) return "Anúncio";
 
@@ -85,6 +106,186 @@ public class ChatService {
         } catch (IllegalArgumentException e) {
             log.warn("Formato de ID inválido ao resolver título do anúncio no chat: {}", anuncioId);
             return "Anúncio";
+        }
+    }
+
+    private String resolverImagemAnuncio(String anuncioId) {
+        if (anuncioId == null || anuncioId.isBlank()) return null;
+
+        try {
+            return imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(UUID.fromString(anuncioId))
+                    .stream()
+                    .findFirst()
+                    .map(ImagemAnuncio::getUrlImagem)
+                    .orElse(null);
+        } catch (IllegalArgumentException e) {
+            log.warn("Formato de ID inválido ao resolver imagem do anúncio no chat: {}", anuncioId);
+            return null;
+        }
+    }
+
+    private FechamentoNegociacao resolverFechamento(Conversa conversa, String usuarioAtualId) {
+        if (conversa.getAnuncioId() == null || conversa.getAnuncioId().isBlank()) {
+            return FechamentoNegociacao.vazio();
+        }
+
+        try {
+            UUID anuncioId = UUID.fromString(conversa.getAnuncioId());
+            Anuncio anuncio = anuncioRepository.findById(anuncioId).orElse(null);
+
+            if (anuncio == null) {
+                return FechamentoNegociacao.vazio();
+            }
+
+            String donoId = anuncio.getUsuario().getId().toString();
+            String interessadoId = donoId.equals(conversa.getRemetente())
+                    ? conversa.getDestinatario()
+                    : conversa.getRemetente();
+
+            InteresseTroca interesse = interesseTrocaRepository
+                    .findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusOrderByCriadoEmDesc(
+                            anuncioId,
+                            UUID.fromString(interessadoId),
+                            InteresseTroca.StatusInteresse.ACEITO
+                    )
+                    .orElse(null);
+
+            boolean usuarioJaAvaliou = avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(
+                    UUID.fromString(usuarioAtualId),
+                    anuncio.getId()
+            );
+            boolean chatFechado = avaliacaoRepository.existsByAnuncioId(anuncio.getId());
+
+            if (interesse == null) {
+                return new FechamentoNegociacao(
+                        null,
+                        anuncio.getStatus().name(),
+                        null,
+                        null,
+                        false,
+                        false,
+                        false,
+                        usuarioJaAvaliou,
+                        chatFechado
+                );
+            }
+
+            boolean usuarioEhDono = usuarioAtualId.equals(donoId);
+            boolean usuarioEhInteressado = usuarioAtualId.equals(interesse.getInteressado().getId().toString());
+            boolean podeMarcarEntregue = usuarioEhDono
+                    && interesse.getEntreguePeloDonoEm() == null
+                    && interesse.getRecebimentoConfirmadoEm() == null
+                    && anuncio.getStatus() == Anuncio.StatusAnuncio.ATIVO
+                    && !chatFechado;
+            boolean podeConfirmarRecebimento = usuarioEhInteressado
+                    && interesse.getEntreguePeloDonoEm() != null
+                    && interesse.getRecebimentoConfirmadoEm() == null
+                    && anuncio.getStatus() == Anuncio.StatusAnuncio.RESERVADO
+                    && !chatFechado;
+            boolean podeAvaliar = (usuarioEhDono || usuarioEhInteressado)
+                    && anuncio.getStatus() == Anuncio.StatusAnuncio.CONCLUIDO
+                    && !usuarioJaAvaliou;
+
+            return new FechamentoNegociacao(
+                    interesse.getId().toString(),
+                    anuncio.getStatus().name(),
+                    interesse.getEntreguePeloDonoEm(),
+                    interesse.getRecebimentoConfirmadoEm(),
+                    podeMarcarEntregue,
+                    podeConfirmarRecebimento,
+                    podeAvaliar,
+                    usuarioJaAvaliou,
+                    chatFechado
+            );
+        } catch (IllegalArgumentException e) {
+            log.warn("Nao foi possivel resolver o fechamento da conversa {}", conversa.getId());
+            return FechamentoNegociacao.vazio();
+        }
+    }
+
+    private void garantirInteresseAceitoParaDoacao(Anuncio anuncio, String remetenteId, String destinatarioId) {
+        if (anuncio.getTipo() != Anuncio.TipoAnuncio.DOACAO) {
+            return;
+        }
+
+        String donoId = anuncio.getUsuario().getId().toString();
+        String interessadoId = donoId.equals(remetenteId) ? destinatarioId : remetenteId;
+
+        if (interessadoId == null || interessadoId.isBlank() || interessadoId.equals(donoId)) {
+            return;
+        }
+
+        UUID interessadoUuid = UUID.fromString(interessadoId);
+        boolean jaExiste = interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
+                anuncio.getId(),
+                interessadoUuid,
+                InteresseTroca.StatusInteresse.ACEITO
+        );
+
+        if (jaExiste) {
+            return;
+        }
+
+        Usuario interessado = usuarioRepository.findById(interessadoUuid)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario", interessadoId));
+
+        interesseTrocaRepository.save(InteresseTroca.builder()
+                .anuncioDesejado(anuncio)
+                .interessado(interessado)
+                .status(InteresseTroca.StatusInteresse.ACEITO)
+                .mensagem("Conversa iniciada para doacao.")
+                .build());
+    }
+
+    private boolean chatEstaFechado(Conversa conversa) {
+        if (conversa.getAnuncioId() == null || conversa.getAnuncioId().isBlank()) {
+            return false;
+        }
+
+        try {
+            return avaliacaoRepository.existsByAnuncioId(UUID.fromString(conversa.getAnuncioId()));
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private void validarChatAberto(Conversa conversa) {
+        if (chatEstaFechado(conversa)) {
+            throw new RegraNegocioException("Este chat foi fechado apos a avaliacao da negociacao.");
+        }
+    }
+
+    private List<ConversaRespostaDTO.MensagemDto> mapearMensagens(List<Conversa> conversas) {
+        return conversas.stream()
+                .flatMap(conversa -> Optional.ofNullable(conversa.getHistoricoMensagens())
+                        .orElse(Collections.emptyList())
+                        .stream())
+                .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
+                .map(m -> new ConversaRespostaDTO.MensagemDto(
+                        m.getConteudo(),
+                        m.getRemetente(),
+                        m.getTimestamp()
+                ))
+                .toList();
+    }
+
+    private List<ConversaRespostaDTO.MensagemDto> mapearHistoricoEntreUsuarios(String usuarioA, String usuarioB) {
+        return mapearMensagens(chatRepository.findByUsuarios(usuarioA, usuarioB));
+    }
+
+    private record FechamentoNegociacao(
+            String interesseId,
+            String statusAnuncio,
+            LocalDateTime entreguePeloDonoEm,
+            LocalDateTime recebimentoConfirmadoEm,
+            boolean podeMarcarEntregue,
+            boolean podeConfirmarRecebimento,
+            boolean podeAvaliarOutroUsuario,
+            boolean usuarioJaAvaliou,
+            boolean chatFechado
+    ) {
+        static FechamentoNegociacao vazio() {
+            return new FechamentoNegociacao(null, null, null, null, false, false, false, false, false);
         }
     }
 
@@ -99,6 +300,8 @@ public class ChatService {
         if (!conversa.getRemetente().equals(remetenteId) && !conversa.getDestinatario().equals(remetenteId)) {
             throw new AcessoNegadoException("Acesso negado: você não tem permissão para enviar mensagens nesta conversa.");
         }
+
+        validarChatAberto(conversa);
 
         Conversa.Mensagem mensagem = new Conversa.Mensagem();
         mensagem.setConteudo(dto.conteudo());
@@ -124,12 +327,15 @@ public class ChatService {
         Anuncio anuncio = buscarAnuncioPorId(dto.anuncioId());
         String donoAnuncioId = anuncio.getUsuario().getId().toString();
 
-        if (!Objects.equals(dto.destinatarioId(), donoAnuncioId)) {
-            throw new RegraNegocioException("O destinatário informado não corresponde ao dono do anúncio.");
+        if (remetenteId.equals(dto.destinatarioId())) {
+            throw new RegraNegocioException("Você não pode iniciar uma conversa consigo mesmo.");
         }
 
-        if (remetenteId.equals(donoAnuncioId)) {
-            throw new RegraNegocioException("Você não pode iniciar uma conversa no seu próprio anúncio.");
+        boolean conversaEnvolveDono = Objects.equals(remetenteId, donoAnuncioId)
+                || Objects.equals(dto.destinatarioId(), donoAnuncioId);
+
+        if (!conversaEnvolveDono) {
+            throw new RegraNegocioException("A conversa precisa envolver o dono do anúncio.");
         }
 
         if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
@@ -137,7 +343,7 @@ public class ChatService {
         }
 
         List<Conversa> conversasExistentes = chatRepository
-                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, donoAnuncioId);
+                .findByAnuncioIdAndUsuarios(dto.anuncioId(), remetenteId, dto.destinatarioId());
 
         Conversa conversa = conversasExistentes.stream()
                 .sorted(java.util.Comparator.comparing(Conversa::getDataCriacao))
@@ -146,7 +352,7 @@ public class ChatService {
                     Conversa novaConversa = Conversa.builder()
                             .anuncioId(dto.anuncioId())
                             .remetente(remetenteId)
-                            .destinatario(donoAnuncioId)
+                            .destinatario(dto.destinatarioId())
                             .historicoMensagens(new java.util.ArrayList<>())
                             .dataCriacao(LocalDateTime.now())
                             .lido(false)
@@ -155,24 +361,51 @@ public class ChatService {
                     return chatRepository.save(novaConversa);
                 });
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
-                .orElse(Collections.emptyList())
-                .stream()
-                .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
-                .map(m -> new ConversaRespostaDTO.MensagemDto(
-                        m.getConteudo(),
-                        m.getRemetente(),
-                        m.getTimestamp()
-                ))
-                .toList();
+        garantirInteresseAceitoParaDoacao(anuncio, remetenteId, dto.destinatarioId());
+
+        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearHistoricoEntreUsuarios(remetenteId, dto.destinatarioId());
+
+        FechamentoNegociacao fechamento = resolverFechamento(conversa, remetenteId);
 
         return new ConversaRespostaDTO(
                 conversa.getId(),
-                donoAnuncioId,
-                anuncio.getUsuario().getName(),
+                dto.destinatarioId(),
+                resolverNomeUsuario(dto.destinatarioId()),
+                resolverAvatarUsuario(dto.destinatarioId()),
+                conversa.getAnuncioId(),
                 anuncio.getTitulo(),
+                resolverImagemAnuncio(conversa.getAnuncioId()),
+                conversa.getAnuncioOferecidoId(),
+                conversa.getAnuncioOferecidoId() != null ? resolverTituloAnuncio(conversa.getAnuncioOferecidoId()) : null,
+                conversa.getAnuncioOferecidoId() != null ? resolverImagemAnuncio(conversa.getAnuncioOferecidoId()) : null,
+                fechamento.interesseId(),
+                fechamento.statusAnuncio(),
+                fechamento.entreguePeloDonoEm(),
+                fechamento.recebimentoConfirmadoEm(),
+                fechamento.podeMarcarEntregue(),
+                fechamento.podeConfirmarRecebimento(),
+                fechamento.podeAvaliarOutroUsuario(),
+                fechamento.usuarioJaAvaliou(),
+                fechamento.chatFechado(),
                 mensagens
         );
+    }
+
+    @Transactional
+    public ConversaRespostaDTO iniciarOuRecuperarConversaComOferta(
+            String emailRemetente,
+            IniciarConversaDTO dto,
+            String anuncioOferecidoId
+    ) {
+        ConversaRespostaDTO conversaResposta = iniciarOuRecuperarConversa(emailRemetente, dto);
+
+        Conversa conversa = chatRepository.findById(conversaResposta.id())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaResposta.id()));
+
+        conversa.setAnuncioOferecidoId(anuncioOferecidoId);
+        chatRepository.save(conversa);
+
+        return recuperarConversaPorId(conversa.getId(), emailRemetente);
     }
 
     @Transactional(readOnly = true)
@@ -184,24 +417,32 @@ public class ChatService {
                 .or(() -> chatRepository.findByRemetenteAndDestinatario(destinatarioId, remetenteId))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Histórico de conversa", remetenteId + " e " + destinatarioId));
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
-                .orElse(Collections.emptyList())
-                .stream()
-                .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
-                .map(m -> new ConversaRespostaDTO.MensagemDto(
-                        m.getConteudo(),
-                        m.getRemetente(),
-                        m.getTimestamp()
-                ))
-                .toList();
+        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearHistoricoEntreUsuarios(remetenteId, destinatarioId);
 
         log.debug("Histórico unificado recuperado para conversa entre {} e {}", remetenteId, destinatarioId);
+
+        FechamentoNegociacao fechamento = resolverFechamento(conversa, remetenteId);
 
         return new ConversaRespostaDTO(
                 conversa.getId(),
                 destinatarioId,
                 resolverNomeUsuario(destinatarioId),
+                resolverAvatarUsuario(destinatarioId),
+                conversa.getAnuncioId(),
                 resolverTituloAnuncio(conversa.getAnuncioId()),
+                resolverImagemAnuncio(conversa.getAnuncioId()),
+                conversa.getAnuncioOferecidoId(),
+                conversa.getAnuncioOferecidoId() != null ? resolverTituloAnuncio(conversa.getAnuncioOferecidoId()) : null,
+                conversa.getAnuncioOferecidoId() != null ? resolverImagemAnuncio(conversa.getAnuncioOferecidoId()) : null,
+                fechamento.interesseId(),
+                fechamento.statusAnuncio(),
+                fechamento.entreguePeloDonoEm(),
+                fechamento.recebimentoConfirmadoEm(),
+                fechamento.podeMarcarEntregue(),
+                fechamento.podeConfirmarRecebimento(),
+                fechamento.podeAvaliarOutroUsuario(),
+                fechamento.usuarioJaAvaliou(),
+                fechamento.chatFechado(),
                 mensagens
         );
     }
@@ -218,26 +459,34 @@ public class ChatService {
             throw new AcessoNegadoException("Acesso negado: você não faz parte desta conversa.");
         }
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = Optional.ofNullable(conversa.getHistoricoMensagens())
-                .orElse(Collections.emptyList())
-                .stream()
-                .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
-                .map(m -> new ConversaRespostaDTO.MensagemDto(
-                        m.getConteudo(),
-                        m.getRemetente(),
-                        m.getTimestamp()
-                ))
-                .toList();
-
         String outroUsuarioId = conversa.getRemetente().equals(usuarioId)
                 ? conversa.getDestinatario()
                 : conversa.getRemetente();
+
+        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearHistoricoEntreUsuarios(usuarioId, outroUsuarioId);
+
+        FechamentoNegociacao fechamento = resolverFechamento(conversa, usuarioId);
 
         return new ConversaRespostaDTO(
                 conversa.getId(),
                 outroUsuarioId,
                 resolverNomeUsuario(outroUsuarioId),
+                resolverAvatarUsuario(outroUsuarioId),
+                conversa.getAnuncioId(),
                 resolverTituloAnuncio(conversa.getAnuncioId()),
+                resolverImagemAnuncio(conversa.getAnuncioId()),
+                conversa.getAnuncioOferecidoId(),
+                conversa.getAnuncioOferecidoId() != null ? resolverTituloAnuncio(conversa.getAnuncioOferecidoId()) : null,
+                conversa.getAnuncioOferecidoId() != null ? resolverImagemAnuncio(conversa.getAnuncioOferecidoId()) : null,
+                fechamento.interesseId(),
+                fechamento.statusAnuncio(),
+                fechamento.entreguePeloDonoEm(),
+                fechamento.recebimentoConfirmadoEm(),
+                fechamento.podeMarcarEntregue(),
+                fechamento.podeConfirmarRecebimento(),
+                fechamento.podeAvaliarOutroUsuario(),
+                fechamento.usuarioJaAvaliou(),
+                fechamento.chatFechado(),
                 mensagens
         );
     }
@@ -253,7 +502,15 @@ public class ChatService {
                 .map(c -> {
                     String outroUsuarioId = c.getRemetente().equals(usuarioId) ? c.getDestinatario() : c.getRemetente();
                     String nomeOutroUsuario = resolverNomeUsuario(outroUsuarioId);
+                    String avatarOutroUsuario = resolverAvatarUsuario(outroUsuarioId);
                     String tituloAnuncio = resolverTituloAnuncio(c.getAnuncioId());
+                    String imagemAnuncio = resolverImagemAnuncio(c.getAnuncioId());
+                    String tituloAnuncioOferecido = c.getAnuncioOferecidoId() != null
+                            ? resolverTituloAnuncio(c.getAnuncioOferecidoId())
+                            : null;
+                    String imagemAnuncioOferecido = c.getAnuncioOferecidoId() != null
+                            ? resolverImagemAnuncio(c.getAnuncioOferecidoId())
+                            : null;
 
                     boolean temMensagens = c.getHistoricoMensagens() != null && !c.getHistoricoMensagens().isEmpty();
 
@@ -266,12 +523,28 @@ public class ChatService {
                             : c.getDataCriacao();
 
                     long naoLidas = c.getDestinatario().equals(usuarioId) && !c.isLido() ? 1 : 0;
+                    FechamentoNegociacao fechamento = resolverFechamento(c, usuarioId);
 
                     return new ListaConversasDTO.ConversaResumo(
                             c.getId(),
                             outroUsuarioId,
                             nomeOutroUsuario,
+                            avatarOutroUsuario,
+                            c.getAnuncioId(),
                             tituloAnuncio,
+                            imagemAnuncio,
+                            c.getAnuncioOferecidoId(),
+                            tituloAnuncioOferecido,
+                            imagemAnuncioOferecido,
+                            fechamento.interesseId(),
+                            fechamento.statusAnuncio(),
+                            fechamento.entreguePeloDonoEm(),
+                            fechamento.recebimentoConfirmadoEm(),
+                            fechamento.podeMarcarEntregue(),
+                            fechamento.podeConfirmarRecebimento(),
+                            fechamento.podeAvaliarOutroUsuario(),
+                            fechamento.usuarioJaAvaliou(),
+                            fechamento.chatFechado(),
                             ultimaMensagem,
                             ultimaAtualizacao,
                             naoLidas
@@ -292,12 +565,14 @@ public class ChatService {
         Conversa conversa = chatRepository.findById(conversaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
 
-        if (!conversa.getDestinatario().equals(usuarioId)) {
-            throw new AcessoNegadoException("Acesso negado: você não tem permissão para marcar esta conversa como lida.");
+        if (!conversa.getRemetente().equals(usuarioId) && !conversa.getDestinatario().equals(usuarioId)) {
+            throw new AcessoNegadoException("Acesso negado: você não faz parte desta conversa.");
         }
 
-        conversa.setLido(true);
-        chatRepository.save(conversa);
+        if (conversa.getDestinatario().equals(usuarioId)) {
+            conversa.setLido(true);
+            chatRepository.save(conversa);
+        }
 
         log.info("Conversa {} marcada como lida por {}", conversaId, usuarioId);
     }

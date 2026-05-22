@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/Home/HomePage";
 import { RegisterPage } from "./pages/Register/RegisterPage";
@@ -10,7 +9,9 @@ import { DetalhesAnuncioPage } from "./pages/Anuncios/DetalhesAnuncioPage";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { EditProfilePage } from "./pages/Profile/EditProfilePage";
 import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
+import { PublicProfilePage } from "./pages/Profile/PublicProfilePage";
 import { ChatPage } from "./pages/Chat/ChatPage";
+import { InteressesRecebidosPage } from "./pages/Interesse/InteressesRecebidosPage";
 import { PrivateRoute } from "./components/PrivateRoute";
 import { ModeracaoPage } from './pages/Moderacao/ModeracaoPage';
 import { ModeratorRoute } from './components/ModeratorRoute';
@@ -88,6 +89,26 @@ function App() {
             </PrivateRoute>
           }
         />
+
+        <Route
+          path="/interesses"
+          element={
+            <PrivateRoute>
+              <InteressesRecebidosPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/interesses/recebidos"
+          element={
+            <PrivateRoute>
+              <InteressesRecebidosPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route path="/perfil/:id" element={<PublicProfilePage />} />
         <Route
           path="/moderacao"
           element={
@@ -112,7 +133,7 @@ function App() {
                 </p>
                 <button
                   onClick={() => window.history.back()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100 active:scale-95"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-sm active:scale-95"
                 >
                   Voltar para onde eu estava
                 </button>

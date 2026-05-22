@@ -124,8 +124,8 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmciPg==')] flex items-center justify-center p-4 sm:p-8">
-      <div className="bg-white rounded-[32px] shadow-xl w-full max-w-lg p-8 md:p-10 border border-slate-100 my-8">
+    <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4 sm:p-8">
+      <div className="bg-white rounded-lg shadow-sm w-full max-w-lg p-8 md:p-10 border border-slate-100 my-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight font-plus-jakarta-sans m-0">
@@ -315,7 +315,7 @@ export const RegisterPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-orange-600 text-white font-bold py-3 rounded-full text-base shadow-lg shadow-orange-100 hover:bg-orange-700 active:scale-[0.98] transition-all duration-200 mt-2"
+            className="w-full bg-orange-600 text-white font-bold py-3 rounded-full text-base shadow-sm hover:bg-orange-700 active:scale-[0.98] transition-all duration-200 mt-2"
           >
             {isLoading ? <Spinner /> : "Criar Conta"}
           </button>

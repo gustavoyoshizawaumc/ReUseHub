@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export const HeroBanner: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
@@ -35,8 +36,8 @@ export const HeroBanner: React.FC = () => {
   }, [slides.length]);
 
   return (
-    <section className="max-w-[1200px] mx-auto px-4 py-4 sm:py-6">
-      <div className="group relative w-full h-[220px] sm:h-[380px] rounded-[20px] sm:rounded-[32px] overflow-hidden shadow-xl bg-slate-100">
+    <section className="max-w-[1200px] mx-auto px-3 py-4 sm:px-4 sm:py-6">
+      <div className="group relative w-full h-[52vw] min-h-[170px] max-h-[220px] sm:h-[380px] sm:max-h-none rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
         {slides.map((slide, index) => (
           <div
             key={slide.id}
@@ -78,21 +79,9 @@ export const HeroBanner: React.FC = () => {
               activeSlide === 0 ? slides.length - 1 : activeSlide - 1,
             )
           }
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/10 hover:bg-black/30 text-white flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 hidden sm:flex"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-black/15 text-white opacity-0 backdrop-blur-sm transition-all hover:bg-black/30 group-hover:opacity-100 sm:flex"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M15 19l-7-7 7-7"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ChevronLeft size={22} strokeWidth={2.4} />
         </button>
         <button
           onClick={() =>
@@ -100,21 +89,9 @@ export const HeroBanner: React.FC = () => {
               activeSlide === slides.length - 1 ? 0 : activeSlide + 1,
             )
           }
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/10 hover:bg-black/30 text-white flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 hidden sm:flex"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-black/15 text-white opacity-0 backdrop-blur-sm transition-all hover:bg-black/30 group-hover:opacity-100 sm:flex"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M9 5l7 7-7 7"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ChevronRight size={22} strokeWidth={2.4} />
         </button>
       </div>
     </section>
