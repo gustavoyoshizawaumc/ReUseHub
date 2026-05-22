@@ -49,7 +49,7 @@ export const ProfilePage: React.FC = () => {
 
       <main className="flex-grow py-12 px-4">
         <div className="max-w-[1000px] mx-auto text-left">
-          <div className="bg-white rounded-[32px] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
             {/* Banner Decorativo */}
             <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-700 w-full" />
 
@@ -81,20 +81,20 @@ export const ProfilePage: React.FC = () => {
                       {usuario.name}
                     </h2>
                     <div className="flex items-center justify-center gap-2 mt-2 text-orange-600 bg-orange-50 px-4 py-1.5 rounded-full font-bold text-sm">
-                      Reputação: {usuario.reputationScore.toFixed(1)}
+                      Reputação: {(usuario.reputationScore ?? 0).toFixed(1)}
                     </div>
                   </div>
 
                   <div className="mt-10 w-full space-y-3">
                     <button
                       onClick={() => navigate("/profile/edit")}
-                      className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-blue-600 text-white font-bold py-4 rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                     >
                       <Edit3 size={18} /> Editar Perfil
                     </button>
                     <button
                       onClick={() => navigate("/profile/delete")}
-                      className="w-full bg-red-50 text-red-600 font-bold py-4 rounded-2xl hover:bg-red-100 transition-all border border-red-100 flex items-center justify-center gap-2"
+                      className="w-full bg-red-50 text-red-600 font-bold py-4 rounded-lg hover:bg-red-100 transition-all border border-red-100 flex items-center justify-center gap-2"
                     >
                       <Trash2 size={18} /> Excluir Conta
                     </button>
@@ -152,14 +152,14 @@ export const ProfilePage: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-lg text-slate-900 font-semibold">
-                        {new Date(usuario.createdAt).toLocaleDateString(
+                        {new Date(usuario.createdAt ?? new Date()).toLocaleDateString(
                           "pt-BR",
                           { month: "long", year: "numeric" },
                         )}
                       </p>
                     </div>
 
-                    <div className="sm:col-span-2 space-y-1 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <div className="sm:col-span-2 space-y-1 bg-slate-50 p-6 rounded-lg border border-slate-100">
                       <div className="flex items-center gap-2 text-slate-400 mb-2">
                         <FileText size={14} />
                         <span className="text-[10px] font-extrabold uppercase tracking-widest">

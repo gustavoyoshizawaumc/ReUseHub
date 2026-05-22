@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import {
-  Filter,
-  RotateCcw,
-  ChevronRight,
-  Layers,
-  HandHelping,
   ArrowLeftRight,
-  PlusCircle,
-  MapPin,
+  ChevronRight,
+  Filter,
+  HandHelping,
+  Layers,
   Loader2,
+  MapPin,
+  PlusCircle,
+  RotateCcw,
   SortAsc,
 } from "lucide-react";
 import type { BuscaFiltro, TipoOrdenacao } from "../../types/busca.types";
@@ -20,44 +20,41 @@ interface FiltrosAnunciosProps {
 }
 
 const CATEGORIAS = [
-  { id: 1, nome: "Imóveis" },
+  { id: 1, nome: "Imoveis" },
   { id: 2, nome: "Autos" },
-  { id: 3, nome: "Autopeças" },
+  { id: 3, nome: "Autopecas" },
   { id: 4, nome: "Celulares e Telefonia" },
-  { id: 5, nome: "Casa, Decoração e Utensílios" },
+  { id: 5, nome: "Casa, Decoracao e Utensilios" },
   { id: 6, nome: "Esportes e Fitness" },
-  { id: 7, nome: "Serviços" },
+  { id: 7, nome: "Servicos" },
   { id: 8, nome: "Moda e Beleza" },
   { id: 9, nome: "Artigos Infantis" },
-  { id: 10, nome: "Animais de Estimação" },
-  { id: 11, nome: "Música e Hobbies" },
-  { id: 12, nome: "Agro e Indústria" },
+  { id: 10, nome: "Animais de Estimacao" },
+  { id: 11, nome: "Musica e Hobbies" },
+  { id: 12, nome: "Agro e Industria" },
   { id: 13, nome: "Vagas de Emprego" },
-  { id: 14, nome: "Comércio" },
-  { id: 15, nome: "Câmeras e Drones" },
+  { id: 14, nome: "Comercio" },
+  { id: 15, nome: "Cameras e Drones" },
   { id: 16, nome: "Games" },
-  { id: 17, nome: "TVs e Vídeo" },
-  { id: 18, nome: "Áudio" },
-  { id: 19, nome: "Informática" },
+  { id: 17, nome: "TVs e Video" },
+  { id: 18, nome: "Audio" },
+  { id: 19, nome: "Informatica" },
   { id: 20, nome: "Eletro" },
-  { id: 21, nome: "Móveis" },
-  { id: 22, nome: "Materiais de Construção" },
-  { id: 23, nome: "Escritório e Home Office" },
+  { id: 21, nome: "Moveis" },
+  { id: 22, nome: "Materiais de Construcao" },
+  { id: 23, nome: "Escritorio e Home Office" },
 ];
 
 const OPCOES_ORDENACAO: { value: TipoOrdenacao; label: string }[] = [
   { value: "RELEVANCIA", label: "Mais relevantes" },
-  { value: "DISTANCIA", label: "Mais próximos" },
+  { value: "DISTANCIA", label: "Mais proximos" },
   { value: "RECENTES", label: "Mais recentes" },
   { value: "POPULARES", label: "Mais visualizados" },
 ];
 
 const RAIOS_KM = [5, 10, 25, 50, 100];
 
-export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
-  onFiltrar,
-  onLimpar,
-}) => {
+export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onLimpar }) => {
   const [tipo, setTipo] = useState<"DOACAO" | "TROCA" | "">("");
   const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM" | "">("");
   const [categoriaId, setCategoriaId] = useState<number | "">("");
@@ -67,48 +64,24 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
   const [fonteLocalizacao, setFonteLocalizacao] = useState<"gps" | "cep" | "nenhuma">("nenhuma");
 
   const { coordenadas, carregandoLocalizacao, obterLocalizacao, limparLocalizacao } = useLocalizacao();
-
-  const possuiFiltroAtivo = tipo || condicao || categoriaId || ordenacao || fonteLocalizacao !== "nenhuma";
+  const possuiFiltroAtivo = Boolean(tipo || condicao || categoriaId || ordenacao || fonteLocalizacao !== "nenhuma");
 
   const montarFiltro = (): BuscaFiltro => {
     const filtro: BuscaFiltro = {};
-
     if (tipo) filtro.tipo = tipo;
     if (condicao) filtro.condicao = condicao;
     if (categoriaId) filtro.categoriaId = Number(categoriaId);
     if (ordenacao) filtro.ordenacao = ordenacao;
-
     if (fonteLocalizacao === "gps" && coordenadas) {
       filtro.latitude = coordenadas.latitude;
       filtro.longitude = coordenadas.longitude;
       filtro.raioKm = raioKm;
     }
-
     if (fonteLocalizacao === "cep" && cep.length === 8) {
       filtro.cep = cep;
       filtro.raioKm = raioKm;
     }
-
     return filtro;
-  };
-
-  const aplicarFiltros = () => {
-    onFiltrar(montarFiltro());
-  };
-
-  const handleTipo = (novoTipo: "DOACAO" | "TROCA") => {
-    const valor = tipo === novoTipo ? "" : novoTipo;
-    setTipo(valor);
-  };
-
-  const handleUsarGps = () => {
-    if (fonteLocalizacao === "gps") {
-      setFonteLocalizacao("nenhuma");
-      limparLocalizacao();
-      return;
-    }
-    setFonteLocalizacao("gps");
-    obterLocalizacao();
   };
 
   const handleLimpar = () => {
@@ -123,9 +96,23 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
     onLimpar();
   };
 
+  const handleTipo = (novoTipo: "DOACAO" | "TROCA") => {
+    setTipo(tipo === novoTipo ? "" : novoTipo);
+  };
+
+  const handleUsarGps = () => {
+    if (fonteLocalizacao === "gps") {
+      setFonteLocalizacao("nenhuma");
+      limparLocalizacao();
+      return;
+    }
+    setFonteLocalizacao("gps");
+    obterLocalizacao();
+  };
+
   const labelSecao = "text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2";
   const botaoFiltro = (ativo: boolean, corAtivo: string) =>
-    `flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all border ${
+    `flex items-center justify-between px-4 py-3 rounded-lg font-bold text-sm transition-all border ${
       ativo ? corAtivo : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
     }`;
 
@@ -137,167 +124,85 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
           Filtros
         </h2>
         {possuiFiltroAtivo && (
-          <button
-            onClick={handleLimpar}
-            className="text-[11px] font-bold text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors"
-          >
+          <button onClick={handleLimpar} className="text-[11px] font-bold text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors">
             <RotateCcw size={12} /> Limpar
           </button>
         )}
       </div>
 
-      {/* MODALIDADE */}
       <div className="space-y-3">
         <h3 className={labelSecao}>
           <Layers size={14} /> Modalidade
         </h3>
         <div className="flex flex-col gap-2">
-          <button
-            onClick={() => handleTipo("DOACAO")}
-            className={botaoFiltro(
-              tipo === "DOACAO",
-              "bg-teal-50 border-teal-200 text-teal-700 shadow-sm"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <HandHelping size={18} /> Doação
-            </div>
+          <button type="button" onClick={() => handleTipo("DOACAO")} className={botaoFiltro(tipo === "DOACAO", "bg-teal-50 border-teal-200 text-teal-700 shadow-sm")}>
+            <div className="flex items-center gap-3"><HandHelping size={18} /> Doacao</div>
             {tipo === "DOACAO" && <ChevronRight size={14} />}
           </button>
-
-          <button
-            onClick={() => handleTipo("TROCA")}
-            className={botaoFiltro(
-              tipo === "TROCA",
-              "bg-orange-50 border-orange-200 text-orange-700 shadow-sm"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <ArrowLeftRight size={18} /> Troca
-            </div>
+          <button type="button" onClick={() => handleTipo("TROCA")} className={botaoFiltro(tipo === "TROCA", "bg-orange-50 border-orange-200 text-orange-700 shadow-sm")}>
+            <div className="flex items-center gap-3"><ArrowLeftRight size={18} /> Troca</div>
             {tipo === "TROCA" && <ChevronRight size={14} />}
           </button>
         </div>
       </div>
 
-      {/* CONDIÇÃO */}
       <div className="space-y-3">
-        <h3 className={labelSecao}>
-          <PlusCircle size={14} /> Condição
-        </h3>
-        <select
-          value={condicao}
-          onChange={(e) => setCondicao(e.target.value as any)}
-          className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all"
-        >
-          <option value="">Qualquer condição</option>
+        <h3 className={labelSecao}><PlusCircle size={14} /> Condicao</h3>
+        <select value={condicao} onChange={(e) => setCondicao(e.target.value as typeof condicao)} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
+          <option value="">Qualquer condicao</option>
           <option value="NOVO">Novo</option>
-          <option value="BOM">Bem Conservado</option>
+          <option value="BOM">Bem conservado</option>
           <option value="REGULAR">Regular</option>
           <option value="RUIM">Ruim</option>
         </select>
       </div>
 
-      {/* CATEGORIAS */}
       <div className="space-y-3">
-        <h3 className={labelSecao}>
-          <PlusCircle size={14} /> Categoria
-        </h3>
-        <select
-          value={categoriaId}
-          onChange={(e) => setCategoriaId(Number(e.target.value) || "")}
-          className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all"
-        >
+        <h3 className={labelSecao}><PlusCircle size={14} /> Categoria</h3>
+        <select value={categoriaId} onChange={(e) => setCategoriaId(Number(e.target.value) || "")} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
           <option value="">Todas as categorias</option>
-          {CATEGORIAS.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.nome}
-            </option>
-          ))}
+          {CATEGORIAS.map((cat) => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
         </select>
       </div>
 
-      {/* ORDENAÇÃO */}
       <div className="space-y-3">
-        <h3 className={labelSecao}>
-          <SortAsc size={14} /> Ordenar por
-        </h3>
-        <select
-          value={ordenacao}
-          onChange={(e) => setOrdenacao(e.target.value as TipoOrdenacao)}
-          className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all"
-        >
-          <option value="">Padrão</option>
-          {OPCOES_ORDENACAO.map((op) => (
-            <option key={op.value} value={op.value}>
-              {op.label}
-            </option>
-          ))}
+        <h3 className={labelSecao}><SortAsc size={14} /> Ordenar por</h3>
+        <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value as TipoOrdenacao)} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
+          <option value="">Padrao</option>
+          {OPCOES_ORDENACAO.map((op) => <option key={op.value} value={op.value}>{op.label}</option>)}
         </select>
       </div>
 
-      {/* LOCALIZAÇÃO */}
       <div className="space-y-3">
-        <h3 className={labelSecao}>
-          <MapPin size={14} /> Localização
-        </h3>
-
+        <h3 className={labelSecao}><MapPin size={14} /> Localizacao</h3>
         <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleUsarGps}
-            disabled={carregandoLocalizacao}
-            className={botaoFiltro(
-              fonteLocalizacao === "gps",
-              "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
-            )}
-          >
+          <button type="button" onClick={handleUsarGps} disabled={carregandoLocalizacao} className={botaoFiltro(fonteLocalizacao === "gps", "bg-blue-50 border-blue-200 text-blue-700 shadow-sm")}>
             <div className="flex items-center gap-3">
-              {carregandoLocalizacao ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <MapPin size={18} />
-              )}
-              {carregandoLocalizacao ? "Obtendo..." : "Usar minha localização"}
+              {carregandoLocalizacao ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
+              {carregandoLocalizacao ? "Obtendo..." : "Usar minha localizacao"}
             </div>
-            {fonteLocalizacao === "gps" && coordenadas && (
-              <ChevronRight size={14} />
-            )}
+            {fonteLocalizacao === "gps" && coordenadas && <ChevronRight size={14} />}
           </button>
-
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="Ou digite seu CEP"
-              value={cep}
-              maxLength={8}
-              onChange={(e) => {
-                const valor = e.target.value.replace(/\D/g, "");
-                setCep(valor);
-                setFonteLocalizacao(valor.length === 8 ? "cep" : "nenhuma");
-              }}
-              className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all placeholder:font-normal"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Ou digite seu CEP"
+            value={cep}
+            maxLength={8}
+            onChange={(e) => {
+              const valor = e.target.value.replace(/\D/g, "");
+              setCep(valor);
+              setFonteLocalizacao(valor.length === 8 ? "cep" : "nenhuma");
+            }}
+            className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all placeholder:font-normal"
+          />
         </div>
 
-        {(fonteLocalizacao !== "nenhuma") && (
+        {fonteLocalizacao !== "nenhuma" && (
           <div className="space-y-2">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-              Raio de busca
-            </p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Raio de busca</p>
             <div className="flex flex-wrap gap-2">
               {RAIOS_KM.map((raio) => (
-                <button
-                  key={raio}
-                  type="button"
-                  onClick={() => setRaioKm(raio)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                    raioKm === raio
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"
-                  }`}
-                >
+                <button key={raio} type="button" onClick={() => setRaioKm(raio)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${raioKm === raio ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"}`}>
                   {raio}km
                 </button>
               ))}
@@ -306,19 +211,11 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
         )}
       </div>
 
-      {/* BOTÃO APLICAR */}
-      <button
-        onClick={aplicarFiltros}
-        className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-100 transition-all active:scale-95"
-      >
-        Aplicar Filtros
+      <button type="button" onClick={() => onFiltrar(montarFiltro())} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all active:scale-[0.99]">
+        Aplicar filtros
       </button>
-
-      <button
-        onClick={handleLimpar}
-        className="py-3 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 text-xs font-bold hover:border-blue-200 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
-      >
-        <RotateCcw size={14} /> Resetar preferências
+      <button type="button" onClick={handleLimpar} className="py-3 border-2 border-dashed border-slate-100 rounded-lg text-slate-400 text-xs font-bold hover:border-blue-200 hover:text-blue-500 transition-all flex items-center justify-center gap-2">
+        <RotateCcw size={14} /> Resetar preferencias
       </button>
     </div>
   );

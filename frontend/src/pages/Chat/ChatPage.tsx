@@ -78,7 +78,10 @@ export const ChatPage: React.FC = () => {
         />
 
         <div className="flex-1 min-h-0">
-          <JanelaChat conversaAtiva={conversaAtiva} />
+          <JanelaChat
+            conversaAtiva={conversaAtiva}
+            onVoltar={() => setConversaAtiva(null)}
+          />
         </div>
       </main>
     </div>
