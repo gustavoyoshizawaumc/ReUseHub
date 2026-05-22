@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/Home/HomePage";
 import { RegisterPage } from "./pages/Register/RegisterPage";
@@ -8,6 +7,7 @@ import { EditarAnuncioPage } from "./pages/Anuncios/EditarAnuncioPage";
 import { ExplorarAnunciosPage } from "./pages/Anuncios/ExplorarAnunciosPage";
 import { MeusAnunciosPage } from "./pages/Anuncios/MeusAnunciosPage";
 import { DetalhesAnuncioPage } from "./pages/Anuncios/DetalhesAnuncioPage";
+import { FavoritosPage } from "./pages/Anuncios/FavoritosPage";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { EditProfilePage } from "./pages/Profile/EditProfilePage";
 import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
@@ -50,6 +50,24 @@ function App() {
           element={
             <PrivateRoute>
               <MeusAnunciosPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/favoritos"
+          element={
+            <PrivateRoute>
+              <FavoritosPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/favorites"
+          element={
+            <PrivateRoute>
+              <FavoritosPage />
             </PrivateRoute>
           }
         />

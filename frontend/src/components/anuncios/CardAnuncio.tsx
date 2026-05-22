@@ -20,12 +20,16 @@ interface CardAnuncioProps {
   anuncio: Anuncio;
   onDelete?: (id: string) => void;
   variant?: "list" | "grid";
+  isFavorito?: boolean;
+  onToggleFavorito?: (id: string) => void;
 }
 
 export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   anuncio,
   onDelete,
   variant = "list",
+  isFavorito = false,
+  onToggleFavorito,
 }) => {
   const navigate = useNavigate();
   const cardVariant = variant === "grid" || !onDelete ? "grid" : "list";
@@ -126,11 +130,25 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   const primaryButtonLabel =
     anuncio.status === "ATIVO" ? "Ver anuncio" : "Acompanhar status";
 
+  const handleToggleFavorito = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onToggleFavorito?.(anuncio.id);
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handlePrimaryAction();
+    }
+  };
+
   if (cardVariant === "grid") {
     return (
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={handlePrimaryAction}
+        onKeyDown={handleCardKeyDown}
         className="group bg-white rounded-[22px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 h-full flex flex-col text-left w-full active:scale-[0.99]"
       >
         <div className="relative aspect-[4/2.7] bg-slate-50 overflow-hidden">
@@ -160,11 +178,16 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
 
           <button
             type="button"
-            onClick={(event) => event.stopPropagation()}
-            className="absolute top-3 right-3 w-10 h-10 rounded-2xl bg-white/95 text-slate-500 hover:bg-rose-50 hover:text-rose-500 backdrop-blur shadow-sm transition-all flex items-center justify-center"
+            onClick={handleToggleFavorito}
+            className={`absolute top-3 right-3 w-10 h-10 rounded-2xl backdrop-blur shadow-sm transition-all flex items-center justify-center ${
+              isFavorito
+                ? "bg-rose-50 text-rose-500"
+                : "bg-white/95 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+            }`}
             title="Favoritar anuncio"
+            aria-pressed={isFavorito}
           >
-            <Heart size={16} />
+            <Heart size={16} fill={isFavorito ? "currentColor" : "none"} />
           </button>
         </div>
 
@@ -235,7 +258,7 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
             </button>
           )}
         </div>
-      </button>
+      </div>
     );
   }
 
@@ -310,6 +333,24 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
 
       <div className="flex md:flex-col justify-end gap-2 shrink-0 md:border-l md:border-slate-50 md:pl-6">
         <button
+          type="button"
+          onClick={handleToggleFavorito}
+          className={`flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
+            isFavorito
+              ? "bg-rose-50 text-rose-500 hover:bg-rose-100"
+              : "bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-500"
+          }`}
+          title="Favoritar Anuncio"
+          aria-pressed={isFavorito}
+        >
+          <span className="text-xs font-bold md:hidden">
+            {isFavorito ? "Favoritado" : "Favoritar"}
+          </span>
+          <Heart size={18} fill={isFavorito ? "currentColor" : "none"} />
+        </button>
+
+        <button
+          type="button"
           onClick={handlePrimaryAction}
           className="flex-1 md:flex-none bg-slate-50 hover:bg-blue-600 hover:text-white text-slate-600 p-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95"
         >

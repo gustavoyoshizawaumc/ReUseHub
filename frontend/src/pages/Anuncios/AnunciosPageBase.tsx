@@ -20,6 +20,7 @@ import { FiltrosAnuncios } from "../../components/anuncios/FiltrosAnuncios";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { useAnuncios } from "../../hooks/useAnuncios";
+import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";
 import type { BuscaFiltro } from "../../types/busca.types";
 
@@ -56,6 +57,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const exibindoMeusAnuncios = modo === "privado";
   const termoMeusAnuncios = searchParams.get("termo")?.trim().toLowerCase() ?? "";
   const statusSelecionado = searchParams.get("statusFiltro") ?? "TODOS";
+  const { ehFavorito, possuiUsuarioAutenticado, alternarFavorito } = useFavoritos();
 
   const {
     anuncios,
@@ -231,6 +233,15 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     if (paginacao.currentPage > 0) {
       paginarFiltros(paginacao.currentPage - 1);
     }
+  };
+
+  const handleToggleFavorito = (anuncioId: string) => {
+    if (!possuiUsuarioAutenticado) {
+      navigate("/login");
+      return;
+    }
+
+    alternarFavorito(anuncioId);
   };
 
   return (
@@ -496,6 +507,8 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                       anuncio={anuncio}
                       onDelete={exibindoMeusAnuncios ? handleDelete : undefined}
                       variant={exibindoMeusAnuncios ? "list" : "grid"}
+                      isFavorito={ehFavorito(anuncio.id)}
+                      onToggleFavorito={handleToggleFavorito}
                     />
                   </div>
                 ))}
