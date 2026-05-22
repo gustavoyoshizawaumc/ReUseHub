@@ -174,7 +174,7 @@ export const Header: React.FC = () => {
             {user ? (
               <>
                 <NavActionIcon
-                  onClick={() => navigate("/favorites")}
+                  onClick={() => navigate("/favoritos")}
                   icon={<Heart size={19} />}
                   label="Favoritos"
                 />
