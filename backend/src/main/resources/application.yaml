@@ -50,6 +50,11 @@ spring:
 app:
   upload:
     dir: uploads
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
+resend:
+  api-key: ${RESEND_API_KEY}
+  from-email: ${RESEND_FROM_EMAIL:ReUseHub <noreply@reusehub.com.br>}
 
 server:
   port: 8080

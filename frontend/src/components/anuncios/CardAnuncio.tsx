@@ -21,7 +21,7 @@ interface CardAnuncioProps {
   onDelete?: (id: string) => void;
   variant?: "list" | "grid";
   isFavorito?: boolean;
-  onToggleFavorito?: (id: string) => void;
+  onToggleFavorito?: (id: string) => void | Promise<void>;
 }
 
 const getCondicaoColor = (condicao: string) => {

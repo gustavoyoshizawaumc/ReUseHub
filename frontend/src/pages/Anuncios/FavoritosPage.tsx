@@ -8,18 +8,6 @@ import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";
 import type { Anuncio } from "../../types/anuncio.types";
 
-const carregarFavoritos = async (favoritosIds: string[]) => {
-  const anuncios = await Promise.allSettled(
-    favoritosIds.map((anuncioId) => anuncioService.obterAnuncio(anuncioId))
-  );
-
-  return anuncios
-    .flatMap((resultado) =>
-      resultado.status === "fulfilled" ? [resultado.value] : []
-    )
-    .filter((anuncio) => anuncio.status === "ATIVO");
-};
-
 export const FavoritosPage: React.FC = () => {
   const navigate = useNavigate();
   const { favoritos, ehFavorito, alternarFavorito } = useFavoritos();
@@ -35,7 +23,7 @@ export const FavoritosPage: React.FC = () => {
       setErro(null);
 
       try {
-        const anuncios = await carregarFavoritos(favoritos);
+        const anuncios = await anuncioService.listarFavoritos();
         if (ativo) {
           setAnunciosFavoritos(anuncios);
         }
