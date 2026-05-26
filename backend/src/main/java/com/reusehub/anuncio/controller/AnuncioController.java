@@ -54,6 +54,22 @@ public class AnuncioController {
         return ResponseEntity.ok(resposta);
     }
 
+    @GetMapping("/favoritos")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AnuncioRespostaDTO>> listarFavoritos(Authentication authentication) {
+        String email = authentication.getName();
+        List<AnuncioRespostaDTO> resposta = anuncioService.listarFavoritosDoUsuario(email);
+        return ResponseEntity.ok(resposta);
+    }
+
+    @GetMapping("/favoritos/ids")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<UUID>> listarIdsFavoritos(Authentication authentication) {
+        String email = authentication.getName();
+        List<UUID> resposta = anuncioService.listarIdsFavoritosDoUsuario(email);
+        return ResponseEntity.ok(resposta);
+    }
+
     @GetMapping("/buscar")
     public ResponseEntity<Page<AnuncioRespostaDTO>> buscarAnuncios(
             @RequestParam String termo,
@@ -131,6 +147,28 @@ public class AnuncioController {
 
         String email = authentication.getName();
         anuncioService.deletarAnuncio(id, email);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/favoritos")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> favoritarAnuncio(
+            @PathVariable UUID id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+        anuncioService.favoritarAnuncio(id, email);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{id}/favoritos")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> desfavoritarAnuncio(
+            @PathVariable UUID id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+        anuncioService.desfavoritarAnuncio(id, email);
         return ResponseEntity.noContent().build();
     }
 

@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/Home/HomePage";
 import { RegisterPage } from "./pages/Register/RegisterPage";
 import { LoginPage } from "./pages/Login/LoginPage";
+import { ForgotPasswordPage } from "./pages/ForgotPassword/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPassword/ResetPasswordPage";
 import { CriarAnuncioPage } from "./pages/Anuncios/CriarAnuncioPage";
 import { EditarAnuncioPage } from "./pages/Anuncios/EditarAnuncioPage";
 import { ExplorarAnunciosPage } from "./pages/Anuncios/ExplorarAnunciosPage";
@@ -25,6 +27,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+        <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
         <Route path="/anuncios" element={<ExplorarAnunciosPage />} />
         <Route path="/anuncios/:id" element={<DetalhesAnuncioPage />} />

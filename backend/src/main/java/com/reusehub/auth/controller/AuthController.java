@@ -3,6 +3,7 @@ package com.reusehub.auth.controller;
 import com.reusehub.anuncio.service.StorageService;
 import com.reusehub.auth.dto.*;
 import com.reusehub.auth.service.AuthService;
+import com.reusehub.auth.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -24,6 +26,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final StorageService storageService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/registrar")
     public ResponseEntity<AuthResponse> registrar(@Valid @RequestBody RegisterRequest request) {
@@ -81,5 +84,28 @@ public class AuthController {
     public ResponseEntity<Void> deletarConta(Authentication authentication) {
         authService.deletarContaPorEmail(authentication.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Inicia o fluxo de recuperação de senha.
+     * Resposta sempre genérica para evitar user enumeration.
+     */
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<Map<String, String>> esqueciSenha(@Valid @RequestBody EsqueciSenhaRequest request) {
+        passwordResetService.solicitarRecuperacao(request.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "mensagem", "Se o e-mail informado estiver cadastrado, você receberá as instruções em breve."
+        ));
+    }
+
+    /**
+     * Redefine a senha usando o token recebido por e-mail.
+     */
+    @PostMapping("/redefinir-senha")
+    public ResponseEntity<Map<String, String>> redefinirSenha(@Valid @RequestBody RedefinirSenhaRequest request) {
+        passwordResetService.redefinirSenha(request);
+        return ResponseEntity.ok(Map.of(
+                "mensagem", "Senha redefinida com sucesso. Você já pode fazer login."
+        ));
     }
 }

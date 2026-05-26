@@ -176,6 +176,48 @@ class AnuncioControllerTest {
     }
 
     @Nested
+    @DisplayName("cenarios para favoritos")
+    class Favoritos {
+        @Test
+        @WithMockUser(username = "usuario@teste.com")
+        @DisplayName("deve listar favoritos do usuario logado")
+        void listarFavoritos() throws Exception {
+            Mockito.when(anuncioService.listarFavoritosDoUsuario("usuario@teste.com"))
+                    .thenReturn(Collections.emptyList());
+
+            mockMvc.perform(get("/api/anuncios/favoritos"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "usuario@teste.com")
+        @DisplayName("deve listar ids de favoritos do usuario logado")
+        void listarIdsFavoritos() throws Exception {
+            Mockito.when(anuncioService.listarIdsFavoritosDoUsuario("usuario@teste.com"))
+                    .thenReturn(List.of(UUID.randomUUID()));
+
+            mockMvc.perform(get("/api/anuncios/favoritos/ids"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "usuario@teste.com")
+        @DisplayName("deve favoritar anuncio com sucesso")
+        void favoritarAnuncio() throws Exception {
+            mockMvc.perform(post("/api/anuncios/{id}/favoritos", UUID.randomUUID()).with(csrf()))
+                    .andExpect(status().isCreated());
+        }
+
+        @Test
+        @WithMockUser(username = "usuario@teste.com")
+        @DisplayName("deve desfavoritar anuncio com sucesso")
+        void desfavoritarAnuncio() throws Exception {
+            mockMvc.perform(delete("/api/anuncios/{id}/favoritos", UUID.randomUUID()).with(csrf()))
+                    .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
     @DisplayName("cenários para buscarAnuncios")
     class BuscarAnuncios {
         @Test

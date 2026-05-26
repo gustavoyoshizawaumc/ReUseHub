@@ -167,4 +167,32 @@ export const authService = {
   isLoggedIn: (): boolean => {
     return !!localStorage.getItem("token");
   },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    const response = await fetch(`${API_URL}/esqueci-senha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao solicitar recuperação de senha");
+    }
+  },
+
+  resetPassword: async (
+    token: string,
+    novaSenha: string,
+    confirmacaoSenha: string,
+  ): Promise<void> => {
+    const response = await fetch(`${API_URL}/redefinir-senha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, novaSenha, confirmacaoSenha }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao redefinir senha");
+    }
+  },
 };

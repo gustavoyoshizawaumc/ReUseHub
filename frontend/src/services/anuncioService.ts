@@ -122,6 +122,24 @@ export const deletarAnuncio = async (id: string): Promise<void> => {
   return response.data;
 };
 
+export const listarFavoritos = async (): Promise<Anuncio[]> => {
+  const response = await api.get("/favoritos");
+  return response.data;
+};
+
+export const listarIdsFavoritos = async (): Promise<string[]> => {
+  const response = await api.get("/favoritos/ids");
+  return response.data;
+};
+
+export const favoritarAnuncio = async (id: string): Promise<void> => {
+  await api.post(`/${id}/favoritos`);
+};
+
+export const desfavoritarAnuncio = async (id: string): Promise<void> => {
+  await api.delete(`/${id}/favoritos`);
+};
+
 const removerParametrosVazios = (
   params: Record<string, unknown>
 ): Record<string, unknown> => {

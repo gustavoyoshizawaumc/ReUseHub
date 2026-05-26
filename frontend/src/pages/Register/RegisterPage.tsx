@@ -7,6 +7,32 @@ type RegisterFormData = RegisterRequest & {
   confirmPassword: string;
 };
 
+/**
+ * Validação matemática do CPF (dígitos verificadores).
+ * Equivalente ao que o backend faz com @ValidCpf.
+ */
+function validarCpf(cpf: string): boolean {
+  const clean = cpf.replace(/[^\d]/g, "");
+  if (clean.length !== 11) return false;
+  // Rejeita sequências com todos os dígitos iguais
+  if (/^(\d)\1{10}$/.test(clean)) return false;
+
+  const calcDigito = (base: string, pesoInicial: number): number => {
+    let soma = 0;
+    for (let i = 0; i < base.length; i++) {
+      soma += parseInt(base[i]) * (pesoInicial - i);
+    }
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  const primeiroDigito = calcDigito(clean.slice(0, 9), 10);
+  if (parseInt(clean[9]) !== primeiroDigito) return false;
+
+  const segundoDigito = calcDigito(clean.slice(0, 10), 11);
+  return parseInt(clean[10]) === segundoDigito;
+}
+
 const Spinner: React.FC = () => (
   <div className="flex items-center justify-center">
     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -49,8 +75,7 @@ export const RegisterPage: React.FC = () => {
         if (typeof value === "string") {
           const cleanedCpf = value.replace(/[^\d]/g, "");
           if (!cleanedCpf) error = "CPF é obrigatório.";
-          else if (!/^\d{11}$/.test(cleanedCpf))
-            error = "CPF deve ter 11 dígitos.";
+          else if (!validarCpf(cleanedCpf)) error = "CPF inválido.";
         }
         break;
       case "email":

@@ -7,6 +7,7 @@ import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { InteresseModal } from "../../components/interesse/InteresseModal";
 import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
+import { useFavoritos } from "../../hooks/useFavoritos";
 import {
   ArrowLeft,
   Calendar,
@@ -38,6 +39,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [modalInteresseAberto, setModalInteresseAberto] = useState(false);
   const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
   const [iniciandoChat, setIniciandoChat] = useState(false);
+  const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
 
 
 
@@ -134,6 +136,21 @@ export const DetalhesAnuncioPage: React.FC = () => {
     }
   };
 
+  const handleToggleFavorito = async () => {
+    if (!anuncio) return;
+    if (!possuiUsuarioAutenticado && !exigirLogin()) return;
+
+    try {
+      await alternarFavorito(anuncio.id);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar favoritos."
+      );
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
@@ -168,6 +185,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
     const podeInteragir = podeFalarComAnunciante || podeEnviarInteresse;
     const mostrarFavoritos = !isEDono && anuncioEstaAtivo;
     const podeAvaliarAnunciante = !isEDono && anuncioConcluido;
+    const anuncioFavoritado = ehFavorito(anuncio.id);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
@@ -378,9 +396,22 @@ export const DetalhesAnuncioPage: React.FC = () => {
                         )}
 
                         {mostrarFavoritos && (
-                          <button className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]">
-                            <Heart size={18} />
-                            Salvar nos Favoritos
+                          <button
+                            type="button"
+                            onClick={handleToggleFavorito}
+                            className={`w-full py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] ${
+                              anuncioFavoritado
+                                ? "bg-rose-50 hover:bg-rose-100 text-rose-600"
+                                : "bg-slate-100 hover:bg-slate-200 text-slate-900"
+                            }`}
+                          >
+                            <Heart
+                              size={18}
+                              fill={anuncioFavoritado ? "currentColor" : "none"}
+                            />
+                            {anuncioFavoritado
+                              ? "Remover dos Favoritos"
+                              : "Salvar nos Favoritos"}
                           </button>
                         )}
                       </>

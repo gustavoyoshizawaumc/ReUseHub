@@ -16,12 +16,16 @@ import com.reusehub.anuncio.service.ViaCepService;
 import com.reusehub.anuncio.service.StorageService;
 
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
 import com.reusehub.anuncio.repository.CategoriaRepository;
 import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.anuncio.service.LocalizacaoService;
+import com.reusehub.anuncio.service.NominatimService;
+import com.reusehub.moderacao.service.ModeracaoService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +50,8 @@ class AnuncioServiceTest {
     @Mock
     private AnuncioRepository anuncioRepository;
     @Mock
+    private AnuncioFavoritoRepository anuncioFavoritoRepository;
+    @Mock
     private UsuarioRepository usuarioRepository;
     @Mock
     private CategoriaRepository categoriaRepository;
@@ -57,6 +63,12 @@ class AnuncioServiceTest {
     private StorageService storageService;
     @Mock
     private ImagemAnuncioRepository imagemAnuncioRepository;
+    @Mock
+    private LocalizacaoService localizacaoService;
+    @Mock
+    private NominatimService nominatimService;
+    @Mock
+    private ModeracaoService moderacaoService;
 
     @InjectMocks
     private AnuncioService anuncioService;
@@ -406,6 +418,73 @@ class AnuncioServiceTest {
             assertThrows(RegraNegocioException.class, () -> {
                 anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com");
             });
+        }
+    }
+
+    @Nested
+    @DisplayName("Cenarios para favoritos")
+    class FavoritosCenarios {
+
+        @Test
+        @DisplayName("deve listar ids de favoritos do usuario")
+        void listarIdsFavoritos() {
+            Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
+            Mockito.when(anuncioFavoritoRepository.findAnuncioIdsByUsuarioId(usuarioDono.getId()))
+                    .thenReturn(java.util.List.of(UUID.randomUUID()));
+
+            var resultado = anuncioService.listarIdsFavoritosDoUsuario("dono@reusehub.com");
+
+            assertEquals(1, resultado.size());
+        }
+
+        @Test
+        @DisplayName("deve favoritar anuncio ativo de outro usuario")
+        void favoritarAnuncio() {
+            UUID anuncioId = UUID.randomUUID();
+            Anuncio anuncioAtivo = Anuncio.builder()
+                    .id(anuncioId)
+                    .usuario(usuarioInvasor)
+                    .status(Anuncio.StatusAnuncio.ATIVO)
+                    .endereco(Endereco.builder().id(UUID.randomUUID()).build())
+                    .categoria(Categoria.builder().id(1).nome("Games").build())
+                    .build();
+
+            Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioAtivo));
+            Mockito.when(anuncioFavoritoRepository.existsByUsuarioIdAndAnuncioId(usuarioDono.getId(), anuncioId))
+                    .thenReturn(false);
+
+            assertDoesNotThrow(() -> anuncioService.favoritarAnuncio(anuncioId, "dono@reusehub.com"));
+            Mockito.verify(anuncioFavoritoRepository).save(Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve impedir favoritar o proprio anuncio")
+        void impedirFavoritarProprioAnuncio() {
+            UUID anuncioId = UUID.randomUUID();
+            Anuncio anuncioAtivo = Anuncio.builder()
+                    .id(anuncioId)
+                    .usuario(usuarioDono)
+                    .status(Anuncio.StatusAnuncio.ATIVO)
+                    .build();
+
+            Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioAtivo));
+
+            assertThrows(RegraNegocioException.class, () ->
+                    anuncioService.favoritarAnuncio(anuncioId, "dono@reusehub.com"));
+        }
+
+        @Test
+        @DisplayName("deve desfavoritar anuncio do usuario")
+        void desfavoritarAnuncio() {
+            UUID anuncioId = UUID.randomUUID();
+            Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
+
+            anuncioService.desfavoritarAnuncio(anuncioId, "dono@reusehub.com");
+
+            Mockito.verify(anuncioFavoritoRepository)
+                    .deleteByUsuarioIdAndAnuncioId(usuarioDono.getId(), anuncioId);
         }
     }
 }

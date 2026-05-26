@@ -235,13 +235,21 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     }
   };
 
-  const handleToggleFavorito = (anuncioId: string) => {
+  const handleToggleFavorito = async (anuncioId: string) => {
     if (!possuiUsuarioAutenticado) {
       navigate("/login");
       return;
     }
 
-    alternarFavorito(anuncioId);
+    try {
+      await alternarFavorito(anuncioId);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel atualizar os favoritos."
+      );
+    }
   };
 
   return (

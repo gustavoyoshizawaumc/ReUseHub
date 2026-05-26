@@ -31,7 +31,7 @@ public class AuthService {
 
         var usuario = Usuario.builder()
                 .name(request.getName())
-                .cpf(request.getCpf())
+                .cpf(request.getCpf().replaceAll("[^0-9]", "")) // garante apenas dígitos no banco
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())

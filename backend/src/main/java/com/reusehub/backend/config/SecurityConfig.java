@@ -48,7 +48,13 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/registrar", "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(
+                                "/api/auth/registrar",
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/esqueci-senha",
+                                "/api/auth/redefinir-senha"
+                        ).permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
@@ -68,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+                        .requestMatchers("/api/anuncios/favoritos/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
                         .requestMatchers("/api/anuncios/meus/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").authenticated()

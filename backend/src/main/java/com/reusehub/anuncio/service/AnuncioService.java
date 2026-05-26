@@ -3,9 +3,12 @@ package com.reusehub.anuncio.service;
 import com.reusehub.anuncio.dto.*;
 import com.reusehub.anuncio.exception.*;
 import com.reusehub.anuncio.model.Anuncio;
+import com.reusehub.anuncio.model.AnuncioFavorito;
+import com.reusehub.anuncio.model.AnuncioFavoritoId;
 import com.reusehub.anuncio.model.Categoria;
 import com.reusehub.anuncio.model.Endereco;
 import com.reusehub.anuncio.model.ImagemAnuncio;
+import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.CategoriaRepository;
 import com.reusehub.anuncio.repository.EnderecoRepository;
@@ -31,6 +34,7 @@ import java.util.UUID;
 public class AnuncioService {
 
     private final AnuncioRepository anuncioRepository;
+    private final AnuncioFavoritoRepository anuncioFavoritoRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
     private final EnderecoRepository enderecoRepository;
@@ -182,6 +186,52 @@ public class AnuncioService {
         Anuncio atualizado = anuncioRepository.save(anuncio);
         moderacaoService.registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", id, "Reprovado na fila de moderacao.");
         return mapearParaRespostaDTO(atualizado);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UUID> listarIdsFavoritosDoUsuario(String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        return anuncioFavoritoRepository.findAnuncioIdsByUsuarioId(usuario.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<AnuncioRespostaDTO> listarFavoritosDoUsuario(String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        return anuncioFavoritoRepository.findAnunciosFavoritosByUsuarioId(usuario.getId())
+                .stream()
+                .filter(anuncio -> anuncio.getStatus() == Anuncio.StatusAnuncio.ATIVO)
+                .map(this::mapearParaRespostaDTO)
+                .toList();
+    }
+
+    public void favoritarAnuncio(UUID anuncioId, String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        Anuncio anuncio = buscarAnuncioPorId(anuncioId);
+
+        if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
+            throw new OperacaoInvalidaException("Somente anuncios ativos podem ser favoritados.");
+        }
+
+        if (anuncio.getUsuario().getId().equals(usuario.getId())) {
+            throw new RegraNegocioException("Voce nao pode favoritar o proprio anuncio.");
+        }
+
+        if (anuncioFavoritoRepository.existsByUsuarioIdAndAnuncioId(usuario.getId(), anuncioId)) {
+            return;
+        }
+
+        anuncioFavoritoRepository.save(
+                AnuncioFavorito.builder()
+                        .id(new AnuncioFavoritoId(usuario.getId(), anuncioId))
+                        .usuario(usuario)
+                        .anuncio(anuncio)
+                        .build()
+        );
+    }
+
+    public void desfavoritarAnuncio(UUID anuncioId, String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        anuncioFavoritoRepository.deleteByUsuarioIdAndAnuncioId(usuario.getId(), anuncioId);
     }
 
     private Anuncio construirAnuncio(

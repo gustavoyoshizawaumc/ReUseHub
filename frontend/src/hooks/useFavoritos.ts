@@ -1,65 +1,68 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import * as anuncioService from "../services/anuncioService";
 import { authService } from "../services/authService";
-import {
-  FAVORITOS_ATUALIZADOS_EVENTO,
-  favoritosService,
-} from "../services/favoritosService";
 
 const carregarUsuarioAtual = () => authService.getUser();
 
 export const useFavoritos = () => {
-  const [usuario, setUsuario] = useState(carregarUsuarioAtual);
-  const [favoritos, setFavoritos] = useState<string[]>(() => {
-    const usuarioAtual = carregarUsuarioAtual();
-    return usuarioAtual?.id ? favoritosService.listar(usuarioAtual.id) : [];
-  });
+  const [usuario] = useState(carregarUsuarioAtual);
+  const [favoritos, setFavoritos] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   const usuarioId = usuario?.id;
 
-  const sincronizarFavoritos = useCallback(() => {
-    const usuarioAtual = carregarUsuarioAtual();
-    setUsuario(usuarioAtual);
-
-    if (!usuarioAtual?.id) {
+  const carregarFavoritos = useCallback(async () => {
+    if (!usuarioId) {
       setFavoritos([]);
       return;
     }
 
-    setFavoritos(favoritosService.listar(usuarioAtual.id));
-  }, []);
+    setLoading(true);
+    setErro(null);
+
+    try {
+      const favoritosIds = await anuncioService.listarIdsFavoritos();
+      setFavoritos(favoritosIds);
+    } catch (error) {
+      setErro(
+        error instanceof Error ? error.message : "Erro ao carregar favoritos."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [usuarioId]);
 
   useEffect(() => {
-    sincronizarFavoritos();
-
-    const handleStorage = () => sincronizarFavoritos();
-    const handleFavoritosAtualizados = (event: Event) => {
-      const customEvent = event as CustomEvent<{ usuarioId?: string }>;
-
-      if (!customEvent.detail?.usuarioId || customEvent.detail.usuarioId === usuarioId) {
-        sincronizarFavoritos();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener(FAVORITOS_ATUALIZADOS_EVENTO, handleFavoritosAtualizados);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener(FAVORITOS_ATUALIZADOS_EVENTO, handleFavoritosAtualizados);
-    };
-  }, [sincronizarFavoritos, usuarioId]);
+    carregarFavoritos();
+  }, [carregarFavoritos]);
 
   const alternarFavorito = useCallback(
-    (anuncioId: string) => {
+    async (anuncioId: string) => {
       if (!usuarioId) {
         return false;
       }
 
-      const proximoEstado = favoritosService.alternar(usuarioId, anuncioId);
-      setFavoritos(proximoEstado);
-      return proximoEstado.includes(anuncioId);
+      const anuncioJaFavoritado = favoritos.includes(anuncioId);
+
+      try {
+        if (anuncioJaFavoritado) {
+          await anuncioService.desfavoritarAnuncio(anuncioId);
+          setFavoritos((estadoAtual) => estadoAtual.filter((id) => id !== anuncioId));
+          return false;
+        }
+
+        await anuncioService.favoritarAnuncio(anuncioId);
+        setFavoritos((estadoAtual) => [...estadoAtual, anuncioId]);
+        return true;
+      } catch (error) {
+        setErro(
+          error instanceof Error ? error.message : "Erro ao atualizar favoritos."
+        );
+        throw error;
+      }
     },
-    [usuarioId]
+    [favoritos, usuarioId]
   );
 
   const favoritosSet = useMemo(() => new Set(favoritos), [favoritos]);
@@ -67,6 +70,9 @@ export const useFavoritos = () => {
   return {
     favoritos,
     favoritosSet,
+    loading,
+    erro,
+    carregarFavoritos,
     possuiUsuarioAutenticado: Boolean(usuarioId),
     alternarFavorito,
     ehFavorito: (anuncioId: string) => favoritosSet.has(anuncioId),

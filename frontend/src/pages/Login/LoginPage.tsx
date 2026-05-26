@@ -156,12 +156,12 @@ export const LoginPage: React.FC = () => {
               >
                 Senha
               </label>
-              <a
-                href="#"
+              <Link
+                to="/esqueci-senha"
                 className="text-[11px] font-bold text-blue-600 hover:text-orange-600 transition-colors"
               >
                 Esqueceu a senha?
-              </a>
+              </Link>
             </div>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-blue-600 group-focus-within:text-orange-500 transition-colors duration-200">
