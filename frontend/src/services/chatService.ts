@@ -1,6 +1,6 @@
-import type { Conversa, ConversaDetalhe, Mensagem } from '../types/chat.types';
+﻿import type { Conversa, ConversaDetalhe, Mensagem } from '../types/chat.types';
 
-const BASE_URL = 'http://localhost:8080/api/chat';
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api/chat`;
 
 const getAuthHeaders = (): Record<string, string> => {
   let token = localStorage.getItem('token');

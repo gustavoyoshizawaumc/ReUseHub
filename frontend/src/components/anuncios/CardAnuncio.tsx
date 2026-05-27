@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Ban,
@@ -17,7 +17,7 @@ import type { Anuncio } from "../../types/anuncio.types";
 import { authService } from "../../services/authService";
 import { DenunciaAnuncioModal } from "../denuncia/DenunciaAnuncioModal";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface CardAnuncioProps {
   anuncio: Anuncio;

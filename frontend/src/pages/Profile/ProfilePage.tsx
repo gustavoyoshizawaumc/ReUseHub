@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import type { UsuarioRespostaDTO } from "../../types/auth.types";
@@ -61,7 +61,7 @@ export const ProfilePage: React.FC = () => {
                       <img
                         src={
                           usuario.avatarUrl
-                            ? `http://localhost:8080${usuario.avatarUrl}`
+                            ? `${import.meta.env.VITE_API_URL}${usuario.avatarUrl}`
                             : DEFAULT_AVATAR
                         }
                         alt={usuario.name}

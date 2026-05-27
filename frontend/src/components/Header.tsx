@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Armchair,
@@ -188,7 +188,7 @@ export const Header: React.FC = () => {
   const getAvatarUrl = (url: string | null | undefined) => {
     if (!url) return DEFAULT_AVATAR;
     if (url.startsWith("http")) return url;
-    return `http://localhost:8080${url.startsWith("/") ? url : `/${url}`}`;
+    return `${import.meta.env.VITE_API_URL}${url.startsWith("/") ? url : `/${url}`}`;
   };
 
   const navegarParaBusca = (params: URLSearchParams) => {
