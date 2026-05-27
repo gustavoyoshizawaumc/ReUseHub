@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
 import type { Anuncio } from "../../types/anuncio.types";
@@ -53,7 +53,7 @@ export const EditarAnuncioPage: React.FC = () => {
 
           if (dados.imagensUrls && dados.imagensUrls.length > 0) {
             const urls = dados.imagensUrls.map((url) =>
-              url.startsWith("http") ? url : `http://localhost:8080${url}`
+              url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}${url}`
             );
             setPreviews(urls);
           }

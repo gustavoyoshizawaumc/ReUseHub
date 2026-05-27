@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Ban,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import type { Anuncio } from "../../types/anuncio.types";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface CardAnuncioProps {
   anuncio: Anuncio;
