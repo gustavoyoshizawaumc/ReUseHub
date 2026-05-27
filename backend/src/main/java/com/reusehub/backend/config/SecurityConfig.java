@@ -65,7 +65,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/perfis/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/avaliacoes/usuario/**").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/static/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/ws/**").permitAll()
