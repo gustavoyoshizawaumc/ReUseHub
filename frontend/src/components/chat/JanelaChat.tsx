@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   obterConversaPorId,
   enviarMensagem,
@@ -13,7 +13,7 @@ import {
 } from '../../services/interesseService';
 import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const montarUrlImagem = (url?: string | null) => {
   if (!url) return null;

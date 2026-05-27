@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
 import { iniciarConversa } from "../../services/chatService";
@@ -25,7 +25,7 @@ import {
   Info,
 } from "lucide-react";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const DetalhesAnuncioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

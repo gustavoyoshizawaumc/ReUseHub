@@ -1,8 +1,8 @@
-import type { Anuncio, PaginacaoResponse } from '../types/anuncio.types';
+﻿import type { Anuncio, PaginacaoResponse } from '../types/anuncio.types';
 
-const ANUNCIOS_URL = 'http://localhost:8080/api/anuncios';
-const MODERACAO_URL = 'http://localhost:8080/api/moderacao';
-const ADMIN_URL = 'http://localhost:8080/api/admin';
+const ANUNCIOS_URL = `${import.meta.env.VITE_API_URL}/api/anuncios`;
+const MODERACAO_URL = `${import.meta.env.VITE_API_URL}/api/moderacao`;
+const ADMIN_URL = `${import.meta.env.VITE_API_URL}/api/admin`;
 
 const getAuthHeaders = (): Record<string, string> => {
   const raw = localStorage.getItem('token');
