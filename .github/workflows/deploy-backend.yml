@@ -26,6 +26,7 @@ jobs:
       - name: Build do JAR
         run: |
           cd backend
+          chmod +x mvnw
           ./mvnw clean package -DskipTests
 
       - name: Configurar chave SSH
