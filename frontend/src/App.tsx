@@ -1,91 +1,165 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/Home/HomePage";
 import { RegisterPage } from "./pages/Register/RegisterPage";
 import { LoginPage } from "./pages/Login/LoginPage";
+import { ForgotPasswordPage } from "./pages/ForgotPassword/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPassword/ResetPasswordPage";
 import { CriarAnuncioPage } from "./pages/Anuncios/CriarAnuncioPage";
 import { EditarAnuncioPage } from "./pages/Anuncios/EditarAnuncioPage";
-import { ListaAnunciosPage } from "./pages/Anuncios/ListaAnunciosPage";
+import { ExplorarAnunciosPage } from "./pages/Anuncios/ExplorarAnunciosPage";
+import { MeusAnunciosPage } from "./pages/Anuncios/MeusAnunciosPage";
 import { DetalhesAnuncioPage } from "./pages/Anuncios/DetalhesAnuncioPage";
+import { FavoritosPage } from "./pages/Anuncios/FavoritosPage";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { EditProfilePage } from "./pages/Profile/EditProfilePage";
 import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
+import { PublicProfilePage } from "./pages/Profile/PublicProfilePage";
 import { ChatPage } from "./pages/Chat/ChatPage";
-import { PrivateRoute } from "./components/PrivateRoute";
+import { InteressesRecebidosPage } from "./pages/Interesse/InteressesRecebidosPage";
 import { ModeracaoPage } from './pages/Moderacao/ModeracaoPage';
 import { ModeratorRoute } from './components/ModeratorRoute';
+import { UserOnlyRoute } from "./components/UserOnlyRoute";
+import { MarketplaceOnlyRoute } from "./components/MarketplaceOnlyRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/"
+          element={
+            <MarketplaceOnlyRoute>
+              <HomePage />
+            </MarketplaceOnlyRoute>
+          }
+        />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+        <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
-        <Route path="/anuncios" element={<ListaAnunciosPage />} />
-        <Route path="/anuncios/:id" element={<DetalhesAnuncioPage />} />
+        <Route
+          path="/anuncios"
+          element={
+            <MarketplaceOnlyRoute>
+              <ExplorarAnunciosPage />
+            </MarketplaceOnlyRoute>
+          }
+        />
+        <Route
+          path="/anuncios/:id"
+          element={
+            <MarketplaceOnlyRoute>
+              <DetalhesAnuncioPage />
+            </MarketplaceOnlyRoute>
+          }
+        />
 
         <Route
           path="/create-listing"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <CriarAnuncioPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/anuncios/:id/editar"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <EditarAnuncioPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/meus-anuncios"
           element={
-            <PrivateRoute>
-              <ListaAnunciosPage />
-            </PrivateRoute>
+            <UserOnlyRoute>
+              <MeusAnunciosPage />
+            </UserOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/favoritos"
+          element={
+            <UserOnlyRoute>
+              <FavoritosPage />
+            </UserOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/favorites"
+          element={
+            <UserOnlyRoute>
+              <FavoritosPage />
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/chat"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <ChatPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/profile"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <ProfilePage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/profile/edit"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <EditProfilePage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/profile/delete"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <DeleteAccountPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/interesses"
+          element={
+            <UserOnlyRoute>
+              <InteressesRecebidosPage />
+            </UserOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/interesses/recebidos"
+          element={
+            <UserOnlyRoute>
+              <InteressesRecebidosPage />
+            </UserOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/perfil/:id"
+          element={
+            <MarketplaceOnlyRoute>
+              <PublicProfilePage />
+            </MarketplaceOnlyRoute>
           }
         />
         <Route
@@ -112,7 +186,7 @@ function App() {
                 </p>
                 <button
                   onClick={() => window.history.back()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100 active:scale-95"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-sm active:scale-95"
                 >
                   Voltar para onde eu estava
                 </button>

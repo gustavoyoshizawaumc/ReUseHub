@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
-import type { Anuncio, AnuncioCriacao } from "../../types/anuncio.types";
+import type { Anuncio } from "../../types/anuncio.types";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { AlertCircle, ArrowLeft, Edit3, Loader2, MapPin, Search, Camera, PlusCircle, X } from "lucide-react";
@@ -15,7 +15,6 @@ export const EditarAnuncioPage: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">("BOM");
@@ -29,7 +28,6 @@ export const EditarAnuncioPage: React.FC = () => {
   const [erroCep, setErroCep] = useState<string | null>(null);
   const [imagens, setImagens] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [erroImagens, setErroImagens] = useState<string | null>(null);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -44,7 +42,6 @@ export const EditarAnuncioPage: React.FC = () => {
           setCategoriaId(String(dados.categoriaId));
           setExpiraEm(dados.expiraEm ? dados.expiraEm.split("T")[0] : "");
 
-          // Endereço direto do DTO
           setCep(dados.cep ?? "");
           setNumero(dados.numero ?? "");
           setComplemento(dados.complemento ?? "");
@@ -54,13 +51,11 @@ export const EditarAnuncioPage: React.FC = () => {
             );
           }
 
-          // Fotos existentes como previews
           if (dados.imagensUrls && dados.imagensUrls.length > 0) {
             const urls = dados.imagensUrls.map((url) =>
               url.startsWith("http") ? url : `http://localhost:8080${url}`
             );
             setPreviews(urls);
-            // imagens fica vazio — só envia novas fotos se o usuário trocar
           }
         }
       } catch (err) {
@@ -97,7 +92,6 @@ export const EditarAnuncioPage: React.FC = () => {
     const total = [...imagens, ...novasImagens].slice(0, 5);
     setImagens(total);
     setPreviews(total.map((f) => URL.createObjectURL(f)));
-    setErroImagens(null);
     e.target.value = "";
   };
 
@@ -123,7 +117,7 @@ export const EditarAnuncioPage: React.FC = () => {
         cep: cep.replace(/\D/g, ""),
         numero,
         complemento: complemento || undefined,
-        enderecoId: anuncio.enderecoId, // ← vem do anúncio carregado
+        enderecoId: anuncio.enderecoId,
       };
 
       const anuncioAtualizado = await anuncioService.atualizarAnuncio(id, dadosAtualizacao);
@@ -137,7 +131,7 @@ export const EditarAnuncioPage: React.FC = () => {
 
   const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider ml-1";
   const inputClass =
-    "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
+    "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
 
   if (carregando) {
     return (
@@ -150,13 +144,13 @@ export const EditarAnuncioPage: React.FC = () => {
   if (erro && !anuncio) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-[32px] shadow-xl text-center max-w-md">
+        <div className="bg-white p-8 rounded-lg shadow-sm text-center max-w-md">
           <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Erro</h2>
           <p className="text-slate-500 mb-6">{erro}</p>
           <button
             onClick={() => navigate(-1)}
-            className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold transition-all active:scale-95"
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold transition-all active:scale-95"
           >
             Voltar
           </button>
@@ -169,8 +163,8 @@ export const EditarAnuncioPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmc+')] py-12 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-[32px] shadow-xl w-full max-w-3xl p-8 md:p-12 border border-slate-100">
+      <main className="flex-grow bg-[#f1f5f9] py-12 px-4 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-sm w-full max-w-3xl p-8 md:p-12 border border-slate-100">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-8 transition-colors group"
@@ -309,7 +303,7 @@ export const EditarAnuncioPage: React.FC = () => {
                       type="button"
                       onClick={handleBuscarCep}
                       disabled={buscandoCep}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all disabled:opacity-50"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
                     >
                       {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                     </button>
@@ -388,7 +382,7 @@ export const EditarAnuncioPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-orange-600 text-white font-bold rounded-[24px] shadow-lg shadow-orange-200 hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-5 bg-orange-600 text-white font-bold rounded-lg shadow-sm hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

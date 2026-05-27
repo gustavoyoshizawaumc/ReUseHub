@@ -1,157 +1,222 @@
 import React, { useState } from "react";
 import {
-  Filter,
-  RotateCcw,
-  ChevronRight,
-  Layers,
-  HandHelping,
   ArrowLeftRight,
+  ChevronRight,
+  Filter,
+  HandHelping,
+  Layers,
+  Loader2,
+  MapPin,
   PlusCircle,
+  RotateCcw,
+  SortAsc,
 } from "lucide-react";
+import type { BuscaFiltro, TipoOrdenacao } from "../../types/busca.types";
+import { useLocalizacao } from "../../hooks/useLocalizacao";
 
 interface FiltrosAnunciosProps {
-  onFiltrarTipo: (tipo: "DOACAO" | "TROCA") => void;
-  onFiltrarCategoria: (categoriaId: number) => void;
+  onFiltrar: (filtro: BuscaFiltro) => void;
   onLimpar: () => void;
 }
 
 const CATEGORIAS = [
-  { id: 5, nome: "Casa, Decoração" },
+  { id: 1, nome: "Imoveis" },
+  { id: 2, nome: "Autos" },
+  { id: 3, nome: "Autopecas" },
+  { id: 4, nome: "Celulares e Telefonia" },
+  { id: 5, nome: "Casa, Decoracao e Utensilios" },
+  { id: 6, nome: "Esportes e Fitness" },
+  { id: 7, nome: "Servicos" },
   { id: 8, nome: "Moda e Beleza" },
-  { id: 11, nome: "Música e Hobbies" },
+  { id: 9, nome: "Artigos Infantis" },
+  { id: 10, nome: "Animais de Estimacao" },
+  { id: 11, nome: "Musica e Hobbies" },
+  { id: 12, nome: "Agro e Industria" },
+  { id: 13, nome: "Vagas de Emprego" },
+  { id: 14, nome: "Comercio" },
+  { id: 15, nome: "Cameras e Drones" },
   { id: 16, nome: "Games" },
-  { id: 19, nome: "Informática" },
+  { id: 17, nome: "TVs e Video" },
+  { id: 18, nome: "Audio" },
+  { id: 19, nome: "Informatica" },
   { id: 20, nome: "Eletro" },
-  { id: 21, nome: "Móveis" },
+  { id: 21, nome: "Moveis" },
+  { id: 22, nome: "Materiais de Construcao" },
+  { id: 23, nome: "Escritorio e Home Office" },
 ];
 
-export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({
-  onFiltrarTipo,
-  onFiltrarCategoria,
-  onLimpar,
-}) => {
+const OPCOES_ORDENACAO: { value: TipoOrdenacao; label: string }[] = [
+  { value: "RELEVANCIA", label: "Mais relevantes" },
+  { value: "DISTANCIA", label: "Mais proximos" },
+  { value: "RECENTES", label: "Mais recentes" },
+  { value: "POPULARES", label: "Mais visualizados" },
+];
+
+const RAIOS_KM = [5, 10, 25, 50, 100];
+
+export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onLimpar }) => {
   const [tipo, setTipo] = useState<"DOACAO" | "TROCA" | "">("");
-  const [categoria, setCategoria] = useState<number | "">("");
+  const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM" | "">("");
+  const [categoriaId, setCategoriaId] = useState<number | "">("");
+  const [ordenacao, setOrdenacao] = useState<TipoOrdenacao | "">("");
+  const [cep, setCep] = useState("");
+  const [raioKm, setRaioKm] = useState<number>(10);
+  const [fonteLocalizacao, setFonteLocalizacao] = useState<"gps" | "cep" | "nenhuma">("nenhuma");
 
-  const handleTipoChange = (novoTipo: "DOACAO" | "TROCA") => {
-    setTipo(novoTipo);
-    onFiltrarTipo(novoTipo);
-  };
+  const { coordenadas, carregandoLocalizacao, obterLocalizacao, limparLocalizacao } = useLocalizacao();
+  const possuiFiltroAtivo = Boolean(tipo || condicao || categoriaId || ordenacao || fonteLocalizacao !== "nenhuma");
 
-  const handleCategoriaChange = (categoriaId: number) => {
-    setCategoria(categoriaId);
-    onFiltrarCategoria(categoriaId);
+  const montarFiltro = (): BuscaFiltro => {
+    const filtro: BuscaFiltro = {};
+    if (tipo) filtro.tipo = tipo;
+    if (condicao) filtro.condicao = condicao;
+    if (categoriaId) filtro.categoriaId = Number(categoriaId);
+    if (ordenacao) filtro.ordenacao = ordenacao;
+    if (fonteLocalizacao === "gps" && coordenadas) {
+      filtro.latitude = coordenadas.latitude;
+      filtro.longitude = coordenadas.longitude;
+      filtro.raioKm = raioKm;
+    }
+    if (fonteLocalizacao === "cep" && cep.length === 8) {
+      filtro.cep = cep;
+      filtro.raioKm = raioKm;
+    }
+    return filtro;
   };
 
   const handleLimpar = () => {
     setTipo("");
-    setCategoria("");
+    setCondicao("");
+    setCategoriaId("");
+    setOrdenacao("");
+    setCep("");
+    setRaioKm(10);
+    setFonteLocalizacao("nenhuma");
+    limparLocalizacao();
     onLimpar();
   };
 
+  const handleTipo = (novoTipo: "DOACAO" | "TROCA") => {
+    setTipo(tipo === novoTipo ? "" : novoTipo);
+  };
+
+  const handleUsarGps = () => {
+    if (fonteLocalizacao === "gps") {
+      setFonteLocalizacao("nenhuma");
+      limparLocalizacao();
+      return;
+    }
+    setFonteLocalizacao("gps");
+    obterLocalizacao();
+  };
+
+  const labelSecao = "text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2";
+  const botaoFiltro = (ativo: boolean, corAtivo: string) =>
+    `flex items-center justify-between px-4 py-3 rounded-lg font-bold text-sm transition-all border ${
+      ativo ? corAtivo : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
+    }`;
+
   return (
-    <div className="flex flex-col gap-8 font-plus-jakarta-sans text-left">
+    <div className="flex flex-col gap-6 font-plus-jakarta-sans text-left">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
           <Filter size={16} className="text-blue-600" />
           Filtros
         </h2>
-        {(tipo || categoria) && (
-          <button
-            onClick={handleLimpar}
-            className="text-[11px] font-bold text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors"
-          >
+        {possuiFiltroAtivo && (
+          <button onClick={handleLimpar} className="text-[11px] font-bold text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors">
             <RotateCcw size={12} /> Limpar
           </button>
         )}
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+      <div className="space-y-3">
+        <h3 className={labelSecao}>
           <Layers size={14} /> Modalidade
         </h3>
         <div className="flex flex-col gap-2">
-          <button
-            onClick={() => handleTipoChange("DOACAO")}
-            className={`flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all border ${
-              tipo === "DOACAO"
-                ? "bg-teal-50 border-teal-200 text-teal-700 shadow-sm shadow-teal-50"
-                : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <HandHelping size={18} /> Doação
-            </div>
+          <button type="button" onClick={() => handleTipo("DOACAO")} className={botaoFiltro(tipo === "DOACAO", "bg-teal-50 border-teal-200 text-teal-700 shadow-sm")}>
+            <div className="flex items-center gap-3"><HandHelping size={18} /> Doacao</div>
             {tipo === "DOACAO" && <ChevronRight size={14} />}
           </button>
-
-          <button
-            onClick={() => handleTipoChange("TROCA")}
-            className={`flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all border ${
-              tipo === "TROCA"
-                ? "bg-orange-50 border-orange-200 text-orange-700 shadow-sm shadow-orange-50"
-                : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <ArrowLeftRight size={18} /> Troca
-            </div>
+          <button type="button" onClick={() => handleTipo("TROCA")} className={botaoFiltro(tipo === "TROCA", "bg-orange-50 border-orange-200 text-orange-700 shadow-sm")}>
+            <div className="flex items-center gap-3"><ArrowLeftRight size={18} /> Troca</div>
             {tipo === "TROCA" && <ChevronRight size={14} />}
           </button>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-          <PlusCircle size={14} /> Categorias
-        </h3>
-        <div className="relative group">
-          <select
-            value={categoria}
-            onChange={(e) => handleCategoriaChange(Number(e.target.value))}
-            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all appearance-none cursor-pointer"
-          >
-            <option value="">Todas as categorias</option>
-            {CATEGORIAS.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nome}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
-            <ChevronDown size={18} />
-          </div>
-        </div>
+      <div className="space-y-3">
+        <h3 className={labelSecao}><PlusCircle size={14} /> Condicao</h3>
+        <select value={condicao} onChange={(e) => setCondicao(e.target.value as typeof condicao)} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
+          <option value="">Qualquer condicao</option>
+          <option value="NOVO">Novo</option>
+          <option value="BOM">Bem conservado</option>
+          <option value="REGULAR">Regular</option>
+          <option value="RUIM">Ruim</option>
+        </select>
       </div>
 
-      <button
-        onClick={handleLimpar}
-        className="mt-4 py-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 text-xs font-bold hover:border-blue-200 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
-      >
-        <RotateCcw size={14} /> Resetar preferências
+      <div className="space-y-3">
+        <h3 className={labelSecao}><PlusCircle size={14} /> Categoria</h3>
+        <select value={categoriaId} onChange={(e) => setCategoriaId(Number(e.target.value) || "")} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
+          <option value="">Todas as categorias</option>
+          {CATEGORIAS.map((cat) => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className={labelSecao}><SortAsc size={14} /> Ordenar por</h3>
+        <select value={ordenacao} onChange={(e) => setOrdenacao(e.target.value as TipoOrdenacao)} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
+          <option value="">Padrao</option>
+          {OPCOES_ORDENACAO.map((op) => <option key={op.value} value={op.value}>{op.label}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className={labelSecao}><MapPin size={14} /> Localizacao</h3>
+        <div className="flex flex-col gap-2">
+          <button type="button" onClick={handleUsarGps} disabled={carregandoLocalizacao} className={botaoFiltro(fonteLocalizacao === "gps", "bg-blue-50 border-blue-200 text-blue-700 shadow-sm")}>
+            <div className="flex items-center gap-3">
+              {carregandoLocalizacao ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
+              {carregandoLocalizacao ? "Obtendo..." : "Usar minha localizacao"}
+            </div>
+            {fonteLocalizacao === "gps" && coordenadas && <ChevronRight size={14} />}
+          </button>
+          <input
+            type="text"
+            placeholder="Ou digite seu CEP"
+            value={cep}
+            maxLength={8}
+            onChange={(e) => {
+              const valor = e.target.value.replace(/\D/g, "");
+              setCep(valor);
+              setFonteLocalizacao(valor.length === 8 ? "cep" : "nenhuma");
+            }}
+            className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all placeholder:font-normal"
+          />
+        </div>
+
+        {fonteLocalizacao !== "nenhuma" && (
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Raio de busca</p>
+            <div className="flex flex-wrap gap-2">
+              {RAIOS_KM.map((raio) => (
+                <button key={raio} type="button" onClick={() => setRaioKm(raio)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${raioKm === raio ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"}`}>
+                  {raio}km
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button type="button" onClick={() => onFiltrar(montarFiltro())} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all active:scale-[0.99]">
+        Aplicar filtros
+      </button>
+      <button type="button" onClick={handleLimpar} className="py-3 border-2 border-dashed border-slate-100 rounded-lg text-slate-400 text-xs font-bold hover:border-blue-200 hover:text-blue-500 transition-all flex items-center justify-center gap-2">
+        <RotateCcw size={14} /> Resetar preferencias
       </button>
     </div>
   );
 };
-
-const ChevronDown = ({
-  size,
-  className,
-}: {
-  size: number;
-  className?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
