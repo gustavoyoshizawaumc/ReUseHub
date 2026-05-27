@@ -1,0 +1,47 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build do JAR
+        run: |
+          cd backend
+          ./mvnw clean package -DskipTests
+
+      - name: Configurar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/chave-reusehub.pem
+          chmod 600 ~/.ssh/chave-reusehub.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Enviar JAR para o EC2
+        run: |
+          scp -i ~/.ssh/chave-reusehub.pem \
+            backend/target/backend-0.0.1-SNAPSHOT.jar \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/backend-new.jar
+
+      - name: Substituir JAR e reiniciar serviço
+        run: |
+          ssh -i ~/.ssh/chave-reusehub.pem \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mv /home/ubuntu/backend-new.jar /home/ubuntu/backend-0.0.1-SNAPSHOT.jar && sudo systemctl restart reusehub"
