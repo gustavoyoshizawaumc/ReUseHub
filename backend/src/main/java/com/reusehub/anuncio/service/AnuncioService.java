@@ -51,6 +51,7 @@ public class AnuncioService {
             List<MultipartFile> imagens
     ) {
         Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        validarContaUsuarioComum(usuario, "criar anuncios");
         Endereco enderecoSalvo = cadastrarEnderecoEnriquecido(usuario, dto);
         Categoria categoria = buscarCategoriaPorId(dto.getCategoriaId());
 
@@ -139,6 +140,7 @@ public class AnuncioService {
         anuncio.setCondicao(dto.getCondicao());
         anuncio.setEndereco(endereco);
         anuncio.setExpiraEm(dto.getExpiraEm());
+        anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
 
         Anuncio atualizado = anuncioRepository.save(anuncio);
         return mapearParaRespostaDTO(atualizado);
@@ -206,6 +208,7 @@ public class AnuncioService {
 
     public void favoritarAnuncio(UUID anuncioId, String emailUsuario) {
         Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        validarContaUsuarioComum(usuario, "favoritar anuncios");
         Anuncio anuncio = buscarAnuncioPorId(anuncioId);
 
         if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
@@ -377,6 +380,12 @@ public class AnuncioService {
             throw new AcessoNegadoException("Acesso negado: Você não tem permissão de moderação.");
         }
         return moderador;
+    }
+
+    private void validarContaUsuarioComum(Usuario usuario, String acao) {
+        if (usuario.getPerfil() != Perfil.USUARIO) {
+            throw new AcessoNegadoException("Contas administrativas nao podem " + acao + ".");
+        }
     }
 
     private void validarAcessoAnuncioInativo(Anuncio anuncio, String emailUsuario) {

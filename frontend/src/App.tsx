@@ -16,123 +16,152 @@ import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
 import { PublicProfilePage } from "./pages/Profile/PublicProfilePage";
 import { ChatPage } from "./pages/Chat/ChatPage";
 import { InteressesRecebidosPage } from "./pages/Interesse/InteressesRecebidosPage";
-import { PrivateRoute } from "./components/PrivateRoute";
 import { ModeracaoPage } from './pages/Moderacao/ModeracaoPage';
 import { ModeratorRoute } from './components/ModeratorRoute';
+import { UserOnlyRoute } from "./components/UserOnlyRoute";
+import { MarketplaceOnlyRoute } from "./components/MarketplaceOnlyRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/"
+          element={
+            <MarketplaceOnlyRoute>
+              <HomePage />
+            </MarketplaceOnlyRoute>
+          }
+        />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
-        <Route path="/anuncios" element={<ExplorarAnunciosPage />} />
-        <Route path="/anuncios/:id" element={<DetalhesAnuncioPage />} />
+        <Route
+          path="/anuncios"
+          element={
+            <MarketplaceOnlyRoute>
+              <ExplorarAnunciosPage />
+            </MarketplaceOnlyRoute>
+          }
+        />
+        <Route
+          path="/anuncios/:id"
+          element={
+            <MarketplaceOnlyRoute>
+              <DetalhesAnuncioPage />
+            </MarketplaceOnlyRoute>
+          }
+        />
 
         <Route
           path="/create-listing"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <CriarAnuncioPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/anuncios/:id/editar"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <EditarAnuncioPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/meus-anuncios"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <MeusAnunciosPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/favoritos"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <FavoritosPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/favorites"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <FavoritosPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/chat"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <ChatPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/profile"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <ProfilePage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/profile/edit"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <EditProfilePage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/profile/delete"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <DeleteAccountPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/interesses"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <InteressesRecebidosPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
         <Route
           path="/interesses/recebidos"
           element={
-            <PrivateRoute>
+            <UserOnlyRoute>
               <InteressesRecebidosPage />
-            </PrivateRoute>
+            </UserOnlyRoute>
           }
         />
 
-        <Route path="/perfil/:id" element={<PublicProfilePage />} />
+        <Route
+          path="/perfil/:id"
+          element={
+            <MarketplaceOnlyRoute>
+              <PublicProfilePage />
+            </MarketplaceOnlyRoute>
+          }
+        />
         <Route
           path="/moderacao"
           element={

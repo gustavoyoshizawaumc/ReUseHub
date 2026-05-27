@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock3,
   Eye,
+  Flag,
   Heart,
   PackageCheck,
   Tag,
@@ -13,6 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Anuncio } from "../../types/anuncio.types";
+import { authService } from "../../services/authService";
+import { DenunciaAnuncioModal } from "../denuncia/DenunciaAnuncioModal";
 
 const BASE_URL = "http://localhost:8080";
 
@@ -73,11 +76,14 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   onToggleFavorito,
 }) => {
   const navigate = useNavigate();
+  const [modalDenunciaAberto, setModalDenunciaAberto] = React.useState(false);
   const cardVariant = variant === "grid" || !onDelete ? "grid" : "list";
   const fotoCapa = anuncio.imagensUrls?.[0];
   const fotoCapaUrl = fotoCapa ? (fotoCapa.startsWith("http") ? fotoCapa : `${BASE_URL}${fotoCapa}`) : null;
   const statusConfig = getStatusConfig(anuncio.status);
   const StatusIcon = statusConfig.icon;
+  const user = authService.getUser();
+  const podeDenunciar = anuncio.status === "ATIVO" && user?.id !== anuncio.usuarioId;
 
   const handlePrimaryAction = () => {
     if (anuncio.status === "ATIVO") {
@@ -92,6 +98,15 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   const handleToggleFavorito = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onToggleFavorito?.(anuncio.id);
+  };
+
+  const handleDenunciar = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
+    setModalDenunciaAberto(true);
   };
 
   const imageBlock = (
@@ -122,6 +137,16 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
           >
             <Heart size={16} fill={isFavorito ? "currentColor" : "none"} />
           </button>
+          {podeDenunciar && (
+            <button
+              type="button"
+              onClick={handleDenunciar}
+              className="absolute right-3 top-16 flex h-10 w-10 items-center justify-center rounded-lg bg-white/95 text-slate-500 shadow-sm backdrop-blur transition-all hover:bg-orange-50 hover:text-orange-600"
+              title="Denunciar anuncio"
+            >
+              <Flag size={16} />
+            </button>
+          )}
         </>
       )}
     </div>
@@ -165,62 +190,90 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
 
   if (cardVariant === "grid") {
     return (
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handlePrimaryAction}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handlePrimaryAction();
-          }
-        }}
-        className="group flex h-full w-full flex-col overflow-hidden rounded-lg border border-slate-100 bg-white text-left shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 active:scale-[0.99]"
-      >
-        {imageBlock}
-        <div className="flex flex-1 flex-col p-4">{content}</div>
-      </div>
+      <>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={handlePrimaryAction}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              handlePrimaryAction();
+            }
+          }}
+          className="group flex h-full w-full flex-col overflow-hidden rounded-lg border border-slate-100 bg-white text-left shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 active:scale-[0.99]"
+        >
+          {imageBlock}
+          <div className="flex flex-1 flex-col p-4">{content}</div>
+        </div>
+        <DenunciaAnuncioModal
+          open={modalDenunciaAberto}
+          onClose={() => setModalDenunciaAberto(false)}
+          anuncioId={anuncio.id}
+          anuncioTitulo={anuncio.titulo}
+        />
+      </>
     );
   }
 
   return (
-    <div className="group flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-200 sm:p-4 md:flex-row md:gap-5">
-      {imageBlock}
-      {content}
-      <div className="flex shrink-0 justify-end gap-2 md:flex-col md:border-l md:border-slate-100 md:pl-5">
-        <button
-          type="button"
-          onClick={handleToggleFavorito}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg p-3 transition-colors active:scale-[0.99] md:flex-none ${
-            isFavorito ? "bg-rose-50 text-rose-500 hover:bg-rose-100" : "bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
-          }`}
-          title="Favoritar anuncio"
-          aria-pressed={isFavorito}
-        >
-          <span className="text-xs font-bold md:hidden">{isFavorito ? "Favoritado" : "Favoritar"}</span>
-          <Heart size={18} fill={isFavorito ? "currentColor" : "none"} />
-        </button>
-
-        <button
-          type="button"
-          onClick={handlePrimaryAction}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-50 p-3 text-slate-600 transition-colors hover:bg-blue-600 hover:text-white active:scale-[0.99] md:flex-none"
-        >
-          <span className="text-xs font-bold">{primaryButtonLabel}</span>
-        </button>
-
-        {onDelete && (
+    <>
+      <div className="group flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-200 sm:p-4 md:flex-row md:gap-5">
+        {imageBlock}
+        {content}
+        <div className="flex shrink-0 justify-end gap-2 md:flex-col md:border-l md:border-slate-100 md:pl-5">
           <button
             type="button"
-            onClick={() => onDelete(anuncio.id)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-50 p-3 text-red-500 transition-colors hover:bg-red-500 hover:text-white active:scale-[0.99] md:flex-none"
-            title="Deletar anuncio"
+            onClick={handleToggleFavorito}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg p-3 transition-colors active:scale-[0.99] md:flex-none ${
+              isFavorito ? "bg-rose-50 text-rose-500 hover:bg-rose-100" : "bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+            }`}
+            title="Favoritar anuncio"
+            aria-pressed={isFavorito}
           >
-            <span className="text-xs font-bold md:hidden">Deletar</span>
-            <Trash2 size={18} />
+            <span className="text-xs font-bold md:hidden">{isFavorito ? "Favoritado" : "Favoritar"}</span>
+            <Heart size={18} fill={isFavorito ? "currentColor" : "none"} />
           </button>
-        )}
+
+          <button
+            type="button"
+            onClick={handlePrimaryAction}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-50 p-3 text-slate-600 transition-colors hover:bg-blue-600 hover:text-white active:scale-[0.99] md:flex-none"
+          >
+            <span className="text-xs font-bold">{primaryButtonLabel}</span>
+          </button>
+
+          {podeDenunciar && (
+            <button
+              type="button"
+              onClick={handleDenunciar}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-50 p-3 text-orange-600 transition-colors hover:bg-orange-100 active:scale-[0.99] md:flex-none"
+              title="Denunciar anuncio"
+            >
+              <span className="text-xs font-bold md:hidden">Denunciar</span>
+              <Flag size={18} />
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(anuncio.id)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-50 p-3 text-red-500 transition-colors hover:bg-red-500 hover:text-white active:scale-[0.99] md:flex-none"
+              title="Deletar anuncio"
+            >
+              <span className="text-xs font-bold md:hidden">Deletar</span>
+              <Trash2 size={18} />
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+      <DenunciaAnuncioModal
+        open={modalDenunciaAberto}
+        onClose={() => setModalDenunciaAberto(false)}
+        anuncioId={anuncio.id}
+        anuncioTitulo={anuncio.titulo}
+      />
+    </>
   );
 };

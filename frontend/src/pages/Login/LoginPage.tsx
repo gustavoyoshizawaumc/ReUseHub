@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
 import type { LoginRequest } from "../../types/auth.types";
+import { isPerfilOperacional } from "../../utils/perfil";
 
 const Spinner: React.FC = () => (
   <div className="flex items-center justify-center">
@@ -70,8 +71,8 @@ export const LoginPage: React.FC = () => {
     }
 
     try {
-      await authService.login(formData);
-      navigate("/");
+      const usuario = await authService.login(formData);
+      navigate(isPerfilOperacional(usuario.perfil) ? "/moderacao" : "/");
     } catch (err: any) {
       setFormError(
         err.message || "Erro ao fazer login. Verifique suas credenciais.",
