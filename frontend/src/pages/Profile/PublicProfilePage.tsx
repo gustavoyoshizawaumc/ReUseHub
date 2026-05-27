@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Calendar, MessageSquare, Star, User2 } from "lucide-react";
 import { Header } from "../../components/Header";
@@ -8,7 +8,7 @@ import { obterPerfilPublico } from "../../services/perfilService";
 import { removerAvaliacaoModeracao } from "../../services/moderacaoService";
 import type { PerfilPublico } from "../../types/perfil.types";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL;
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 const imagemUrl = (url?: string | null) => {

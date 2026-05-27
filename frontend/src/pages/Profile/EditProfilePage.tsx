@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import { Header } from "../../components/Header";
@@ -103,7 +103,7 @@ export const EditProfilePage: React.FC = () => {
     ) {
       return formData.avatarPreview;
     }
-    return `http://localhost:8080${formData.avatarPreview.startsWith("/") ? "" : "/"}${formData.avatarPreview}`;
+    return `${import.meta.env.VITE_API_URL}${formData.avatarPreview.startsWith("/") ? "" : "/"}${formData.avatarPreview}`;
   };
 
   return (

@@ -1,9 +1,9 @@
-import type {
+﻿import type {
   AvaliacaoCriacaoPayload,
   AvaliacaoResposta,
 } from "../types/avaliacao.types";
 
-const BASE_URL = "http://localhost:8080/api/avaliacoes";
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api/avaliacoes`;
 
 function getAuthHeaders() {
   const token = localStorage.getItem("token");

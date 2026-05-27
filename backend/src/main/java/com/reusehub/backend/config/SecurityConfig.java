@@ -94,6 +94,9 @@ public class SecurityConfig {
                 .build();
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
@@ -128,6 +131,7 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
 
         config.setAllowedOrigins(java.util.List.of(
+                frontendUrl,
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://localhost:3000"

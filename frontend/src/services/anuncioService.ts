@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 import type {
   Anuncio,
   AnuncioCriacao,
@@ -7,7 +7,7 @@ import type {
 } from "../types/anuncio.types";
 import type { BuscaFiltro } from "../types/busca.types";
 
-const API_URL = "http://localhost:8080/api/anuncios";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/anuncios`;
 
 const api = axios.create({
   baseURL: API_URL,
