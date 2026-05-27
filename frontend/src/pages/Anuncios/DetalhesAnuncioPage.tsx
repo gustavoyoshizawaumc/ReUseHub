@@ -7,6 +7,7 @@ import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { InteresseModal } from "../../components/interesse/InteresseModal";
 import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
+import { DenunciaAnuncioModal } from "../../components/denuncia/DenunciaAnuncioModal";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import {
   ArrowLeft,
@@ -23,6 +24,7 @@ import {
   ChevronRight,
   ImageOff,
   Info,
+  ShieldAlert,
 } from "lucide-react";
 
 const BASE_URL = "http://localhost:8080";
@@ -38,6 +40,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [imagemAtual, setImagemAtual] = useState(0);
   const [modalInteresseAberto, setModalInteresseAberto] = useState(false);
   const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
+  const [modalDenunciaAberto, setModalDenunciaAberto] = useState(false);
   const [iniciandoChat, setIniciandoChat] = useState(false);
   const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
 
@@ -151,6 +154,11 @@ export const DetalhesAnuncioPage: React.FC = () => {
     }
   };
 
+  const handleAbrirDenuncia = () => {
+    if (!exigirLogin()) return;
+    setModalDenunciaAberto(true);
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
@@ -184,6 +192,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
     const podeEnviarInteresse = !isEDono && anuncioEstaAtivo && anuncio.tipo === "TROCA";
     const podeInteragir = podeFalarComAnunciante || podeEnviarInteresse;
     const mostrarFavoritos = !isEDono && anuncioEstaAtivo;
+    const podeDenunciar = !isEDono && anuncioEstaAtivo;
     const podeAvaliarAnunciante = !isEDono && anuncioConcluido;
     const anuncioFavoritado = ehFavorito(anuncio.id);
 
@@ -414,6 +423,17 @@ export const DetalhesAnuncioPage: React.FC = () => {
                               : "Salvar nos Favoritos"}
                           </button>
                         )}
+
+                        {podeDenunciar && (
+                          <button
+                            type="button"
+                            onClick={handleAbrirDenuncia}
+                            className="w-full py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-200"
+                          >
+                            <ShieldAlert size={18} />
+                            Denunciar anuncio
+                          </button>
+                        )}
                       </>
                     ) : (
                       <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
@@ -431,6 +451,17 @@ export const DetalhesAnuncioPage: React.FC = () => {
                       >
                         <Star size={18} />
                         Avaliar anunciante
+                      </button>
+                    )}
+
+                    {podeDenunciar && !podeInteragir && (
+                      <button
+                        type="button"
+                        onClick={handleAbrirDenuncia}
+                        className="w-full py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-200"
+                      >
+                        <ShieldAlert size={18} />
+                        Denunciar anuncio
                       </button>
                     )}
                   </div>
@@ -471,6 +502,13 @@ export const DetalhesAnuncioPage: React.FC = () => {
         anuncioId={anuncio.id}
         avaliadoId={anuncio.usuarioId}
         avaliadoNome={anuncio.nomeUsuario}
+      />
+
+      <DenunciaAnuncioModal
+        open={modalDenunciaAberto}
+        onClose={() => setModalDenunciaAberto(false)}
+        anuncioId={anuncio.id}
+        anuncioTitulo={anuncio.titulo}
       />
     </div>
   );

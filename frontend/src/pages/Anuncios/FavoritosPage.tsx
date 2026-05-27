@@ -123,7 +123,9 @@ export const FavoritosPage: React.FC = () => {
                     anuncio={anuncio}
                     variant="grid"
                     isFavorito={ehFavorito(anuncio.id)}
-                    onToggleFavorito={alternarFavorito}
+                    onToggleFavorito={async (anuncioId) => {
+                      await alternarFavorito(anuncioId);
+                    }}
                   />
                 ))}
               </div>

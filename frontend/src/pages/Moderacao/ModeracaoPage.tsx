@@ -23,7 +23,7 @@ import {
   Users,
   XCircle,
 } from 'lucide-react';
-import { Header } from '../../components/Header';
+import { OperationalHeader } from '../../components/OperationalHeader';
 import { Footer } from '../../components/Footer';
 import { authService } from '../../services/authService';
 import {
@@ -207,7 +207,7 @@ export const ModeracaoPage: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-plus-jakarta-sans text-left">
-      <Header />
+      <OperationalHeader />
       <main className="flex-grow py-8 md:py-10">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">

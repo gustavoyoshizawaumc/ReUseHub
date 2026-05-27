@@ -51,6 +51,10 @@ public class ModeracaoService {
             throw new RegraNegocioException("Voce nao pode denunciar o proprio anuncio.");
         }
 
+        if (denunciaRepository.existsByDenuncianteIdAndAnuncioId(denunciante.getId(), anuncio.getId())) {
+            throw new RegraNegocioException("Voce ja denunciou este anuncio.");
+        }
+
         DenunciaAnuncio denuncia = DenunciaAnuncio.builder()
                 .denunciante(denunciante)
                 .anuncio(anuncio)

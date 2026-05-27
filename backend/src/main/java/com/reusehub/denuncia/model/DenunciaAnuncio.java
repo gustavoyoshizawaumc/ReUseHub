@@ -9,7 +9,15 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "denuncias_anuncio")
+@Table(
+        name = "denuncias_anuncio",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_denuncias_anuncio_denunciante_anuncio",
+                        columnNames = {"denunciante_id", "anuncio_id"}
+                )
+        }
+)
 @Getter
 @Setter
 @Builder
