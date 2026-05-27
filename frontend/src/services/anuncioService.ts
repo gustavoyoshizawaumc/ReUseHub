@@ -5,6 +5,7 @@ import type {
   AnuncioAtualizacao,
   PaginacaoResponse,
 } from "../types/anuncio.types";
+import type { BuscaFiltro } from "../types/busca.types";
 
 const API_URL = "http://localhost:8080/api/anuncios";
 
@@ -28,28 +29,21 @@ export const criarAnuncio = async (
   imagens: File[]
 ): Promise<Anuncio> => {
   const formData = new FormData();
-
   formData.append(
     "dados",
     new Blob([JSON.stringify(dados)], { type: "application/json" })
   );
-
-  imagens.forEach((imagem) => {
-    formData.append("imagens", imagem);
-  });
-
+  imagens.forEach((imagem) => formData.append("imagens", imagem));
   const response = await api.post("", formData);
   return response.data;
 };
 
 export const listarAnuncios = async (
-  page: number = 0,
-  size: number = 10,
-  sort: string = "criadoEm,desc",
+  page = 0,
+  size = 10,
+  sort = "criadoEm,desc"
 ): Promise<PaginacaoResponse<Anuncio>> => {
-  const response = await api.get("", {
-    params: { page, size, sort },
-  });
+  const response = await api.get("", { params: { page, size, sort } });
   return response.data;
 };
 
@@ -59,30 +53,36 @@ export const obterAnuncio = async (id: string): Promise<Anuncio> => {
 };
 
 export const listarMeusAnuncios = async (
-  page: number = 0,
-  size: number = 10,
+  page = 0,
+  size = 10
 ): Promise<PaginacaoResponse<Anuncio>> => {
-  const response = await api.get("/meus", {
-    params: { page, size },
-  });
+  const response = await api.get("/meus", { params: { page, size } });
   return response.data;
 };
 
 export const buscarAnuncios = async (
   termo: string,
-  page: number = 0,
-  size: number = 10,
+  page = 0,
+  size = 10
 ): Promise<PaginacaoResponse<Anuncio>> => {
-  const response = await api.get("/buscar", {
-    params: { termo, page, size },
-  });
+  const response = await api.get("/buscar", { params: { termo, page, size } });
+  return response.data;
+};
+
+export const buscarComFiltros = async (
+  filtro: BuscaFiltro,
+  page = 0,
+  size = 10
+): Promise<PaginacaoResponse<Anuncio>> => {
+  const params = removerParametrosVazios({ ...filtro, page, size });
+  const response = await api.get("/filtrar", { params });
   return response.data;
 };
 
 export const filtrarPorCategoria = async (
   categoriaId: number,
-  page: number = 0,
-  size: number = 10,
+  page = 0,
+  size = 10
 ): Promise<PaginacaoResponse<Anuncio>> => {
   const response = await api.get(`/categoria/${categoriaId}`, {
     params: { page, size },
@@ -92,18 +92,16 @@ export const filtrarPorCategoria = async (
 
 export const filtrarPorTipo = async (
   tipo: "DOACAO" | "TROCA",
-  page: number = 0,
-  size: number = 10,
+  page = 0,
+  size = 10
 ): Promise<PaginacaoResponse<Anuncio>> => {
-  const response = await api.get(`/tipo/${tipo}`, {
-    params: { page, size },
-  });
+  const response = await api.get(`/tipo/${tipo}`, { params: { page, size } });
   return response.data;
 };
 
 export const atualizarAnuncio = async (
   id: string,
-  dados: AnuncioAtualizacao,
+  dados: AnuncioAtualizacao
 ): Promise<Anuncio> => {
   const response = await api.put(`/${id}`, dados);
   return response.data;
@@ -111,7 +109,7 @@ export const atualizarAnuncio = async (
 
 export const alterarStatus = async (
   id: string,
-  status: "RESERVADO" | "CONCLUIDO" | "CANCELADO",
+  status: "ATIVO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO"
 ): Promise<Anuncio> => {
   const response = await api.patch(`/${id}/status`, null, {
     params: { status },
@@ -122,6 +120,34 @@ export const alterarStatus = async (
 export const deletarAnuncio = async (id: string): Promise<void> => {
   const response = await api.delete(`/${id}`);
   return response.data;
+};
+
+export const listarFavoritos = async (): Promise<Anuncio[]> => {
+  const response = await api.get("/favoritos");
+  return response.data;
+};
+
+export const listarIdsFavoritos = async (): Promise<string[]> => {
+  const response = await api.get("/favoritos/ids");
+  return response.data;
+};
+
+export const favoritarAnuncio = async (id: string): Promise<void> => {
+  await api.post(`/${id}/favoritos`);
+};
+
+export const desfavoritarAnuncio = async (id: string): Promise<void> => {
+  await api.delete(`/${id}/favoritos`);
+};
+
+const removerParametrosVazios = (
+  params: Record<string, unknown>
+): Record<string, unknown> => {
+  return Object.fromEntries(
+    Object.entries(params).filter(
+      ([, valor]) => valor !== undefined && valor !== null && valor !== ""
+    )
+  );
 };
 
 export default api;

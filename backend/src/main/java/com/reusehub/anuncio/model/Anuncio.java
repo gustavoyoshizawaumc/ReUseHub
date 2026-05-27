@@ -90,6 +90,7 @@ public class Anuncio {
         PENDENTE,
         ATIVO,
         REPROVADO,
+        SUSPENSO,
         RESERVADO,
         CONCLUIDO,
         CANCELADO

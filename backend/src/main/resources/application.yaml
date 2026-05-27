@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
+
   application:
     name: reusehub
 
@@ -9,8 +12,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/reusehub
-    username: ${DB_USER:reusehub}
-    password: ${DB_PASSWORD:reusehub123}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   flyway:
@@ -47,6 +50,11 @@ spring:
 app:
   upload:
     dir: uploads
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
+resend:
+  api-key: ${RESEND_API_KEY}
+  from-email: ${RESEND_FROM_EMAIL:ReUseHub <noreply@reusehub.com.br>}
 
 server:
   port: 8080
@@ -54,7 +62,7 @@ server:
     context-path: /
 
 jwt:
-  secret: "9aPq8bRs7cTu6vWx5yZa4bCd3eEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGh"
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 logging:

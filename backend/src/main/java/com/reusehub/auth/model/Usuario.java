@@ -47,6 +47,10 @@ public class Usuario extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "banido")
+    @Builder.Default
+    private Boolean banido = false;
+
     @Column(name = "email_verificado")
     @Builder.Default
     private Boolean isVerified = false;

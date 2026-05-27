@@ -10,7 +10,7 @@ const API_URL = "http://localhost:8080/api/auth";
 
 export const authService = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await fetch(`${API_URL}/register`, {
+    const response = await fetch(`${API_URL}/registrar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -56,7 +56,7 @@ export const authService = {
       throw new Error("Token não encontrado. Faça login novamente.");
     }
 
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/minha-conta`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -89,7 +89,7 @@ export const authService = {
       formData.append("bio", data.bio || "");
       formData.append("avatarFile", avatarFile);
 
-      const response = await fetch(`${API_URL}/me`, {
+      const response = await fetch(`${API_URL}/minha-conta`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -107,7 +107,7 @@ export const authService = {
       return result;
     }
 
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/minha-conta`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -133,7 +133,7 @@ export const authService = {
       throw new Error("Token não encontrado. Faça login novamente.");
     }
 
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/minha-conta`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -166,5 +166,33 @@ export const authService = {
 
   isLoggedIn: (): boolean => {
     return !!localStorage.getItem("token");
+  },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    const response = await fetch(`${API_URL}/esqueci-senha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao solicitar recuperação de senha");
+    }
+  },
+
+  resetPassword: async (
+    token: string,
+    novaSenha: string,
+    confirmacaoSenha: string,
+  ): Promise<void> => {
+    const response = await fetch(`${API_URL}/redefinir-senha`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, novaSenha, confirmacaoSenha }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Erro ao redefinir senha");
+    }
   },
 };

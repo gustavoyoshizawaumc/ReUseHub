@@ -4,8 +4,10 @@ import com.reusehub.auth.filter.JwtAuthenticationFilter;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.auth.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -33,6 +35,10 @@ public class SecurityConfig {
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
 
+    @Lazy
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -41,48 +47,62 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/registrar",
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/esqueci-senha",
+                                "/api/auth/redefinir-senha"
+                        ).permitAll()
 
-                    .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/filtrar").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/perfis/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/avaliacoes/usuario/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/static/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
 
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
+                        .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                        .requestMatchers("/api/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                    .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
-                    .requestMatchers("/uploads/**").permitAll()
-                    .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/anuncios/favoritos/**").hasRole("USUARIO")
+                        .requestMatchers("/api/anuncios/meus/**").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/anuncios").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/anuncios/*/favoritos").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/anuncios/*/favoritos").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").hasRole("USUARIO")
+                        .requestMatchers("/api/chat/**").hasRole("USUARIO")
+                        .requestMatchers("/api/interesses/**").hasRole("USUARIO")
+                        .requestMatchers("/api/denuncias/**").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/avaliacoes/**").hasRole("USUARIO")
 
-                    // moderação: precisa vir antes das regras genéricas de /api/anuncios/**
-                    .requestMatchers("/api/anuncios/moderacao/**").hasAnyRole("MODERADOR", "ADMIN")
-
-                    .requestMatchers(HttpMethod.POST, "/api/anuncios").authenticated()
-                    .requestMatchers("/api/anuncios/meus/**").authenticated()
-                    .requestMatchers(HttpMethod.PUT, "/api/anuncios/**").authenticated()
-                    .requestMatchers(HttpMethod.DELETE, "/api/anuncios/**").authenticated()
-                    .requestMatchers(HttpMethod.PATCH, "/api/anuncios/**").authenticated()
-
-                    .anyRequest().authenticated()
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(
-                    new JwtAuthenticationFilter(jwtService, userDetailsService()),
-                    UsernamePasswordAuthenticationFilter.class
-                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> usuarioRepository.findByEmail(email)
-                .filter(u -> u.getIsActive())
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()) && !Boolean.TRUE.equals(u.getBanido()))
                 .map(u -> User.withUsername(u.getEmail())
                         .password(u.getPasswordHash())
                         .authorities("ROLE_" + u.getPerfil().name())
                         .build())
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado ou conta deletada"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado ou conta indisponivel"));
     }
 
     @Bean
@@ -108,13 +128,13 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
 
         config.setAllowedOrigins(java.util.List.of(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000"
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:3000"
         ));
 
         config.setAllowedMethods(java.util.List.of(
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
 
         config.setAllowedHeaders(java.util.List.of("*"));
@@ -122,7 +142,7 @@ public class SecurityConfig {
         config.setMaxAge(3600L);
 
         org.springframework.web.cors.UrlBasedCorsConfigurationSource source =
-            new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+                new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         return source;

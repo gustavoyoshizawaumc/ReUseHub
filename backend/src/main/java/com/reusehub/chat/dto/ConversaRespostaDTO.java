@@ -7,7 +7,22 @@ public record ConversaRespostaDTO(
     String id,
     String outroUsuarioId,
     String nomeOutroUsuario,
+    String avatarOutroUsuario,
+    String anuncioId,
     String tituloAnuncio,
+    String imagemAnuncio,
+    String anuncioOferecidoId,
+    String tituloAnuncioOferecido,
+    String imagemAnuncioOferecido,
+    String interesseId,
+    String statusAnuncio,
+    LocalDateTime entreguePeloDonoEm,
+    LocalDateTime recebimentoConfirmadoEm,
+    boolean podeMarcarEntregue,
+    boolean podeConfirmarRecebimento,
+    boolean podeAvaliarOutroUsuario,
+    boolean usuarioJaAvaliou,
+    boolean chatFechado,
     List<MensagemDto> mensagens
 ) {
     public record MensagemDto(

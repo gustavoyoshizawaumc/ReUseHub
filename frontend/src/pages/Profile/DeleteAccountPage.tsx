@@ -37,8 +37,8 @@ export const DeleteAccountPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmciPg==')] py-12 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-[32px] shadow-xl w-full max-w-2xl p-8 md:p-12 border border-slate-100">
+      <main className="flex-grow bg-[#f1f5f9] py-12 px-4 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-sm w-full max-w-2xl p-8 md:p-12 border border-slate-100">
           <button
             onClick={() => navigate("/profile")}
             className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-8 transition-colors group"
@@ -59,7 +59,7 @@ export const DeleteAccountPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-red-50 border-2 border-red-100 p-6 rounded-2xl mb-10 flex items-start gap-4">
+          <div className="bg-red-50 border-2 border-red-100 p-6 rounded-lg mb-10 flex items-start gap-4">
             <div className="bg-red-100 p-3 rounded-xl text-red-600 shrink-0">
               <AlertTriangle size={24} />
             </div>
@@ -102,7 +102,7 @@ export const DeleteAccountPage: React.FC = () => {
                   value={confirmacao}
                   onChange={(e) => setConfirmacao(e.target.value)}
                   placeholder="Digite aqui..."
-                  className="w-full px-5 py-4 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-red-50 focus:border-red-500 bg-slate-50/50 text-slate-800 outline-none transition-all font-mono font-bold text-[16px] placeholder:font-sans placeholder:font-medium"
+                  className="w-full px-5 py-4 border-2 border-slate-100 rounded-lg focus:ring-4 focus:ring-red-50 focus:border-red-500 bg-slate-50/50 text-slate-800 outline-none transition-all font-mono font-bold text-[16px] placeholder:font-sans placeholder:font-medium"
                 />
               </div>
             </div>
@@ -110,7 +110,7 @@ export const DeleteAccountPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button
                 onClick={() => navigate("/profile")}
-                className="flex-1 py-4 border-2 border-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-50 transition-all active:scale-[0.98]"
+                className="flex-1 py-4 border-2 border-slate-100 text-slate-500 font-bold rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98]"
               >
                 Manter minha conta
               </button>
@@ -118,7 +118,7 @@ export const DeleteAccountPage: React.FC = () => {
               <button
                 onClick={handleDeleteAccount}
                 disabled={loading || confirmacao !== "DELETAR MINHA CONTA"}
-                className="flex-[1.5] bg-red-600 text-white font-bold py-4 rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="flex-[1.5] bg-red-600 text-white font-bold py-4 rounded-lg hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
               >
                 {loading ? (
                   <Spinner />

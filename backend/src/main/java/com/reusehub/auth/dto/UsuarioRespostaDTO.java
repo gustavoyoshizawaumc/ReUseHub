@@ -18,6 +18,7 @@ public class UsuarioRespostaDTO {
     private String bio;  
     private BigDecimal reputationScore;  
     private Boolean isActive;  
+    private Boolean banido;
     private Boolean isVerified;  
     private LocalDateTime createdAt; 
     private LocalDateTime updatedAt;  

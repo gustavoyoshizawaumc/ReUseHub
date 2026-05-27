@@ -1,4 +1,3 @@
-// frontend/src/pages/register/RegisterPage.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
@@ -7,6 +6,32 @@ import type { RegisterRequest } from "../../types/auth.types";
 type RegisterFormData = RegisterRequest & {
   confirmPassword: string;
 };
+
+/**
+ * Validação matemática do CPF (dígitos verificadores).
+ * Equivalente ao que o backend faz com @ValidCpf.
+ */
+function validarCpf(cpf: string): boolean {
+  const clean = cpf.replace(/[^\d]/g, "");
+  if (clean.length !== 11) return false;
+  // Rejeita sequências com todos os dígitos iguais
+  if (/^(\d)\1{10}$/.test(clean)) return false;
+
+  const calcDigito = (base: string, pesoInicial: number): number => {
+    let soma = 0;
+    for (let i = 0; i < base.length; i++) {
+      soma += parseInt(base[i]) * (pesoInicial - i);
+    }
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  const primeiroDigito = calcDigito(clean.slice(0, 9), 10);
+  if (parseInt(clean[9]) !== primeiroDigito) return false;
+
+  const segundoDigito = calcDigito(clean.slice(0, 10), 11);
+  return parseInt(clean[10]) === segundoDigito;
+}
 
 const Spinner: React.FC = () => (
   <div className="flex items-center justify-center">
@@ -50,8 +75,7 @@ export const RegisterPage: React.FC = () => {
         if (typeof value === "string") {
           const cleanedCpf = value.replace(/[^\d]/g, "");
           if (!cleanedCpf) error = "CPF é obrigatório.";
-          else if (!/^\d{11}$/.test(cleanedCpf))
-            error = "CPF deve ter 11 dígitos.";
+          else if (!validarCpf(cleanedCpf)) error = "CPF inválido.";
         }
         break;
       case "email":
@@ -116,7 +140,6 @@ export const RegisterPage: React.FC = () => {
 
     try {
       await authService.register(formData);
-      // Rota corrigida aqui!
       navigate("/login");
     } catch (err: any) {
       setFormError(err.message || "Erro ao cadastrar. Tente novamente.");
@@ -126,8 +149,8 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmciPg==')] flex items-center justify-center p-4 sm:p-8">
-      <div className="bg-white rounded-[32px] shadow-xl w-full max-w-lg p-8 md:p-10 border border-slate-100 my-8">
+    <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4 sm:p-8">
+      <div className="bg-white rounded-lg shadow-sm w-full max-w-lg p-8 md:p-10 border border-slate-100 my-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight font-plus-jakarta-sans m-0">
@@ -317,7 +340,7 @@ export const RegisterPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-orange-600 text-white font-bold py-3 rounded-full text-base shadow-lg shadow-orange-100 hover:bg-orange-700 active:scale-[0.98] transition-all duration-200 mt-2"
+            className="w-full bg-orange-600 text-white font-bold py-3 rounded-full text-base shadow-sm hover:bg-orange-700 active:scale-[0.98] transition-all duration-200 mt-2"
           >
             {isLoading ? <Spinner /> : "Criar Conta"}
           </button>
