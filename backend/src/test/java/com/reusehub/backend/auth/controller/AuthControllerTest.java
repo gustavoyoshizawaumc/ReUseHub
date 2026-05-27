@@ -169,7 +169,7 @@ class AuthControllerTest {
         void atualizarComArquivoSucesso() throws Exception {
             MockMultipartFile avatar = new MockMultipartFile("avatarFile", "avatar.png", "image/png", "bytes".getBytes());
             
-            Mockito.when(storageService.salvarImagens(Mockito.any())).thenReturn(Collections.singletonList("/uploads/fake.png"));
+            Mockito.when(storageService.salvarImagens(Mockito.any())).thenReturn(Collections.singletonList("https://reusehub-uploads.s3.us-east-2.amazonaws.com/fake.png"));
             Mockito.when(authService.atualizarPerfilPorEmail(Mockito.anyString(), Mockito.any())).thenReturn(new UsuarioRespostaDTO());
 
             mockMvc.perform(multipart("/api/auth/minha-conta")
