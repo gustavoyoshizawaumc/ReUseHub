@@ -313,12 +313,12 @@ public class AnuncioService {
         return Endereco.builder()
                 .usuario(usuario)
                 .cep(dto.getCep())
-                .rua(dadosCEP.getRua())
+                .rua(dadosCEP.rua())
                 .numero(dto.getNumero())
                 .complemento(dto.getComplemento())
-                .bairro(dadosCEP.getBairro())
-                .cidade(dadosCEP.getCidade())
-                .uf(dadosCEP.getUf())
+                .bairro(dadosCEP.bairro())
+                .cidade(dadosCEP.cidade())
+                .uf(dadosCEP.uf())
                 .latitude(BigDecimal.valueOf(coordenadas.getLatitude()))
                 .longitude(BigDecimal.valueOf(coordenadas.getLongitude()))
                 .principal(false)
@@ -339,11 +339,11 @@ public class AnuncioService {
 
     private String montarEnderecoCompleto(ViaCepService.DadosCEP dadosCEP, String numero) {
         return String.format("%s, %s, %s, %s, %s, Brasil",
-                dadosCEP.getRua(),
+                dadosCEP.rua(),
                 numero,
-                dadosCEP.getBairro(),
-                dadosCEP.getCidade(),
-                dadosCEP.getUf()
+                dadosCEP.bairro(),
+                dadosCEP.cidade(),
+                dadosCEP.uf()
         );
     }
 

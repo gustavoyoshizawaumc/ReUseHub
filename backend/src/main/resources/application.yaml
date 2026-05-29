@@ -61,6 +61,10 @@ resend:
   api-key: ${RESEND_API_KEY}
   from-email: ${RESEND_FROM_EMAIL:ReUseHub <noreply@reusehub.com.br>}
 
+external:
+  viacep:
+    base-url: ${EXTERNAL_VIACEP_BASE_URL:https://viacep.com.br/ws}
+
 server:
   port: 8080
   servlet:
