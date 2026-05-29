@@ -47,6 +47,17 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Testes Unitários de AnuncioService - Camada de Negócio")
 class AnuncioServiceTest {
 
+    private static final String EMAIL_DONO = "dono@reusehub.com";
+    private static final String CEP_VALIDO = "01001-000";
+    private static final double LATITUDE_SAO_PAULO = -23.55;
+    private static final double LONGITUDE_SAO_PAULO = -46.63;
+
+    private static final ViaCepService.DadosCEP DADOS_CEP_PADRAO = new ViaCepService.DadosCEP(
+            CEP_VALIDO, "Rua A", "Bairro B", "Cidade C", "SP"
+    );
+    private static final NominatimService.Coordenadas COORDENADAS_PADRAO =
+            new NominatimService.Coordenadas(LATITUDE_SAO_PAULO, LONGITUDE_SAO_PAULO);
+
     @Mock
     private AnuncioRepository anuncioRepository;
     @Mock
@@ -85,7 +96,7 @@ class AnuncioServiceTest {
         UUID idModerador = UUID.randomUUID();
 
         usuarioDono = new Usuario();
-        usuarioDono.setEmail("dono@reusehub.com");
+        usuarioDono.setEmail(EMAIL_DONO);
         usuarioDono.setName("Dono");
   
         try { usuarioDono.setId(idDono); } catch (Exception e) {}
@@ -111,31 +122,46 @@ class AnuncioServiceTest {
                 .build();
     }
 
+    private void prepararResolucaoEnderecoComSucesso() {
+        Mockito.when(viaCepService.buscarDadosCEP(Mockito.anyString()))
+                .thenReturn(DADOS_CEP_PADRAO);
+        Mockito.when(nominatimService.buscarCoordenadasPorEndereco(Mockito.anyString()))
+                .thenReturn(COORDENADAS_PADRAO);
+        Mockito.when(enderecoRepository.save(Mockito.any(Endereco.class)))
+                .thenAnswer(i -> i.getArgument(0));
+    }
+
+    private AnuncioCriacaoComEnderecoDTO novoDtoCriacao(Integer categoriaId) {
+        AnuncioCriacaoComEnderecoDTO dto = new AnuncioCriacaoComEnderecoDTO();
+        dto.setCategoriaId(categoriaId);
+        dto.setCep(CEP_VALIDO);
+        return dto;
+    }
+
     @Nested
     @DisplayName("Cenários para criarAnuncioComEndereco")
     class CriarAnuncioCenarios {
 
+        private static final Integer CATEGORIA_EXISTENTE_ID = 1;
+        private static final Integer CATEGORIA_INEXISTENTE_ID = 99;
+        private static final String EMAIL_INEXISTENTE = "erro@teste.com";
+
         @Test
         @DisplayName("deve criar anúncio com sucesso")
         void criarComSucesso() {
-            AnuncioCriacaoComEnderecoDTO dto = new AnuncioCriacaoComEnderecoDTO();
-            dto.setCategoriaId(1);
-            dto.setCep("01001-000");
+            AnuncioCriacaoComEnderecoDTO dto = novoDtoCriacao(CATEGORIA_EXISTENTE_ID);
 
-            Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
-            
-            ViaCepService.DadosCEP mockDadosCep = Mockito.mock(ViaCepService.DadosCEP.class);
-            Mockito.when(mockDadosCep.getRua()).thenReturn("Rua A");
-            Mockito.when(mockDadosCep.getBairro()).thenReturn("Bairro B");
-            Mockito.when(mockDadosCep.getCidade()).thenReturn("Cidade C");
-            Mockito.when(mockDadosCep.getUf()).thenReturn("SP");
-            
-            Mockito.when(viaCepService.buscarDadosCEP(Mockito.anyString())).thenReturn(mockDadosCep);
-            Mockito.when(enderecoRepository.save(Mockito.any(Endereco.class))).thenAnswer(i -> i.getArgument(0));
-            Mockito.when(categoriaRepository.findById(1)).thenReturn(Optional.of(Categoria.builder().id(1).nome("Móveis").build()));
-            Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class))).thenAnswer(i -> i.getArgument(0));
+            Mockito.when(usuarioRepository.findByEmail(EMAIL_DONO))
+                    .thenReturn(Optional.of(usuarioDono));
+            prepararResolucaoEnderecoComSucesso();
+            Mockito.when(categoriaRepository.findById(CATEGORIA_EXISTENTE_ID))
+                    .thenReturn(Optional.of(Categoria.builder().id(CATEGORIA_EXISTENTE_ID).nome("Móveis").build()));
+            Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class)))
+                    .thenAnswer(i -> i.getArgument(0));
 
-            AnuncioRespostaDTO resultado = anuncioService.criarAnuncioComEndereco("dono@reusehub.com", dto, new ArrayList<>());
+            AnuncioRespostaDTO resultado = anuncioService.criarAnuncioComEndereco(
+                    EMAIL_DONO, dto, new ArrayList<>()
+            );
 
             assertNotNull(resultado);
             assertEquals(Anuncio.StatusAnuncio.PENDENTE, resultado.getStatus());
@@ -144,29 +170,30 @@ class AnuncioServiceTest {
         @Test
         @DisplayName("deve estourar RecursoNaoEncontradoException se o usuário não existir")
         void erroUsuarioInexistente() {
-            Mockito.when(usuarioRepository.findByEmail("erro@teste.com")).thenReturn(Optional.empty());
+            Mockito.when(usuarioRepository.findByEmail(EMAIL_INEXISTENTE))
+                    .thenReturn(Optional.empty());
 
-            assertThrows(RecursoNaoEncontradoException.class, () -> {
-                anuncioService.criarAnuncioComEndereco("erro@teste.com", new AnuncioCriacaoComEnderecoDTO(), new ArrayList<>());
-            });
+            assertThrows(RecursoNaoEncontradoException.class, () ->
+                    anuncioService.criarAnuncioComEndereco(
+                            EMAIL_INEXISTENTE, new AnuncioCriacaoComEnderecoDTO(), new ArrayList<>()
+                    )
+            );
         }
 
         @Test
         @DisplayName("deve estourar RecursoNaoEncontradoException se a categoria não existir")
         void erroCategoriaInexistente() {
-            AnuncioCriacaoComEnderecoDTO dto = new AnuncioCriacaoComEnderecoDTO();
-            dto.setCategoriaId(99);
+            AnuncioCriacaoComEnderecoDTO dto = novoDtoCriacao(CATEGORIA_INEXISTENTE_ID);
 
-            Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
-            
-            ViaCepService.DadosCEP mockDadosCep = Mockito.mock(ViaCepService.DadosCEP.class);
-            Mockito.when(viaCepService.buscarDadosCEP(Mockito.any())).thenReturn(mockDadosCep);
-            Mockito.when(enderecoRepository.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
-            Mockito.when(categoriaRepository.findById(99)).thenReturn(Optional.empty());
+            Mockito.when(usuarioRepository.findByEmail(EMAIL_DONO))
+                    .thenReturn(Optional.of(usuarioDono));
+            prepararResolucaoEnderecoComSucesso();
+            Mockito.when(categoriaRepository.findById(CATEGORIA_INEXISTENTE_ID))
+                    .thenReturn(Optional.empty());
 
-            assertThrows(RecursoNaoEncontradoException.class, () -> {
-                anuncioService.criarAnuncioComEndereco("dono@reusehub.com", dto, new ArrayList<>());
-            });
+            assertThrows(RecursoNaoEncontradoException.class, () ->
+                    anuncioService.criarAnuncioComEndereco(EMAIL_DONO, dto, new ArrayList<>())
+            );
         }
     }
     
