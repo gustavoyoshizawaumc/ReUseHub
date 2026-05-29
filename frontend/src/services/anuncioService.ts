@@ -6,8 +6,9 @@ import type {
   PaginacaoResponse,
 } from "../types/anuncio.types";
 import type { BuscaFiltro } from "../types/busca.types";
+import { apiUrl } from "../config/api";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/anuncios`;
+const API_URL = apiUrl("/api/anuncios");
 
 const api = axios.create({
   baseURL: API_URL,

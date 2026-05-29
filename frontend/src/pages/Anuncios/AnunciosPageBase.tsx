@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
@@ -54,6 +54,7 @@ const possuiBuscaAtiva = (filtro: BuscaFiltro) =>
 export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const scrollPreservadoRef = useRef<number | null>(null);
   const exibindoMeusAnuncios = modo === "privado";
   const termoMeusAnuncios = searchParams.get("termo")?.trim().toLowerCase() ?? "";
   const statusSelecionado = searchParams.get("statusFiltro") ?? "TODOS";
@@ -196,10 +197,26 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     }
   };
 
+  const preservarScroll = () => {
+    scrollPreservadoRef.current = window.scrollY;
+  };
+
+  const restaurarScrollPreservado = () => {
+    const scrollY = scrollPreservadoRef.current;
+    if (scrollY === null) return;
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: scrollY, behavior: "auto" });
+      scrollPreservadoRef.current = null;
+    });
+  };
+
   // Chama o motor de busca com todos os filtros selecionados
-  const handleFiltrar = (filtro: BuscaFiltro) => {
+  const handleFiltrar = async (filtro: BuscaFiltro) => {
     if (exibindoMeusAnuncios) return;
-    buscarComFiltros(filtro);
+    preservarScroll();
+    await buscarComFiltros(filtro);
+    restaurarScrollPreservado();
   };
 
   const handleBuscar = (termo: string) => {
@@ -432,9 +449,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                     </div>
                     <FiltrosAnuncios
                       onFiltrar={handleFiltrar}
-                      onLimpar={() => {
+                      onLimpar={async () => {
+                        preservarScroll();
                         setSearchParams({}, { replace: true });
-                        listar();
+                        await listar();
+                        restaurarScrollPreservado();
                       }}
                     />
                   </>
@@ -443,7 +462,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
             </aside>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <div className={`${exibindoMeusAnuncios ? "lg:col-span-3 space-y-6" : "space-y-4"}`}>
+            <div className={`${exibindoMeusAnuncios ? "lg:col-span-3 space-y-6" : "space-y-4"} min-h-[720px]`}>
               {loading && (
                 <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center justify-center text-center">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />

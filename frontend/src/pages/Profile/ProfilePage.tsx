@@ -14,6 +14,7 @@ import {
   Edit3,
   Trash2,
 } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -61,7 +62,7 @@ export const ProfilePage: React.FC = () => {
                       <img
                         src={
                           usuario.avatarUrl
-                            ? `${import.meta.env.VITE_API_URL}${usuario.avatarUrl}`
+                            ? `${API_BASE_URL}${usuario.avatarUrl}`
                             : DEFAULT_AVATAR
                         }
                         alt={usuario.name}
