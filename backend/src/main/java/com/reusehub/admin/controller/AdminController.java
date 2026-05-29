@@ -10,12 +10,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
@@ -41,9 +43,12 @@ public class AdminController {
             @RequestParam(required = false) String termo,
             @RequestParam(required = false) Perfil perfil,
             @RequestParam(required = false) Boolean ativo,
+            @RequestParam(required = false) Boolean banido,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate criadoDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate criadoAte,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(adminService.listarUsuarios(termo, perfil, ativo, pageable));
+        return ResponseEntity.ok(adminService.listarUsuarios(termo, perfil, ativo, banido, criadoDe, criadoAte, pageable));
     }
 
     @PatchMapping("/usuarios/{id}/ativar")

@@ -2,8 +2,9 @@
   AvaliacaoCriacaoPayload,
   AvaliacaoResposta,
 } from "../types/avaliacao.types";
+import { apiUrl } from "../config/api";
 
-const BASE_URL = `${import.meta.env.VITE_API_URL}/api/avaliacoes`;
+const BASE_URL = apiUrl("/api/avaliacoes");
 
 function getAuthHeaders() {
   const token = localStorage.getItem("token");

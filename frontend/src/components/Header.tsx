@@ -43,6 +43,7 @@ import { listarInteressesRecebidos } from "../services/interesseService";
 import type { UsuarioRespostaDTO } from "../types/auth.types";
 import { OperationalHeader } from "./OperationalHeader";
 import { isUsuarioOperacional } from "../utils/perfil";
+import { API_BASE_URL } from "../config/api";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -188,7 +189,7 @@ export const Header: React.FC = () => {
   const getAvatarUrl = (url: string | null | undefined) => {
     if (!url) return DEFAULT_AVATAR;
     if (url.startsWith("http")) return url;
-    return `${import.meta.env.VITE_API_URL}${url.startsWith("/") ? url : `/${url}`}`;
+    return `${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`;
   };
 
   const navegarParaBusca = (params: URLSearchParams) => {

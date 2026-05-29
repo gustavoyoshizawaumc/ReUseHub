@@ -1,9 +1,10 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArcElement,
   BarElement,
   CategoryScale,
   Chart as ChartJS,
+  Filler,
   Legend,
   LinearScale,
   LineElement,
@@ -19,6 +20,8 @@ import {
   FileText,
   ShieldCheck,
   ShieldOff,
+  Star,
+  Trash2,
   UserCog,
   Users,
   XCircle,
@@ -35,6 +38,7 @@ import {
   descartarDenuncia,
   listarAnunciosPendentes,
   listarAuditoria,
+  listarAvaliacoesModeracao,
   listarDenuncias,
   listarMeuHistorico,
   listarSuspeitos,
@@ -43,20 +47,34 @@ import {
   reativarAnuncio,
   reprovarAnuncio,
   reprovarSuspeito,
+  removerAvaliacaoModeracao,
   suspenderAnuncio,
   type AdminDashboard,
   type AdminUsuario,
   type AnuncioSuspeito,
+  type AvaliacaoModeracao,
   type DenunciaModeracao,
   type HistoricoModeracao,
+  type UsuarioAdminFiltros,
 } from '../../services/moderacaoService';
 import type { Anuncio } from '../../types/anuncio.types';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from '../../config/api';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Tooltip, Legend);
+const BASE_URL = API_BASE_URL;
 
-type Aba = 'pendentes' | 'denuncias' | 'suspeitos' | 'historico' | 'admin';
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Filler, Tooltip, Legend);
+
+type Aba = 'pendentes' | 'denuncias' | 'suspeitos' | 'avaliacoes' | 'historico' | 'admin';
+
+const FILTROS_USUARIO_INICIAIS: UsuarioAdminFiltros = {
+  termo: '',
+  perfil: '',
+  ativo: '',
+  banido: '',
+  criadoDe: '',
+  criadoAte: '',
+};
 
 const imageUrl = (url?: string) => {
   if (!url) return null;
@@ -108,14 +126,17 @@ export const ModeracaoPage: React.FC = () => {
   const [pendentes, setPendentes] = useState<Anuncio[]>([]);
   const [denuncias, setDenuncias] = useState<DenunciaModeracao[]>([]);
   const [suspeitos, setSuspeitos] = useState<AnuncioSuspeito[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoModeracao[]>([]);
   const [historico, setHistorico] = useState<HistoricoModeracao[]>([]);
   const [auditoria, setAuditoria] = useState<HistoricoModeracao[]>([]);
   const [usuarios, setUsuarios] = useState<AdminUsuario[]>([]);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
-  const [termoUsuario, setTermoUsuario] = useState('');
+  const filtrosUsuariosInicializadosRef = useRef(false);
+  const [usuarioFiltros, setUsuarioFiltros] = useState<UsuarioAdminFiltros>(FILTROS_USUARIO_INICIAIS);
   const [moderadorForm, setModeradorForm] = useState({
     name: '',
     email: '',
@@ -127,31 +148,49 @@ export const ModeracaoPage: React.FC = () => {
       { id: 'pendentes' as Aba, label: 'Anuncios', icon: Clock3 },
       { id: 'denuncias' as Aba, label: 'Denuncias', icon: AlertTriangle },
       { id: 'suspeitos' as Aba, label: 'Suspeitos', icon: ShieldOff },
+      { id: 'avaliacoes' as Aba, label: 'Avaliacoes', icon: Star },
       { id: 'historico' as Aba, label: 'Historico', icon: FileText },
       ...(isAdmin ? [{ id: 'admin' as Aba, label: 'Admin', icon: BarChart3 }] : []),
     ],
     [isAdmin]
   );
 
+  const carregarUsuarios = useCallback(async (filtros = usuarioFiltros) => {
+    if (!isAdmin) return;
+
+    setLoadingUsuarios(true);
+    setErro(null);
+    try {
+      const usuariosData = await listarUsuariosAdmin(0, 20, filtros);
+      setUsuarios(usuariosData.content ?? []);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Nao foi possivel listar usuarios.');
+    } finally {
+      setLoadingUsuarios(false);
+    }
+  }, [isAdmin, usuarioFiltros]);
+
   const carregar = useCallback(async () => {
     setLoading(true);
     setErro(null);
     try {
-      const [pendentesData, denunciasData, suspeitosData, historicoData] = await Promise.all([
+      const [pendentesData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
         listarAnunciosPendentes(0, 20),
         listarDenuncias('ABERTA', 0, 20),
         listarSuspeitos(2),
+        listarAvaliacoesModeracao(0, 20),
         listarMeuHistorico(0, 20),
       ]);
       setPendentes(pendentesData.content ?? []);
       setDenuncias(denunciasData.content ?? []);
       setSuspeitos(suspeitosData ?? []);
+      setAvaliacoes(avaliacoesData.content ?? []);
       setHistorico(historicoData.content ?? []);
 
       if (isAdmin) {
         const [dash, usuariosData, auditoriaData] = await Promise.all([
           obterDashboardAdmin(),
-          listarUsuariosAdmin(0, 20, termoUsuario),
+          listarUsuariosAdmin(0, 20, FILTROS_USUARIO_INICIAIS),
           listarAuditoria(0, 20),
         ]);
         setDashboard(dash);
@@ -163,11 +202,26 @@ export const ModeracaoPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, termoUsuario]);
+  }, [isAdmin]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    if (!filtrosUsuariosInicializadosRef.current) {
+      filtrosUsuariosInicializadosRef.current = true;
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      carregarUsuarios();
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [carregarUsuarios, isAdmin]);
 
   const executar = async (id: string, acao: () => Promise<unknown>) => {
     setProcessando(id);
@@ -175,6 +229,19 @@ export const ModeracaoPage: React.FC = () => {
     try {
       await acao();
       await carregar();
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Nao foi possivel concluir a acao.');
+    } finally {
+      setProcessando(null);
+    }
+  };
+
+  const executarUsuario = async (id: string, acao: () => Promise<unknown>) => {
+    setProcessando(id);
+    setErro(null);
+    try {
+      await acao();
+      await carregarUsuarios();
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Nao foi possivel concluir a acao.');
     } finally {
@@ -192,6 +259,19 @@ export const ModeracaoPage: React.FC = () => {
       }
       setModeradorForm({ name: '', email: '', password: '' });
     });
+  };
+
+  const removerAvaliacao = async (avaliacao: AvaliacaoModeracao) => {
+    const justificativa = window.prompt('Informe a justificativa para remover esta avaliacao:');
+    if (justificativa === null) return;
+
+    await executar(avaliacao.id, () =>
+      removerAvaliacaoModeracao(avaliacao.id, justificativa.trim() || 'Avaliacao removida pela moderacao.')
+    );
+  };
+
+  const alterarFiltroUsuario = <K extends keyof UsuarioAdminFiltros>(campo: K, valor: UsuarioAdminFiltros[K]) => {
+    setUsuarioFiltros((prev) => ({ ...prev, [campo]: valor }));
   };
 
   const metricas = dashboard
@@ -383,6 +463,51 @@ export const ModeracaoPage: React.FC = () => {
                 </section>
               )}
 
+              {aba === 'avaliacoes' && (
+                <section>
+                  <SectionHeader title="Avaliacoes" description="Remova avaliacoes com linguagem ofensiva, impropria ou fora das regras." />
+                  {avaliacoes.length === 0 ? (
+                    <EmptyState text="Nenhuma avaliacao registrada." />
+                  ) : (
+                    <div className="grid gap-3">
+                      {avaliacoes.map((avaliacao) => (
+                        <article key={avaliacao.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase text-amber-700">
+                                  {Array.from({ length: 5 }).map((_, index) => (
+                                    <Star key={index} size={12} className={index < avaliacao.nota ? 'fill-amber-400 text-amber-400' : 'text-amber-200'} />
+                                  ))}
+                                </span>
+                                <span className="text-xs font-bold text-slate-400">
+                                  {avaliacao.criadoEm ? new Date(avaliacao.criadoEm).toLocaleString('pt-BR') : ''}
+                                </span>
+                              </div>
+                              <h3 className="mt-2 text-base font-black text-slate-950">{avaliacao.anuncioTitulo}</h3>
+                              <p className="mt-1 text-xs font-semibold text-slate-500">
+                                {avaliacao.avaliadorNome} avaliou {avaliacao.avaliadoNome}
+                              </p>
+                              <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-600">
+                                {avaliacao.comentario || 'Sem comentario.'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => removerAvaliacao(avaliacao)}
+                              disabled={processando === avaliacao.id}
+                              className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                            >
+                              <Trash2 size={16} />
+                              Remover
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
               {aba === 'historico' && (
                 <section>
                   <SectionHeader title="Meu historico" description="Acoes de moderacao feitas pela sua conta." />
@@ -524,14 +649,73 @@ export const ModeracaoPage: React.FC = () => {
                           <Users size={19} />
                           Usuarios
                         </h3>
-                        <input
-                          value={termoUsuario}
-                          onChange={(e) => setTermoUsuario(e.target.value)}
-                          placeholder="Buscar usuario"
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                        />
                       </div>
+                      <div className="mb-4 grid gap-2 md:grid-cols-2 xl:grid-cols-6">
+                        <input
+                          value={usuarioFiltros.termo ?? ''}
+                          onChange={(e) => alterarFiltroUsuario('termo', e.target.value)}
+                          placeholder="Nome, e-mail ou CPF"
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 xl:col-span-2"
+                        />
+                        <select
+                          value={usuarioFiltros.perfil ?? ''}
+                          onChange={(e) => alterarFiltroUsuario('perfil', e.target.value as UsuarioAdminFiltros['perfil'])}
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500"
+                        >
+                          <option value="">Todos os perfis</option>
+                          <option value="USUARIO">Usuario</option>
+                          <option value="MODERADOR">Moderador</option>
+                          <option value="ADMIN">Admin</option>
+                        </select>
+                        <select
+                          value={usuarioFiltros.ativo === '' ? '' : String(usuarioFiltros.ativo)}
+                          onChange={(e) => alterarFiltroUsuario('ativo', e.target.value === '' ? '' : e.target.value === 'true')}
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500"
+                        >
+                          <option value="">Ativos/inativos</option>
+                          <option value="true">Ativos</option>
+                          <option value="false">Inativos</option>
+                        </select>
+                        <select
+                          value={usuarioFiltros.banido === '' ? '' : String(usuarioFiltros.banido)}
+                          onChange={(e) => alterarFiltroUsuario('banido', e.target.value === '' ? '' : e.target.value === 'true')}
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500"
+                        >
+                          <option value="">Banidos/todos</option>
+                          <option value="true">Banidos</option>
+                          <option value="false">Nao banidos</option>
+                        </select>
+                        <div className="grid grid-cols-2 gap-2 xl:col-span-2">
+                          <input
+                            type="date"
+                            value={usuarioFiltros.criadoDe ?? ''}
+                            onChange={(e) => alterarFiltroUsuario('criadoDe', e.target.value)}
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500"
+                          />
+                          <input
+                            type="date"
+                            value={usuarioFiltros.criadoAte ?? ''}
+                            onChange={(e) => alterarFiltroUsuario('criadoAte', e.target.value)}
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setUsuarioFiltros(FILTROS_USUARIO_INICIAIS)}
+                        className="mb-4 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 hover:border-blue-200 hover:text-blue-600"
+                      >
+                        Limpar filtros de usuarios
+                      </button>
+                      {loadingUsuarios && (
+                        <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
+                          Atualizando usuarios...
+                        </div>
+                      )}
                       <div className="space-y-2">
+                        {!loadingUsuarios && usuarios.length === 0 && (
+                          <EmptyState text="Nenhum usuario encontrado com os filtros atuais." />
+                        )}
                         {usuarios.map((usuario) => {
                           const isSelf = usuario.id === user?.id;
                           return (
@@ -544,17 +728,17 @@ export const ModeracaoPage: React.FC = () => {
                                 <p className="text-xs font-semibold text-slate-500">{usuario.email} | {usuario.perfil}</p>
                               </div>
                               <div className="flex flex-wrap gap-2">
-                                <button onClick={() => executar(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
+                                <button onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
                                 <button
                                   disabled={isSelf}
-                                  onClick={() => executar(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
+                                  onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
                                   className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                   Desativar
                                 </button>
                                 <button
                                   disabled={isSelf}
-                                  onClick={() => executar(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
+                                  onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
                                   className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                   Banir

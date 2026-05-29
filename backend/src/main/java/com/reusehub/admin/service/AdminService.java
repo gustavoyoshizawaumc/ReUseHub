@@ -21,6 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.Locale;
@@ -61,10 +63,24 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AdminUsuarioDTO> listarUsuarios(String termo, Perfil perfil, Boolean ativo, Pageable pageable) {
+    public Page<AdminUsuarioDTO> listarUsuarios(
+            String termo,
+            Perfil perfil,
+            Boolean ativo,
+            Boolean banido,
+            LocalDate criadoDe,
+            LocalDate criadoAte,
+            Pageable pageable
+    ) {
+        LocalDateTime criadoDeInicio = criadoDe != null ? criadoDe.atStartOfDay() : null;
+        LocalDateTime criadoAteFim = criadoAte != null ? criadoAte.plusDays(1).atStartOfDay() : null;
+
         var filtrados = usuarioRepository.findAll().stream()
                 .filter(u -> perfil == null || u.getPerfil() == perfil)
                 .filter(u -> ativo == null || Boolean.valueOf(ativo).equals(u.getIsActive()))
+                .filter(u -> banido == null || Boolean.valueOf(banido).equals(u.getBanido()))
+                .filter(u -> criadoDeInicio == null || (u.getCreatedAt() != null && !u.getCreatedAt().isBefore(criadoDeInicio)))
+                .filter(u -> criadoAteFim == null || (u.getCreatedAt() != null && u.getCreatedAt().isBefore(criadoAteFim)))
                 .filter(u -> termo == null || termo.isBlank()
                         || u.getName().toLowerCase(Locale.ROOT).contains(termo.toLowerCase(Locale.ROOT))
                         || u.getEmail().toLowerCase(Locale.ROOT).contains(termo.toLowerCase(Locale.ROOT))

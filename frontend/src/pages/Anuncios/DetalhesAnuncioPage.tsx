@@ -27,7 +27,9 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from "../../config/api";
+
+const BASE_URL = API_BASE_URL;
 
 export const DetalhesAnuncioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

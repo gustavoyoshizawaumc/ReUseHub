@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 const Spinner: React.FC = () => (
   <div className="flex items-center justify-center">
@@ -103,7 +104,7 @@ export const EditProfilePage: React.FC = () => {
     ) {
       return formData.avatarPreview;
     }
-    return `${import.meta.env.VITE_API_URL}${formData.avatarPreview.startsWith("/") ? "" : "/"}${formData.avatarPreview}`;
+    return `${API_BASE_URL}${formData.avatarPreview.startsWith("/") ? "" : "/"}${formData.avatarPreview}`;
   };
 
   return (

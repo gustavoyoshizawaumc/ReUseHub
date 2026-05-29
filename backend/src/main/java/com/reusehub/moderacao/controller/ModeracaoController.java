@@ -1,5 +1,6 @@
 package com.reusehub.moderacao.controller;
 
+import com.reusehub.avaliacao.dto.AvaliacaoRespostaDTO;
 import com.reusehub.denuncia.dto.DenunciaRespostaDTO;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.moderacao.dto.AcaoModeracaoDTO;
@@ -101,6 +102,11 @@ public class ModeracaoController {
     ) {
         moderacaoService.removerAvaliacao(id, authentication.getName(), dto != null ? dto.justificativa() : null);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/avaliacoes")
+    public ResponseEntity<Page<AvaliacaoRespostaDTO>> listarAvaliacoes(Pageable pageable) {
+        return ResponseEntity.ok(moderacaoService.listarAvaliacoes(pageable));
     }
 
     @GetMapping("/historico/me")
