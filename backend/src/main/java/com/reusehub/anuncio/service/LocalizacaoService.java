@@ -90,9 +90,9 @@ public class LocalizacaoService {
 
     private String montarEnderecoTextualParaBusca(ViaCepService.DadosCEP dadosCEP) {
         return String.format("%s, %s, %s, Brasil",
-                dadosCEP.getBairro(),
-                dadosCEP.getCidade(),
-                dadosCEP.getUf()
+                dadosCEP.bairro(),
+                dadosCEP.cidade(),
+                dadosCEP.uf()
         );
     }
 }

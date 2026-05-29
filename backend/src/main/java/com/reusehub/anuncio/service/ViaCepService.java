@@ -2,85 +2,83 @@ package com.reusehub.anuncio.service;
 
 import com.reusehub.anuncio.exception.OperacaoInvalidaException;
 import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 @Service
 public class ViaCepService {
 
+    private static final String RECURSO_CEP = "CEP";
+    private static final String CAMINHO_CONSULTA = "/{cep}/json/";
+    private static final String REGEX_CEP_VALIDO = "\\d{8}";
+    private static final String REGEX_NAO_NUMERICO = "\\D";
+
     private final RestClient restClient;
 
-    public ViaCepService() {
-        this.restClient = RestClient.builder()
-                .baseUrl("https://viacep.com.br/ws")
-                .build();
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DadosCEP {
-        private String cep;
-        private String rua;
-        private String bairro;
-        private String cidade;
-        private String uf;
-    }
-
-    @Data
-    private static class ViaCepResponse {
-        private String cep;
-        private String logradouro;
-        private String bairro;
-        private String localidade;
-        private String uf;
-        private Boolean erro;
+    public ViaCepService(@Qualifier("viaCepRestClient") RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public DadosCEP buscarDadosCEP(String cepRaw) {
-        String cep = limparEValidarCep(cepRaw);
+        String cep = normalizarEValidarCep(cepRaw);
+        ViaCepResposta resposta = consultarViaCep(cep);
+        garantirCepEncontrado(resposta, cep);
+        return resposta.paraDadosCEP();
+    }
 
+    private ViaCepResposta consultarViaCep(String cep) {
         try {
-            ViaCepResponse response = restClient.get()
-                    .uri("/{cep}/json/", cep)
+            return restClient.get()
+                    .uri(CAMINHO_CONSULTA, cep)
                     .retrieve()
-                    .body(ViaCepResponse.class);
-
-            if (response == null || Boolean.TRUE.equals(response.getErro())) {
-                throw new RecursoNaoEncontradoException("CEP", cep);
-            }
-
-            return DadosCEP.builder()
-                    .cep(response.getCep())
-                    .rua(response.getLogradouro())
-                    .bairro(response.getBairro())
-                    .cidade(response.getLocalidade())
-                    .uf(response.getUf())
-                    .build();
-
-        } catch (RecursoNaoEncontradoException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new OperacaoInvalidaException("Falha na comunicação com o serviço externo ViaCEP: " + e.getMessage());
+                    .body(ViaCepResposta.class);
+        } catch (RestClientException e) {
+            throw new OperacaoInvalidaException(
+                    "Falha na comunicacao com o servico ViaCEP", e
+            );
         }
     }
 
-    private String limparEValidarCep(String cep) {
+    private void garantirCepEncontrado(ViaCepResposta resposta, String cep) {
+        if (resposta == null || Boolean.TRUE.equals(resposta.erro())) {
+            throw new RecursoNaoEncontradoException(RECURSO_CEP, cep);
+        }
+    }
+
+    private String normalizarEValidarCep(String cep) {
         if (cep == null) {
-            throw new OperacaoInvalidaException("O CEP não pode ser nulo.");
+            throw new OperacaoInvalidaException("O CEP nao pode ser nulo.");
         }
 
-        String cepLimpo = cep.replaceAll("\\D", "");
+        String cepNormalizado = cep.replaceAll(REGEX_NAO_NUMERICO, "");
 
-        if (!cepLimpo.matches("\\d{8}")) {
-            throw new OperacaoInvalidaException("Formato de CEP inválido: " + cep);
+        if (!cepNormalizado.matches(REGEX_CEP_VALIDO)) {
+            throw new OperacaoInvalidaException("Formato de CEP invalido: " + cep);
         }
 
-        return cepLimpo;
+        return cepNormalizado;
+    }
+
+    public record DadosCEP(
+            String cep,
+            String rua,
+            String bairro,
+            String cidade,
+            String uf
+    ) {}
+
+    private record ViaCepResposta(
+            String cep,
+            String logradouro,
+            String bairro,
+            String localidade,
+            String uf,
+            Boolean erro
+    ) {
+        DadosCEP paraDadosCEP() {
+            return new DadosCEP(cep, logradouro, bairro, localidade, uf);
+        }
     }
 }
