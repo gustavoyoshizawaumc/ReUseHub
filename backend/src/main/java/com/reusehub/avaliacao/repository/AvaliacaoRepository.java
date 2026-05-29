@@ -1,6 +1,8 @@
 package com.reusehub.avaliacao.repository;
 
 import com.reusehub.avaliacao.model.Avaliacao;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -14,6 +16,8 @@ public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
     boolean existsByAvaliadorIdAndAnuncioId(UUID avaliadorId, UUID anuncioId);
 
     boolean existsByAnuncioId(UUID anuncioId);
+
+    Page<Avaliacao> findAllByOrderByCriadoEmDesc(Pageable pageable);
 
     List<Avaliacao> findByAvaliadoIdOrderByCriadoEmDesc(UUID avaliadoId);
 
