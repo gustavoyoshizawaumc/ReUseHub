@@ -1,114 +1,82 @@
 package com.reusehub.anuncio.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.reusehub.anuncio.exception.OperacaoInvalidaException;
-import lombok.Data;
+import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Slf4j
 @Service
 public class NominatimService {
 
-    private static final String NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-    private static final String USER_AGENT = "ReUseHub/1.0";
+    private static final String RECURSO_ENDERECO = "endereco";
+    private static final String CAMINHO_BUSCA = "/search";
+    private static final String FORMATO_JSON = "json";
     private static final int LIMITE_RESULTADOS = 1;
-    private static final int CONNECT_TIMEOUT_MS = 3000;
-    private static final int READ_TIMEOUT_MS = 8000;
 
-    private final RestTemplate restTemplate = criarRestTemplateComTimeout();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestClient restClient;
 
-    private RestTemplate criarRestTemplateComTimeout() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        factory.setReadTimeout(READ_TIMEOUT_MS);
-        return new RestTemplate(factory);
+    public NominatimService(@Qualifier("nominatimRestClient") RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public Coordenadas buscarCoordenadasPorEndereco(String enderecoTextual) {
-        log.info("Buscando coordenadas para: {}", enderecoTextual);
-        long inicio = System.currentTimeMillis();
+        log.debug("Buscando coordenadas para o endereco: {}", enderecoTextual);
 
-        String url = montarUrlPorEndereco(enderecoTextual);
-        String resposta = executarRequisicao(url);
-        Coordenadas coordenadas = extrairCoordenadas(resposta, enderecoTextual);
+        List<NominatimResposta> resultados = consultarNominatim(enderecoTextual);
+        garantirEnderecoEncontrado(resultados, enderecoTextual);
 
-        log.info("Coordenadas obtidas em {}ms: lat={}, lng={}",
-                System.currentTimeMillis() - inicio,
-                coordenadas.getLatitude(),
-                coordenadas.getLongitude());
-
-        return coordenadas;
+        return resultados.get(0).paraCoordenadas();
     }
 
-    private String montarUrlPorEndereco(String enderecoTextual) {
-        String enderecoEncoded = URLEncoder.encode(enderecoTextual, StandardCharsets.UTF_8);
-        return NOMINATIM_URL
-                + "?q=" + enderecoEncoded
-                + "&format=json"
-                + "&limit=" + LIMITE_RESULTADOS;
-    }
-
-    private String executarRequisicao(String url) {
+    private List<NominatimResposta> consultarNominatim(String enderecoTextual) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set(HttpHeaders.USER_AGENT, USER_AGENT);
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-
-            URI uri = new URI(url);
-
-            ResponseEntity<String> resposta = restTemplate.exchange(
-                    uri, HttpMethod.GET, entity, String.class
-            );
-            return resposta.getBody();
-        } catch (OperacaoInvalidaException e) {
-            throw e;
-        } catch (Exception e) {
+            return restClient.get()
+                    .uri(uri -> uri.path(CAMINHO_BUSCA)
+                            .queryParam("q", enderecoTextual)
+                            .queryParam("format", FORMATO_JSON)
+                            .queryParam("limit", LIMITE_RESULTADOS)
+                            .build())
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
+        } catch (ResourceAccessException e) {
+            log.error("Timeout ou falha de conexao com Nominatim para '{}'", enderecoTextual, e);
             throw new OperacaoInvalidaException(
-                    "Falha ao consultar o serviço de geolocalização"
+                    "Servico de geolocalizacao demorou para responder", e
+            );
+        } catch (RestClientException e) {
+            log.error("Falha na comunicacao com Nominatim para '{}'", enderecoTextual, e);
+            throw new OperacaoInvalidaException(
+                    "Falha ao consultar o servico de geolocalizacao", e
             );
         }
     }
 
-    private Coordenadas extrairCoordenadas(String resposta, String referenciaConsulta) {
-        try {
-            JsonNode raiz = objectMapper.readTree(resposta);
-
-            if (raiz.isEmpty()) {
-                throw new OperacaoInvalidaException(
-                        "Endereço não encontrado no geolocalizador: " + referenciaConsulta
-                );
-            }
-
-            JsonNode primeiroResultado = raiz.get(0);
-            double latitude = primeiroResultado.get("lat").asDouble();
-            double longitude = primeiroResultado.get("lon").asDouble();
-
-            return new Coordenadas(latitude, longitude);
-        } catch (OperacaoInvalidaException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new OperacaoInvalidaException(
-                    "Erro ao processar resposta do geolocalizador"
-            );
+    private void garantirEnderecoEncontrado(List<NominatimResposta> resultados, String enderecoTextual) {
+        if (resultados == null || resultados.isEmpty()) {
+            throw new RecursoNaoEncontradoException(RECURSO_ENDERECO, enderecoTextual);
         }
     }
 
-    @Data
-    public static class Coordenadas {
-        private final double latitude;
-        private final double longitude;
+    public record Coordenadas(double latitude, double longitude) {}
+
+    private record NominatimResposta(
+            @JsonProperty("lat") String latitudeTexto,
+            @JsonProperty("lon") String longitudeTexto
+    ) {
+        Coordenadas paraCoordenadas() {
+            return new Coordenadas(
+                    Double.parseDouble(latitudeTexto),
+                    Double.parseDouble(longitudeTexto)
+            );
+        }
     }
 }

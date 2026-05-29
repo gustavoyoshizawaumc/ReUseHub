@@ -64,6 +64,8 @@ resend:
 external:
   viacep:
     base-url: ${EXTERNAL_VIACEP_BASE_URL:https://viacep.com.br/ws}
+  nominatim:
+    base-url: ${EXTERNAL_NOMINATIM_BASE_URL:https://nominatim.openstreetmap.org}
 
 server:
   port: 8080
