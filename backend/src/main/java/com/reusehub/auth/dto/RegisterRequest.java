@@ -20,7 +20,10 @@ public class RegisterRequest {
     private String email;
     
     @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$",
+        message = "Senha deve ter no mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial"
+    )
     private String password;
     
     @Pattern(regexp = "^\\d{10,11}$", message = "Telefone inválido")
