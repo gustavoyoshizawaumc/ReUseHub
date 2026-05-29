@@ -64,7 +64,7 @@ class AuthControllerTest {
             request.setName("Gustavo");
             request.setCpf("12345678901");
             request.setEmail("novo@reusehub.com");
-            request.setPassword("senha123");
+            request.setPassword("Senha@123");
             request.setPhone("11999999999");
             request.setLgpdConsent(true);
 
