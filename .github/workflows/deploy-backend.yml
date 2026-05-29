@@ -8,9 +8,19 @@ on:
       - 'backend/**'
   workflow_dispatch:
 
+env:
+  JAR_ATUAL: /home/ubuntu/backend-0.0.1-SNAPSHOT.jar
+  JAR_NOVO: /home/ubuntu/backend-new.jar
+  JAR_ANTERIOR: /home/ubuntu/backend-previous.jar
+  CAMINHO_CHAVE_SSH: ~/.ssh/chave-reusehub.pem
+  SERVICO: reusehub
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
       - name: Checkout do código
@@ -23,27 +33,44 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Garantir permissão de execução no mvnw
+        run: chmod +x mvnw
+
       - name: Build do JAR
-        run: |
-          cd backend
-          chmod +x mvnw
-          ./mvnw clean package -DskipTests
+        run: ./mvnw clean package -DskipTests
 
       - name: Configurar chave SSH
+        working-directory: .
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/chave-reusehub.pem
-          chmod 600 ~/.ssh/chave-reusehub.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > ${{ env.CAMINHO_CHAVE_SSH }}
+          chmod 600 ${{ env.CAMINHO_CHAVE_SSH }}
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Enviar JAR para o EC2
+        working-directory: .
         run: |
-          scp -i ~/.ssh/chave-reusehub.pem \
+          scp -i ${{ env.CAMINHO_CHAVE_SSH }} \
             backend/target/backend-0.0.1-SNAPSHOT.jar \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/backend-new.jar
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ env.JAR_NOVO }}
 
-      - name: Substituir JAR e reiniciar serviço
+      - name: Fazer backup do JAR atual no EC2
+        working-directory: .
         run: |
-          ssh -i ~/.ssh/chave-reusehub.pem \
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "mv /home/ubuntu/backend-new.jar /home/ubuntu/backend-0.0.1-SNAPSHOT.jar && sudo systemctl restart reusehub"
+            "cp -f ${{ env.JAR_ATUAL }} ${{ env.JAR_ANTERIOR }} 2>/dev/null || true"
+
+      - name: Promover JAR novo para versão ativa
+        working-directory: .
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mv ${{ env.JAR_NOVO }} ${{ env.JAR_ATUAL }}"
+
+      - name: Reiniciar serviço
+        working-directory: .
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "sudo systemctl restart ${{ env.SERVICO }}"
