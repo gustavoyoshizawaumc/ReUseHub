@@ -319,8 +319,8 @@ public class AnuncioService {
                 .bairro(dadosCEP.bairro())
                 .cidade(dadosCEP.cidade())
                 .uf(dadosCEP.uf())
-                .latitude(BigDecimal.valueOf(coordenadas.getLatitude()))
-                .longitude(BigDecimal.valueOf(coordenadas.getLongitude()))
+                .latitude(BigDecimal.valueOf(coordenadas.latitude()))
+                .longitude(BigDecimal.valueOf(coordenadas.longitude()))
                 .principal(false)
                 .build();
     }
