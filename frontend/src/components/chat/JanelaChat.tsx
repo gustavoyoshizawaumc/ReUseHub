@@ -13,7 +13,9 @@ import {
 } from '../../services/interesseService';
 import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from '../../config/api';
+
+const BASE_URL = API_BASE_URL;
 
 const montarUrlImagem = (url?: string | null) => {
   if (!url) return null;

@@ -6,6 +6,7 @@ import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { AlertCircle, ArrowLeft, Edit3, Loader2, MapPin, Search, Camera, PlusCircle, X } from "lucide-react";
 import { buscarEnderecoPorCEP } from "../../services/viaCepService";
+import { API_BASE_URL } from "../../config/api";
 
 export const EditarAnuncioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +54,7 @@ export const EditarAnuncioPage: React.FC = () => {
 
           if (dados.imagensUrls && dados.imagensUrls.length > 0) {
             const urls = dados.imagensUrls.map((url) =>
-              url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}${url}`
+              url.startsWith("http") ? url : `${API_BASE_URL}${url}`
             );
             setPreviews(urls);
           }

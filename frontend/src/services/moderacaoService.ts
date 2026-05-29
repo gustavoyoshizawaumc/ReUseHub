@@ -1,8 +1,10 @@
 ﻿import type { Anuncio, PaginacaoResponse } from '../types/anuncio.types';
 
-const ANUNCIOS_URL = `${import.meta.env.VITE_API_URL}/api/anuncios`;
-const MODERACAO_URL = `${import.meta.env.VITE_API_URL}/api/moderacao`;
-const ADMIN_URL = `${import.meta.env.VITE_API_URL}/api/admin`;
+import { apiUrl } from '../config/api';
+
+const ANUNCIOS_URL = apiUrl('/api/anuncios');
+const MODERACAO_URL = apiUrl('/api/moderacao');
+const ADMIN_URL = apiUrl('/api/admin');
 
 const getAuthHeaders = (): Record<string, string> => {
   const raw = localStorage.getItem('token');
@@ -69,6 +71,28 @@ export interface AdminUsuario {
   banido: boolean;
   notaReputacao: number;
   criadoEm: string;
+}
+
+export interface AvaliacaoModeracao {
+  id: string;
+  avaliadorId: string;
+  avaliadorNome: string;
+  avaliadoId: string;
+  avaliadoNome: string;
+  anuncioId: string;
+  anuncioTitulo: string;
+  nota: number;
+  comentario?: string;
+  criadoEm: string;
+}
+
+export interface UsuarioAdminFiltros {
+  termo?: string;
+  perfil?: 'USUARIO' | 'MODERADOR' | 'ADMIN' | '';
+  ativo?: boolean | '';
+  banido?: boolean | '';
+  criadoDe?: string;
+  criadoAte?: string;
 }
 
 export interface AdminDashboard {
@@ -179,6 +203,13 @@ export async function listarMeuHistorico(page = 0, size = 12): Promise<Paginacao
   return parseResponse(response, 'Erro ao listar historico');
 }
 
+export async function listarAvaliacoesModeracao(page = 0, size = 20): Promise<PaginacaoResponse<AvaliacaoModeracao>> {
+  const response = await fetch(`${MODERACAO_URL}/avaliacoes?page=${page}&size=${size}`, {
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response, 'Erro ao listar avaliacoes');
+}
+
 export async function removerAvaliacaoModeracao(id: string, justificativa?: string): Promise<void> {
   const response = await fetch(`${MODERACAO_URL}/avaliacoes/${id}`, {
     method: 'DELETE',
@@ -188,9 +219,22 @@ export async function removerAvaliacaoModeracao(id: string, justificativa?: stri
   return parseResponse(response, 'Erro ao remover avaliacao');
 }
 
-export async function listarUsuariosAdmin(page = 0, size = 10, termo = ''): Promise<PaginacaoResponse<AdminUsuario>> {
+export async function listarUsuariosAdmin(
+  page = 0,
+  size = 10,
+  filtros: UsuarioAdminFiltros | string = ''
+): Promise<PaginacaoResponse<AdminUsuario>> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
-  if (termo.trim()) params.set('termo', termo.trim());
+  const filtroNormalizado: UsuarioAdminFiltros =
+    typeof filtros === 'string' ? { termo: filtros } : filtros;
+
+  if (filtroNormalizado.termo?.trim()) params.set('termo', filtroNormalizado.termo.trim());
+  if (filtroNormalizado.perfil) params.set('perfil', filtroNormalizado.perfil);
+  if (filtroNormalizado.ativo !== '' && filtroNormalizado.ativo !== undefined) params.set('ativo', String(filtroNormalizado.ativo));
+  if (filtroNormalizado.banido !== '' && filtroNormalizado.banido !== undefined) params.set('banido', String(filtroNormalizado.banido));
+  if (filtroNormalizado.criadoDe) params.set('criadoDe', filtroNormalizado.criadoDe);
+  if (filtroNormalizado.criadoAte) params.set('criadoAte', filtroNormalizado.criadoAte);
+
   const response = await fetch(`${ADMIN_URL}/usuarios?${params.toString()}`, {
     headers: getAuthHeaders(),
   });

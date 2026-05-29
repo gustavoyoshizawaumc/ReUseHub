@@ -10,6 +10,7 @@ import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.avaliacao.dto.AvaliacaoRespostaDTO;
 import com.reusehub.avaliacao.model.Avaliacao;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.denuncia.dto.DenunciaCriacaoDTO;
@@ -150,6 +151,12 @@ public class ModeracaoService {
     }
 
     @Transactional(readOnly = true)
+    public Page<AvaliacaoRespostaDTO> listarAvaliacoes(Pageable pageable) {
+        return avaliacaoRepository.findAllByOrderByCriadoEmDesc(pageable)
+                .map(this::mapearAvaliacao);
+    }
+
+    @Transactional(readOnly = true)
     public Page<HistoricoModeracaoDTO> meuHistorico(String emailModerador, Pageable pageable) {
         Usuario moderador = validarModerador(emailModerador);
         return historicoRepository.findByModeradorIdOrderByCriadoEmDesc(moderador.getId(), pageable)
@@ -227,6 +234,21 @@ public class ModeracaoService {
                 historico.getAlvoId(),
                 historico.getDetalhes(),
                 historico.getCriadoEm()
+        );
+    }
+
+    private AvaliacaoRespostaDTO mapearAvaliacao(Avaliacao avaliacao) {
+        return new AvaliacaoRespostaDTO(
+                avaliacao.getId(),
+                avaliacao.getAvaliador().getId(),
+                avaliacao.getAvaliador().getName(),
+                avaliacao.getAvaliado().getId(),
+                avaliacao.getAvaliado().getName(),
+                avaliacao.getAnuncio().getId(),
+                avaliacao.getAnuncio().getTitulo(),
+                avaliacao.getNota(),
+                avaliacao.getComentario(),
+                avaliacao.getCriadoEm()
         );
     }
 

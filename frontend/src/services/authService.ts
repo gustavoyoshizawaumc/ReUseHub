@@ -5,8 +5,9 @@
   UsuarioRespostaDTO,
   UpdateProfileRequest,
 } from "../types/auth.types";
+import { apiUrl } from "../config/api";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
+const API_URL = apiUrl("/api/auth");
 
 export const authService = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {

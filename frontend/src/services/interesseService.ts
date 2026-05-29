@@ -1,6 +1,8 @@
 ﻿import type { InteresseCriacaoPayload, InteresseResposta } from "../types/interesse.types";
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from "../config/api";
+
+const BASE_URL = API_BASE_URL;
 
 function getAuthHeaders() {
   const token = localStorage.getItem("token");
