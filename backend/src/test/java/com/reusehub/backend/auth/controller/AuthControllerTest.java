@@ -35,6 +35,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerTest {
 
     private static final String CPF_VALIDO_PARA_REGISTRO = "52998224725";
+    private static final String EMAIL_NOVO_USUARIO = "novo@reusehub.com";
+    private static final String NOME_PADRAO = "Gustavo";
+    private static final String TELEFONE_VALIDO = "11999999999";
+    private static final String SENHA_FORTE = "Senha@123";
+    private static final String SENHA_FRACA = "12345";
 
     @Autowired
     private MockMvc mockMvc;
@@ -62,21 +67,12 @@ class AuthControllerTest {
         @Test
         @DisplayName("deve registrar usuário com sucesso")
         void registrarSucesso() throws Exception {
-            RegisterRequest request = new RegisterRequest();
-            request.setName("Gustavo");
-            request.setCpf(CPF_VALIDO_PARA_REGISTRO);
-            request.setEmail("novo@reusehub.com");
-            request.setPassword("Senha@123");
-            request.setPhone("11999999999");
-            request.setLgpdConsent(true);
+            RegisterRequest request = novoRegisterRequestValido();
 
             AuthResponse mockResponse = Mockito.mock(AuthResponse.class);
             Mockito.when(authService.registrar(Mockito.any())).thenReturn(mockResponse);
 
-            mockMvc.perform(post("/api/auth/registrar")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request))
-                    .with(csrf()))
+            executarRegistroComBody(request)
                     .andExpect(status().isCreated());
         }
 
@@ -85,11 +81,38 @@ class AuthControllerTest {
         void registrarDadosInvalidos() throws Exception {
             RegisterRequest request = new RegisterRequest();
 
-            mockMvc.perform(post("/api/auth/registrar")
+            executarRegistroComBody(request)
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("deve retornar 400 quando a senha nao atender ao padrao de senha forte")
+        void registrarSenhaFraca() throws Exception {
+            RegisterRequest request = novoRegisterRequestValido();
+            request.setPassword(SENHA_FRACA);
+
+            executarRegistroComBody(request)
+                    .andExpect(status().isBadRequest());
+
+            Mockito.verify(authService, Mockito.never()).registrar(Mockito.any());
+        }
+
+        private RegisterRequest novoRegisterRequestValido() {
+            RegisterRequest request = new RegisterRequest();
+            request.setName(NOME_PADRAO);
+            request.setCpf(CPF_VALIDO_PARA_REGISTRO);
+            request.setEmail(EMAIL_NOVO_USUARIO);
+            request.setPassword(SENHA_FORTE);
+            request.setPhone(TELEFONE_VALIDO);
+            request.setLgpdConsent(true);
+            return request;
+        }
+
+        private org.springframework.test.web.servlet.ResultActions executarRegistroComBody(RegisterRequest request) throws Exception {
+            return mockMvc.perform(post("/api/auth/registrar")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request))
-                    .with(csrf()))
-                    .andExpect(status().isBadRequest());
+                    .with(csrf()));
         }
     }
 

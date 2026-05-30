@@ -328,9 +328,32 @@ class AnuncioServiceTest {
             Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class))).thenAnswer(i -> i.getArgument(0));
 
             AnuncioRespostaDTO resultado = anuncioService.atualizarAnuncio(validId, "dono@reusehub.com", dto);
-            
+
             assertNotNull(resultado);
             assertEquals("Título Novo", anuncioPendente.getTitulo());
+        }
+
+        @Test
+        @DisplayName("deve forcar status para PENDENTE quando anúncio ATIVO for editado (regra de reanalise)")
+        void devolverAnuncioParaReanaliseAposEdicao() {
+            UUID validId = anuncioPendente.getId();
+            anuncioPendente.setStatus(Anuncio.StatusAnuncio.ATIVO);
+
+            AnuncioAtualizacaoDTO dto = new AnuncioAtualizacaoDTO();
+            dto.setEnderecoId(UUID.randomUUID());
+            dto.setTitulo("Título Editado");
+
+            Mockito.when(anuncioRepository.findById(validId))
+                    .thenReturn(Optional.of(anuncioPendente));
+            Mockito.when(enderecoRepository.findByIdAndUsuarioId(Mockito.any(UUID.class), Mockito.any()))
+                    .thenReturn(Optional.of(Endereco.builder().build()));
+            Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class)))
+                    .thenAnswer(i -> i.getArgument(0));
+
+            AnuncioRespostaDTO resultado = anuncioService.atualizarAnuncio(validId, EMAIL_DONO, dto);
+
+            assertEquals(Anuncio.StatusAnuncio.PENDENTE, resultado.getStatus());
+            assertEquals(Anuncio.StatusAnuncio.PENDENTE, anuncioPendente.getStatus());
         }
 
         @Test
