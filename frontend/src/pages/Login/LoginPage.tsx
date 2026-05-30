@@ -73,10 +73,11 @@ export const LoginPage: React.FC = () => {
     try {
       const usuario = await authService.login(formData);
       navigate(isPerfilOperacional(usuario.perfil) ? "/moderacao" : "/");
-    } catch (err: any) {
-      setFormError(
-        err.message || "Erro ao fazer login. Verifique suas credenciais.",
-      );
+    } catch (err) {
+      const mensagem = err instanceof Error
+        ? err.message
+        : "Erro ao fazer login. Verifique suas credenciais.";
+      setFormError(mensagem);
     } finally {
       setIsLoading(false);
     }
