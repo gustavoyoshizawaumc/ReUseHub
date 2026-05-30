@@ -36,10 +36,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,6 +52,8 @@ class AnuncioServiceTest {
 
     private static final String EMAIL_DONO = "dono@reusehub.com";
     private static final String CEP_VALIDO = "01001-000";
+    private static final int QUANTIDADE_MINIMA_IMAGENS = 3;
+    private static final int QUANTIDADE_MAXIMA_IMAGENS = 5;
     private static final double LATITUDE_SAO_PAULO = -23.55;
     private static final double LONGITUDE_SAO_PAULO = -46.63;
 
@@ -138,6 +143,31 @@ class AnuncioServiceTest {
         return dto;
     }
 
+    /**
+     * Gera uma lista de imagens mockadas com a quantidade pedida.
+     * Permite testar tanto cenarios validos quanto bordas da regra
+     * de quantidade minima/maxima de imagens por anuncio.
+     */
+    private List<MultipartFile> criarListaDeImagens(int quantidade) {
+        return IntStream.rangeClosed(1, quantidade)
+                .<MultipartFile>mapToObj(indice -> new MockMultipartFile(
+                        "imagens",
+                        "foto" + indice + ".png",
+                        "image/png",
+                        ("bytes-" + indice).getBytes()
+                ))
+                .toList();
+    }
+
+    /**
+     * Retorna uma lista com a quantidade minima de imagens validas exigida
+     * pelo AnuncioService. Util para testes que precisam passar pela
+     * validacao inicial sem que esse seja o foco do cenario testado.
+     */
+    private List<MultipartFile> imagensValidasParaCriacao() {
+        return criarListaDeImagens(QUANTIDADE_MINIMA_IMAGENS);
+    }
+
     @Nested
     @DisplayName("Cenários para criarAnuncioComEndereco")
     class CriarAnuncioCenarios {
@@ -160,7 +190,7 @@ class AnuncioServiceTest {
                     .thenAnswer(i -> i.getArgument(0));
 
             AnuncioRespostaDTO resultado = anuncioService.criarAnuncioComEndereco(
-                    EMAIL_DONO, dto, new ArrayList<>()
+                    EMAIL_DONO, dto, imagensValidasParaCriacao()
             );
 
             assertNotNull(resultado);
@@ -175,7 +205,7 @@ class AnuncioServiceTest {
 
             assertThrows(RecursoNaoEncontradoException.class, () ->
                     anuncioService.criarAnuncioComEndereco(
-                            EMAIL_INEXISTENTE, new AnuncioCriacaoComEnderecoDTO(), new ArrayList<>()
+                            EMAIL_INEXISTENTE, new AnuncioCriacaoComEnderecoDTO(), imagensValidasParaCriacao()
                     )
             );
         }
@@ -192,7 +222,39 @@ class AnuncioServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThrows(RecursoNaoEncontradoException.class, () ->
-                    anuncioService.criarAnuncioComEndereco(EMAIL_DONO, dto, new ArrayList<>())
+                    anuncioService.criarAnuncioComEndereco(EMAIL_DONO, dto, imagensValidasParaCriacao())
+            );
+        }
+
+        @Test
+        @DisplayName("deve estourar OperacaoInvalidaException se a quantidade de imagens for menor que o minimo")
+        void erroQuantidadeAbaixoDoMinimo() {
+            AnuncioCriacaoComEnderecoDTO dto = novoDtoCriacao(CATEGORIA_EXISTENTE_ID);
+            List<MultipartFile> abaixoDoMinimo = criarListaDeImagens(QUANTIDADE_MINIMA_IMAGENS - 1);
+
+            assertThrows(OperacaoInvalidaException.class, () ->
+                    anuncioService.criarAnuncioComEndereco(EMAIL_DONO, dto, abaixoDoMinimo)
+            );
+        }
+
+        @Test
+        @DisplayName("deve estourar OperacaoInvalidaException se a quantidade de imagens for maior que o maximo")
+        void erroQuantidadeAcimaDoMaximo() {
+            AnuncioCriacaoComEnderecoDTO dto = novoDtoCriacao(CATEGORIA_EXISTENTE_ID);
+            List<MultipartFile> acimaDoMaximo = criarListaDeImagens(QUANTIDADE_MAXIMA_IMAGENS + 1);
+
+            assertThrows(OperacaoInvalidaException.class, () ->
+                    anuncioService.criarAnuncioComEndereco(EMAIL_DONO, dto, acimaDoMaximo)
+            );
+        }
+
+        @Test
+        @DisplayName("deve estourar OperacaoInvalidaException se a lista de imagens for nula")
+        void erroListaDeImagensNula() {
+            AnuncioCriacaoComEnderecoDTO dto = novoDtoCriacao(CATEGORIA_EXISTENTE_ID);
+
+            assertThrows(OperacaoInvalidaException.class, () ->
+                    anuncioService.criarAnuncioComEndereco(EMAIL_DONO, dto, null)
             );
         }
     }
