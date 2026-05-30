@@ -36,6 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Testes do ChatController - Camada Web")
 class ChatControllerTest {
 
+    private static final String EMAIL_USUARIO_TESTE = "gustavo@reusehub.com";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -56,7 +58,7 @@ class ChatControllerTest {
     class EnviarMensagemCenarios {
 
         @Test
-        @WithMockUser(username = "gustavo@reusehub.com")
+        @WithMockUser(username = "gustavo@reusehub.com", roles = "USUARIO")
         @DisplayName("deve enviar mensagem com sucesso retornando 201 Created")
         void enviarSucesso() throws Exception {
             MensagemCriacaoDTO dto = new MensagemCriacaoDTO("conversa-xyz", "Olá, tenho interesse no item!");
@@ -68,7 +70,7 @@ class ChatControllerTest {
                     .andExpect(status().isCreated());
 
             Mockito.verify(chatService, Mockito.times(1))
-                   .enviarMensagem(Mockito.eq("gustavo@reusehub.com"), Mockito.eq("conversa-xyz"), Mockito.any());
+                   .enviarMensagem(Mockito.eq(EMAIL_USUARIO_TESTE), Mockito.eq("conversa-xyz"), Mockito.any());
         }
     }
 
@@ -77,7 +79,7 @@ class ChatControllerTest {
     class IniciarConversaCenarios {
 
         @Test
-        @WithMockUser(username = "gustavo@reusehub.com")
+        @WithMockUser(username = "gustavo@reusehub.com", roles = "USUARIO")
         @DisplayName("deve iniciar ou recuperar uma conversa com sucesso")
         void iniciarSucesso() throws Exception {
             IniciarConversaDTO dto = new IniciarConversaDTO("anuncio-123", "destinatario-456");
@@ -100,12 +102,12 @@ class ChatControllerTest {
     class MinhasConversasCenarios {
 
         @Test
-        @WithMockUser(username = "gustavo@reusehub.com")
+        @WithMockUser(username = "gustavo@reusehub.com", roles = "USUARIO")
         @DisplayName("deve listar conversas do usuário logado")
         void listarSucesso() throws Exception {
             ListaConversasDTO mockLista = Mockito.mock(ListaConversasDTO.class);
 
-            Mockito.when(chatService.listarConversasUsuario("gustavo@reusehub.com"))
+            Mockito.when(chatService.listarConversasUsuario(EMAIL_USUARIO_TESTE))
                    .thenReturn(mockLista);
 
             mockMvc.perform(get("/api/chat/minhas-conversas"))
@@ -125,14 +127,14 @@ class ChatControllerTest {
     class MarcarComoLidoCenarios {
 
         @Test
-        @WithMockUser(username = "gustavo@reusehub.com")
+        @WithMockUser(username = "gustavo@reusehub.com", roles = "USUARIO")
         @DisplayName("deve marcar mensagens da conversa como lidas")
         void marcarLidoSucesso() throws Exception {
             mockMvc.perform(patch("/api/chat/conversa-123/lido").with(csrf()))
                     .andExpect(status().isOk());
 
             Mockito.verify(chatService, Mockito.times(1))
-                   .marcarComoLido("conversa-123", "gustavo@reusehub.com");
+                   .marcarComoLido("conversa-123", EMAIL_USUARIO_TESTE);
         }
     }
 }

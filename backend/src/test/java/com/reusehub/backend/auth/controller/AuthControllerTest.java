@@ -34,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Testes do AuthController - Camada Web")
 class AuthControllerTest {
 
+    private static final String CPF_VALIDO_PARA_REGISTRO = "52998224725";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -62,7 +64,7 @@ class AuthControllerTest {
         void registrarSucesso() throws Exception {
             RegisterRequest request = new RegisterRequest();
             request.setName("Gustavo");
-            request.setCpf("12345678901");
+            request.setCpf(CPF_VALIDO_PARA_REGISTRO);
             request.setEmail("novo@reusehub.com");
             request.setPassword("Senha@123");
             request.setPhone("11999999999");
