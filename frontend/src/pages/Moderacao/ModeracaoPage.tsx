@@ -76,6 +76,19 @@ const FILTROS_USUARIO_INICIAIS: UsuarioAdminFiltros = {
   criadoAte: '',
 };
 
+const CHAVE_FILTROS_USUARIO = 'reusehub:moderacao:filtros-usuarios';
+
+const carregarFiltrosUsuariosSalvos = (): UsuarioAdminFiltros => {
+  if (typeof window === 'undefined') return FILTROS_USUARIO_INICIAIS;
+
+  try {
+    const filtros = window.localStorage.getItem(CHAVE_FILTROS_USUARIO);
+    return filtros ? { ...FILTROS_USUARIO_INICIAIS, ...JSON.parse(filtros) } : FILTROS_USUARIO_INICIAIS;
+  } catch {
+    return FILTROS_USUARIO_INICIAIS;
+  }
+};
+
 const imageUrl = (url?: string) => {
   if (!url) return null;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
@@ -136,7 +149,8 @@ export const ModeracaoPage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
   const filtrosUsuariosInicializadosRef = useRef(false);
-  const [usuarioFiltros, setUsuarioFiltros] = useState<UsuarioAdminFiltros>(FILTROS_USUARIO_INICIAIS);
+  const [usuarioFiltros, setUsuarioFiltros] = useState<UsuarioAdminFiltros>(carregarFiltrosUsuariosSalvos);
+  const filtrosUsuariosIniciaisRef = useRef(usuarioFiltros);
   const [moderadorForm, setModeradorForm] = useState({
     name: '',
     email: '',
@@ -145,14 +159,14 @@ export const ModeracaoPage: React.FC = () => {
 
   const tabs = useMemo(
     () => [
-      { id: 'pendentes' as Aba, label: 'Anuncios', icon: Clock3 },
-      { id: 'denuncias' as Aba, label: 'Denuncias', icon: AlertTriangle },
-      { id: 'suspeitos' as Aba, label: 'Suspeitos', icon: ShieldOff },
-      { id: 'avaliacoes' as Aba, label: 'Avaliacoes', icon: Star },
-      { id: 'historico' as Aba, label: 'Historico', icon: FileText },
-      ...(isAdmin ? [{ id: 'admin' as Aba, label: 'Admin', icon: BarChart3 }] : []),
+      { id: 'pendentes' as Aba, label: 'Anuncios', description: 'Fila de aprovacao', icon: Clock3, count: pendentes.length },
+      { id: 'denuncias' as Aba, label: 'Denuncias', description: 'Relatos abertos', icon: AlertTriangle, count: denuncias.length },
+      { id: 'suspeitos' as Aba, label: 'Suspeitos', description: 'Conteudos em risco', icon: ShieldOff, count: suspeitos.length },
+      { id: 'avaliacoes' as Aba, label: 'Avaliacoes', description: 'Comentarios recebidos', icon: Star, count: avaliacoes.length },
+      { id: 'historico' as Aba, label: 'Historico', description: 'Minhas acoes', icon: FileText, count: historico.length },
+      ...(isAdmin ? [{ id: 'admin' as Aba, label: 'Admin', description: 'Usuarios e metricas', icon: BarChart3, count: usuarios.length }] : []),
     ],
-    [isAdmin]
+    [avaliacoes.length, denuncias.length, historico.length, isAdmin, pendentes.length, suspeitos.length, usuarios.length]
   );
 
   const carregarUsuarios = useCallback(async (filtros = usuarioFiltros) => {
@@ -190,7 +204,7 @@ export const ModeracaoPage: React.FC = () => {
       if (isAdmin) {
         const [dash, usuariosData, auditoriaData] = await Promise.all([
           obterDashboardAdmin(),
-          listarUsuariosAdmin(0, 20, FILTROS_USUARIO_INICIAIS),
+          listarUsuariosAdmin(0, 20, filtrosUsuariosIniciaisRef.current),
           listarAuditoria(0, 20),
         ]);
         setDashboard(dash);
@@ -210,6 +224,8 @@ export const ModeracaoPage: React.FC = () => {
 
   useEffect(() => {
     if (!isAdmin) return;
+
+    window.localStorage.setItem(CHAVE_FILTROS_USUARIO, JSON.stringify(usuarioFiltros));
 
     if (!filtrosUsuariosInicializadosRef.current) {
       filtrosUsuariosInicializadosRef.current = true;
@@ -712,41 +728,74 @@ export const ModeracaoPage: React.FC = () => {
                           Atualizando usuarios...
                         </div>
                       )}
-                      <div className="space-y-2">
+                      <div className="overflow-x-auto rounded-lg border border-slate-200">
                         {!loadingUsuarios && usuarios.length === 0 && (
                           <EmptyState text="Nenhum usuario encontrado com os filtros atuais." />
                         )}
-                        {usuarios.map((usuario) => {
-                          const isSelf = usuario.id === user?.id;
-                          return (
-                            <div key={usuario.id} className="flex flex-col gap-3 rounded-lg border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div>
-                                <p className="font-black text-slate-950">
-                                  {usuario.name}
-                                  {isSelf && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase text-blue-700">Voce</span>}
-                                </p>
-                                <p className="text-xs font-semibold text-slate-500">{usuario.email} | {usuario.perfil}</p>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                <button onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
-                                <button
-                                  disabled={isSelf}
-                                  onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
-                                  className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  Desativar
-                                </button>
-                                <button
-                                  disabled={isSelf}
-                                  onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
-                                  className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  Banir
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                        {usuarios.length > 0 && (
+                          <table className="min-w-[760px] w-full border-collapse bg-white text-sm">
+                            <thead className="bg-slate-50 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">
+                              <tr>
+                                <th className="px-3 py-3">Usuario</th>
+                                <th className="px-3 py-3">Perfil</th>
+                                <th className="px-3 py-3">Status</th>
+                                <th className="px-3 py-3">Reputacao</th>
+                                <th className="px-3 py-3">Cadastro</th>
+                                <th className="px-3 py-3 text-right">Acoes</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {usuarios.map((usuario) => {
+                                const isSelf = usuario.id === user?.id;
+                                return (
+                                  <tr key={usuario.id} className="hover:bg-slate-50">
+                                    <td className="px-3 py-3">
+                                      <p className="font-black text-slate-950">
+                                        {usuario.name}
+                                        {isSelf && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase text-blue-700">Voce</span>}
+                                      </p>
+                                      <p className="mt-0.5 text-xs font-semibold text-slate-500">{usuario.email}</p>
+                                    </td>
+                                    <td className="px-3 py-3">
+                                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-black uppercase text-slate-600">{usuario.perfil}</span>
+                                    </td>
+                                    <td className="px-3 py-3">
+                                      <div className="flex flex-wrap gap-1">
+                                        <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${usuario.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                                          {usuario.ativo ? 'Ativo' : 'Inativo'}
+                                        </span>
+                                        {usuario.banido && <span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-black uppercase text-rose-700">Banido</span>}
+                                      </div>
+                                    </td>
+                                    <td className="px-3 py-3 font-bold text-slate-700">{Number(usuario.notaReputacao ?? 0).toFixed(1)}</td>
+                                    <td className="px-3 py-3 text-xs font-semibold text-slate-500">
+                                      {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString('pt-BR') : '-'}
+                                    </td>
+                                    <td className="px-3 py-3">
+                                      <div className="flex justify-end gap-2">
+                                        <button onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
+                                        <button
+                                          disabled={isSelf}
+                                          onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
+                                          className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                          Desativar
+                                        </button>
+                                        <button
+                                          disabled={isSelf}
+                                          onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
+                                          className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                          Banir
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        )}
                       </div>
                     </div>
                   </div>
