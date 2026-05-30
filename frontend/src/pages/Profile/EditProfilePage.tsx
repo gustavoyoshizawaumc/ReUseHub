@@ -24,28 +24,22 @@ const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 export const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    bio: "",
-    avatarFile: null as File | null,
-    avatarPreview: "",
+  const [formData, setFormData] = useState(() => {
+    const usuario = authService.getUser();
+    return {
+      name: usuario?.name || "",
+      phone: usuario?.phone || "",
+      bio: usuario?.bio || "",
+      avatarFile: null as File | null,
+      avatarPreview: usuario?.avatarUrl || "",
+    };
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const usuario = authService.getUser();
-    if (usuario) {
-      setFormData((prev) => ({
-        ...prev,
-        name: usuario.name || "",
-        phone: usuario.phone || "",
-        bio: usuario.bio || "",
-        avatarPreview: usuario.avatarUrl || "",
-      }));
-    } else {
+    if (!authService.getUser()) {
       navigate("/login");
     }
   }, [navigate]);
@@ -88,8 +82,9 @@ export const EditProfilePage: React.FC = () => {
 
       setSuccess(true);
       setTimeout(() => navigate("/profile"), 1500);
-    } catch (err: any) {
-      setError(err.message || "Erro ao atualizar perfil");
+    } catch (err) {
+      const mensagem = err instanceof Error ? err.message : "Erro ao atualizar perfil";
+      setError(mensagem);
       console.error(err);
     } finally {
       setLoading(false);

@@ -122,9 +122,11 @@ export const Header: React.FC = () => {
   const categoriasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setUser(authService.getUser());
-
     const params = new URLSearchParams(location.search);
+    // Sincroniza estado interno do header com os parametros da URL.
+    // O searchTerm e activeCategory tambem sao atualizados via UI,
+    // entao precisam ser useState (nao podem virar derived state).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchTerm(params.get("termo") ?? "");
     setActiveCategory(params.get("categoriaId") ? Number(params.get("categoriaId")) : null);
 
@@ -139,6 +141,8 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     if (!user) {
+      // Reset dos indicadores ao deslogar.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTemChatPendente(false);
       setTemTrocaPendente(false);
       return;

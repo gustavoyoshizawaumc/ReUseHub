@@ -9,13 +9,20 @@ interface Paginacao {
   totalElements: number;
 }
 
+interface RespostaPaginada<T> {
+  content: T[];
+  currentPage?: number;
+  totalPages?: number;
+  totalElements?: number;
+}
+
 const PAGINACAO_INICIAL: Paginacao = {
   currentPage: 0,
   totalPages: 0,
   totalElements: 0,
 };
 
-const extrairPaginacao = (resposta: any, page: number): Paginacao => ({
+const extrairPaginacao = <T>(resposta: RespostaPaginada<T>, page: number): Paginacao => ({
   currentPage: resposta.currentPage ?? page,
   totalPages: resposta.totalPages ?? 1,
   totalElements: resposta.totalElements ?? 0,
@@ -29,7 +36,7 @@ export const useAnuncios = () => {
   const [filtroAtual, setFiltroAtual] = useState<BuscaFiltro>({});
 
   const executarRequisicao = useCallback(
-    async (fn: () => Promise<{ content: Anuncio[] } & any>, page: number) => {
+    async (fn: () => Promise<RespostaPaginada<Anuncio>>, page: number) => {
       setLoading(true);
       setErro(null);
       try {

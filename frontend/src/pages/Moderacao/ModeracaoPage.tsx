@@ -205,6 +205,9 @@ export const ModeracaoPage: React.FC = () => {
   }, [isAdmin]);
 
   useEffect(() => {
+    // Fetch inicial dos dados de moderacao.
+    // setState dentro do effect e aceitavel: sincronizacao com a API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, [carregar]);
 
