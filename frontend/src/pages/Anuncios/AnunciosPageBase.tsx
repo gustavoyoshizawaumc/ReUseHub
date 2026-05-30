@@ -189,9 +189,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
     try {
       await anuncioService.deletarAnuncio(id);
-      exibindoMeusAnuncios
-        ? listarMeus(paginacao.currentPage)
-        : listar(paginacao.currentPage);
+      if (exibindoMeusAnuncios) {
+        listarMeus(paginacao.currentPage);
+      } else {
+        listar(paginacao.currentPage);
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Erro ao deletar");
     }
@@ -221,15 +223,21 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
   const handleBuscar = (termo: string) => {
     const params = new URLSearchParams(searchParams);
-    termo ? params.set("termo", termo) : params.delete("termo");
+    if (termo) {
+      params.set("termo", termo);
+    } else {
+      params.delete("termo");
+    }
     setSearchParams(params, { replace: true });
   };
 
   const handleFiltrarStatus = (novoStatus: string) => {
     const params = new URLSearchParams(searchParams);
-    novoStatus === "TODOS"
-      ? params.delete("statusFiltro")
-      : params.set("statusFiltro", novoStatus);
+    if (novoStatus === "TODOS") {
+      params.delete("statusFiltro");
+    } else {
+      params.set("statusFiltro", novoStatus);
+    }
     setSearchParams(params, { replace: true });
   };
 

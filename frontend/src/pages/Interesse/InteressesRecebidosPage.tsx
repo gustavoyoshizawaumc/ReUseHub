@@ -68,6 +68,9 @@ export const InteressesRecebidosPage: React.FC = () => {
   };
 
   useEffect(() => {
+    // Fetch inicial da lista de interesses recebidos.
+    // setState dentro do effect e aceitavel: sincronizacao com a API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, []);
 

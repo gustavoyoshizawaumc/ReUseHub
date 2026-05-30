@@ -41,8 +41,8 @@ public class LocalizacaoService {
     private void resolverCoordenadasPorCepInformado(BuscaFiltroDTO filtro) {
         try {
             NominatimService.Coordenadas coordenadas = converterCepEmCoordenadas(filtro.getCep());
-            filtro.setLatitude(coordenadas.getLatitude());
-            filtro.setLongitude(coordenadas.getLongitude());
+            filtro.setLatitude(coordenadas.latitude());
+            filtro.setLongitude(coordenadas.longitude());
         } catch (Exception ignored) {
             // Falha silenciosa: busca prossegue sem filtro geográfico
         }
@@ -90,9 +90,9 @@ public class LocalizacaoService {
 
     private String montarEnderecoTextualParaBusca(ViaCepService.DadosCEP dadosCEP) {
         return String.format("%s, %s, %s, Brasil",
-                dadosCEP.getBairro(),
-                dadosCEP.getCidade(),
-                dadosCEP.getUf()
+                dadosCEP.bairro(),
+                dadosCEP.cidade(),
+                dadosCEP.uf()
         );
     }
 }

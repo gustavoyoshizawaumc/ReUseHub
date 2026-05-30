@@ -1,0 +1,57 @@
+name: Rollback Backend
+
+on:
+  workflow_dispatch:
+
+env:
+  JAR_ATUAL: /home/ubuntu/backend-0.0.1-SNAPSHOT.jar
+  JAR_ANTERIOR: /home/ubuntu/backend-previous.jar
+  JAR_QUEBRADO: /home/ubuntu/backend-broken.jar
+  CAMINHO_CHAVE_SSH: ~/.ssh/chave-reusehub.pem
+  SERVICO: reusehub
+  SEGUNDOS_AGUARDAR_SUBIDA: 15
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configurar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ${{ env.CAMINHO_CHAVE_SSH }}
+          chmod 600 ${{ env.CAMINHO_CHAVE_SSH }}
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verificar se existe versão anterior para restaurar
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "test -f ${{ env.JAR_ANTERIOR }} || { echo 'ERRO: nenhuma versao anterior disponivel para rollback.'; exit 1; }"
+
+      - name: Preservar JAR atual como evidência do problema
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mv ${{ env.JAR_ATUAL }} ${{ env.JAR_QUEBRADO }}"
+
+      - name: Restaurar versão anterior
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mv ${{ env.JAR_ANTERIOR }} ${{ env.JAR_ATUAL }}"
+
+      - name: Reiniciar serviço
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "sudo systemctl restart ${{ env.SERVICO }}"
+
+      - name: Aguardar subida do serviço
+        run: sleep ${{ env.SEGUNDOS_AGUARDAR_SUBIDA }}
+
+      - name: Confirmar que o serviço está ativo
+        run: |
+          ssh -i ${{ env.CAMINHO_CHAVE_SSH }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "sudo systemctl is-active ${{ env.SERVICO }}"

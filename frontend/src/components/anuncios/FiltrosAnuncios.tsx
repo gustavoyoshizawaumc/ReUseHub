@@ -13,37 +13,12 @@ import {
 } from "lucide-react";
 import type { BuscaFiltro, TipoOrdenacao } from "../../types/busca.types";
 import { useLocalizacao } from "../../hooks/useLocalizacao";
+import { useCategorias } from "../../hooks/useCategorias";
 
 interface FiltrosAnunciosProps {
   onFiltrar: (filtro: BuscaFiltro) => void;
   onLimpar: () => void;
 }
-
-const CATEGORIAS = [
-  { id: 1, nome: "Imoveis" },
-  { id: 2, nome: "Autos" },
-  { id: 3, nome: "Autopecas" },
-  { id: 4, nome: "Celulares e Telefonia" },
-  { id: 5, nome: "Casa, Decoracao e Utensilios" },
-  { id: 6, nome: "Esportes e Fitness" },
-  { id: 7, nome: "Servicos" },
-  { id: 8, nome: "Moda e Beleza" },
-  { id: 9, nome: "Artigos Infantis" },
-  { id: 10, nome: "Animais de Estimacao" },
-  { id: 11, nome: "Musica e Hobbies" },
-  { id: 12, nome: "Agro e Industria" },
-  { id: 13, nome: "Vagas de Emprego" },
-  { id: 14, nome: "Comercio" },
-  { id: 15, nome: "Cameras e Drones" },
-  { id: 16, nome: "Games" },
-  { id: 17, nome: "TVs e Video" },
-  { id: 18, nome: "Audio" },
-  { id: 19, nome: "Informatica" },
-  { id: 20, nome: "Eletro" },
-  { id: 21, nome: "Moveis" },
-  { id: 22, nome: "Materiais de Construcao" },
-  { id: 23, nome: "Escritorio e Home Office" },
-];
 
 const OPCOES_ORDENACAO: { value: TipoOrdenacao; label: string }[] = [
   { value: "RELEVANCIA", label: "Mais relevantes" },
@@ -64,6 +39,11 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onL
   const [fonteLocalizacao, setFonteLocalizacao] = useState<"gps" | "cep" | "nenhuma">("nenhuma");
 
   const { coordenadas, carregandoLocalizacao, obterLocalizacao, limparLocalizacao } = useLocalizacao();
+  const {
+    categorias,
+    carregando: carregandoCategorias,
+    erro: erroCategorias,
+  } = useCategorias();
   const possuiFiltroAtivo = Boolean(tipo || condicao || categoriaId || ordenacao || fonteLocalizacao !== "nenhuma");
 
   const montarFiltro = (): BuscaFiltro => {
@@ -159,10 +139,22 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onL
 
       <div className="space-y-3">
         <h3 className={labelSecao}><PlusCircle size={14} /> Categoria</h3>
-        <select value={categoriaId} onChange={(e) => setCategoriaId(Number(e.target.value) || "")} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all">
-          <option value="">Todas as categorias</option>
-          {CATEGORIAS.map((cat) => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
+        <select
+          value={categoriaId}
+          onChange={(e) => setCategoriaId(Number(e.target.value) || "")}
+          disabled={carregandoCategorias || categorias.length === 0}
+          className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all disabled:opacity-60"
+        >
+          <option value="">
+            {carregandoCategorias ? "Carregando..." : "Todas as categorias"}
+          </option>
+          {categorias.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.nome}</option>
+          ))}
         </select>
+        {erroCategorias && (
+          <p className="text-red-500 text-[11px] font-semibold">{erroCategorias}</p>
+        )}
       </div>
 
       <div className="space-y-3">

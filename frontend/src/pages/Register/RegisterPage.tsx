@@ -8,6 +8,23 @@ type RegisterFormData = RegisterRequest & {
 };
 
 /**
+ * Regra de senha forte: mínimo 8 caracteres, com pelo menos uma letra
+ * maiúscula, uma minúscula, um número e um caractere especial.
+ * Deve espelhar o @Pattern do RegisterRequest no backend.
+ */
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+/** Requisitos individuais, usados na dica visual abaixo do campo. */
+const passwordRequisitos = (senha: string) => [
+  { label: "Mínimo 8 caracteres", ok: senha.length >= 8 },
+  { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
+  { label: "Uma letra minúscula", ok: /[a-z]/.test(senha) },
+  { label: "Um número", ok: /\d/.test(senha) },
+  { label: "Um caractere especial", ok: /[^A-Za-z0-9]/.test(senha) },
+];
+
+/**
  * Validação matemática do CPF (dígitos verificadores).
  * Equivalente ao que o backend faz com @ValidCpf.
  */
@@ -83,8 +100,9 @@ export const RegisterPage: React.FC = () => {
           error = "E-mail inválido.";
         break;
       case "password":
-        if (typeof value === "string" && value.length < 6)
-          error = "Senha deve ter no mínimo 6 caracteres.";
+        if (typeof value === "string" && !PASSWORD_REGEX.test(value))
+          error =
+            "Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.";
         break;
       case "confirmPassword":
         if (typeof value === "string" && value !== formData.password)
@@ -141,8 +159,11 @@ export const RegisterPage: React.FC = () => {
     try {
       await authService.register(formData);
       navigate("/login");
-    } catch (err: any) {
-      setFormError(err.message || "Erro ao cadastrar. Tente novamente.");
+    } catch (err) {
+      const mensagem = err instanceof Error
+        ? err.message
+        : "Erro ao cadastrar. Tente novamente.";
+      setFormError(mensagem);
     } finally {
       setIsLoading(false);
     }
@@ -248,7 +269,7 @@ export const RegisterPage: React.FC = () => {
                   id={field.id}
                   name={field.id}
                   type={field.type}
-                  value={(formData as any)[field.id]}
+                  value={String(formData[field.id as keyof typeof formData] ?? "")}
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   className={`w-full pl-12 pr-4 py-2 text-[16px] border ${errors[field.id as keyof typeof errors] ? "border-red-400 focus:ring-red-50" : "border-slate-200 focus:ring-orange-50 focus:border-orange-300"} rounded-xl bg-slate-50/50 text-slate-800 transition-all outline-none focus:ring-2`}
@@ -284,7 +305,7 @@ export const RegisterPage: React.FC = () => {
                   <input
                     name={id}
                     type="password"
-                    value={(formData as any)[id]}
+                    value={String(formData[id as keyof typeof formData] ?? "")}
                     onChange={handleChange}
                     placeholder="••••••"
                     className={`w-full pl-12 pr-4 py-2 text-[16px] border ${errors[id as keyof typeof errors] ? "border-red-400" : "border-slate-200 focus:border-orange-300"} rounded-xl bg-slate-50/50 outline-none transition-all focus:ring-2 focus:ring-orange-50`}
@@ -294,6 +315,21 @@ export const RegisterPage: React.FC = () => {
                   <p className="text-red-500 text-[10px] font-bold ml-2">
                     {errors[id as keyof typeof errors]}
                   </p>
+                )}
+                {id === "password" && formData.password && (
+                  <ul className="mt-1 ml-2 space-y-0.5">
+                    {passwordRequisitos(formData.password).map((req) => (
+                      <li
+                        key={req.label}
+                        className={`flex items-center gap-1 text-[10px] font-medium ${
+                          req.ok ? "text-green-600" : "text-slate-400"
+                        }`}
+                      >
+                        <span>{req.ok ? "✓" : "○"}</span>
+                        {req.label}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             ))}

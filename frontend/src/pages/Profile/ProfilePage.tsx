@@ -32,7 +32,7 @@ export const ProfilePage: React.FC = () => {
         }
         const dados = await authService.getProfile();
         setUsuario(dados);
-      } catch (err) {
+      } catch {
         navigate("/login");
       } finally {
         setLoading(false);

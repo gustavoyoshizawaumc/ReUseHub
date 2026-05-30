@@ -26,8 +26,9 @@ export const DeleteAccountPage: React.FC = () => {
     try {
       await authService.deleteAccount();
       navigate("/");
-    } catch (err: any) {
-      setError(err.message || "Erro ao deletar conta");
+    } catch (err) {
+      const mensagem = err instanceof Error ? err.message : "Erro ao deletar conta";
+      setError(mensagem);
       console.error(err);
       setLoading(false);
     }
