@@ -8,6 +8,23 @@ const Spinner: React.FC = () => (
   </div>
 );
 
+/**
+ * Regra de senha forte: mínimo 8 caracteres, com pelo menos uma letra
+ * maiúscula, uma minúscula, um número e um caractere especial.
+ * Deve espelhar o @Pattern do RedefinirSenhaRequest no backend.
+ */
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+/** Requisitos individuais, usados na dica visual abaixo do campo. */
+const passwordRequisitos = (senha: string) => [
+  { label: "Mínimo 8 caracteres", ok: senha.length >= 8 },
+  { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
+  { label: "Uma letra minúscula", ok: /[a-z]/.test(senha) },
+  { label: "Um número", ok: /\d/.test(senha) },
+  { label: "Um caractere especial", ok: /[^A-Za-z0-9]/.test(senha) },
+];
+
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -34,7 +51,8 @@ export const ResetPasswordPage: React.FC = () => {
 
   const validateField = (name: string, value: string): string => {
     if (name === "novaSenha") {
-      if (value.length < 6) return "Senha deve ter no mínimo 6 caracteres.";
+      if (!PASSWORD_REGEX.test(value))
+        return "Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.";
     }
     if (name === "confirmacaoSenha") {
       if (value !== formData.novaSenha) return "As senhas não coincidem.";
@@ -71,10 +89,11 @@ export const ResetPasswordPage: React.FC = () => {
         formData.confirmacaoSenha,
       );
       setSucesso(true);
-    } catch (err: any) {
-      setFormError(
-        err.message || "Token inválido ou expirado. Solicite um novo link.",
-      );
+    } catch (err) {
+      const mensagem = err instanceof Error
+        ? err.message
+        : "Token inválido ou expirado. Solicite um novo link.";
+      setFormError(mensagem);
     } finally {
       setIsLoading(false);
     }
@@ -197,6 +216,21 @@ export const ResetPasswordPage: React.FC = () => {
                   <p className="text-red-500 text-[11px] font-medium ml-1">
                     {errors[field]}
                   </p>
+                )}
+                {field === "novaSenha" && formData.novaSenha && (
+                  <ul className="mt-1 ml-1 space-y-0.5">
+                    {passwordRequisitos(formData.novaSenha).map((req) => (
+                      <li
+                        key={req.label}
+                        className={`flex items-center gap-1 text-[11px] font-medium ${
+                          req.ok ? "text-green-600" : "text-slate-400"
+                        }`}
+                      >
+                        <span>{req.ok ? "✓" : "○"}</span>
+                        {req.label}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             ))}

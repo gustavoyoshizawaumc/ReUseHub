@@ -27,16 +27,16 @@ public class StorageService {
     private static final String EXTENSAO_PADRAO = ".jpg";
     private static final String FORMATO_URL_S3 = "https://%s.s3.%s.amazonaws.com/%s";
 
-    @Value("${aws.s3.bucket}")
+    @Value("${aws.s3.bucket:reusehub-uploads}")
     private String bucketName;
 
-    @Value("${aws.s3.region}")
+    @Value("${aws.s3.region:us-east-2}")
     private String region;
 
-    @Value("${aws.access-key-id}")
+    @Value("${aws.access-key-id:test-access-key}")
     private String accessKeyId;
 
-    @Value("${aws.secret-access-key}")
+    @Value("${aws.secret-access-key:test-secret-key}")
     private String secretAccessKey;
 
     private S3Client s3Client;

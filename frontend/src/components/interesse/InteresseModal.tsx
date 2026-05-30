@@ -48,6 +48,8 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
 
   useEffect(() => {
     if (!open) {
+      // Reset do formulario quando o modal e fechado.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMensagem("");
       setAnuncioOferecidoId("");
     }

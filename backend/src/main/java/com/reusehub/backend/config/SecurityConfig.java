@@ -32,6 +32,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] ROTAS_LEITURA_PUBLICA = {
+            "/api/anuncios",
+            "/api/anuncios/buscar",
+            "/api/anuncios/filtrar",
+            "/api/anuncios/categoria/**",
+            "/api/anuncios/tipo/**",
+            "/api/anuncios/{id}",
+            "/api/categorias",
+            "/api/perfis/**",
+            "/api/avaliacoes/usuario/**"
+    };
+
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
 
@@ -56,15 +68,8 @@ public class SecurityConfig {
                                 "/api/auth/redefinir-senha"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/anuncios").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/anuncios/buscar").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/anuncios/filtrar").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/anuncios/categoria/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/anuncios/tipo/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/anuncios/{id}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/perfis/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/avaliacoes/usuario/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, ROTAS_LEITURA_PUBLICA).permitAll()
+                        .requestMatchers(HttpMethod.HEAD, ROTAS_LEITURA_PUBLICA).permitAll()
                         .requestMatchers("/static/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/ws/**").permitAll()
