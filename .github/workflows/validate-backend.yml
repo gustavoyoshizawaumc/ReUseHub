@@ -29,9 +29,5 @@ jobs:
       - name: Garantir permissão de execução no mvnw
         run: chmod +x mvnw
 
-      # TODO: voltar a executar testes assim que a suite for estabilizada.
-      # Atualmente varios testes existentes falham por problemas de contexto
-      # nao relacionados as alteracoes desta PR. A execucao de testes sera
-      # restaurada em PR dedicada ao saneamento da suite.
-      - name: Compilar (testes temporariamente desabilitados)
-        run: ./mvnw clean package -DskipTests
+      - name: Compilar e executar testes
+        run: ./mvnw clean verify
