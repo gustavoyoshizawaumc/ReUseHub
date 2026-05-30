@@ -39,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Testes do AnuncioController - Camada Web")
 class AnuncioControllerTest {
 
+    private static final String EMAIL_USUARIO_TESTE = "usuario@teste.com";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -79,7 +81,7 @@ class AnuncioControllerTest {
     class CriarAnuncio {
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("criar anúncio")
         void c1() throws Exception {
             AnuncioCriacaoComEnderecoDTO dto = criarDtoValido();
@@ -98,7 +100,7 @@ class AnuncioControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve retornar 400 se título for inválido")
         void c3() throws Exception {
             AnuncioCriacaoComEnderecoDTO dto = criarDtoValido();
@@ -109,7 +111,7 @@ class AnuncioControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve retornar 400 se descrição estiver em branco")
         void c4() throws Exception {
             AnuncioCriacaoComEnderecoDTO dto = criarDtoValido();
@@ -120,7 +122,7 @@ class AnuncioControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve retornar 400 se tipo for nulo")
         void c5() throws Exception {
             AnuncioCriacaoComEnderecoDTO dto = criarDtoValido();
@@ -157,10 +159,10 @@ class AnuncioControllerTest {
     @DisplayName("cenários para listarMeusAnuncios")
     class ListarMeusAnuncios {
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve listar anúncios do usuário logado")
         void c1() throws Exception {
-            Mockito.when(anuncioService.listarAnunciosDoUsuario(Mockito.eq("usuario@teste.com"), Mockito.any(Pageable.class)))
+            Mockito.when(anuncioService.listarAnunciosDoUsuario(Mockito.eq(EMAIL_USUARIO_TESTE), Mockito.any(Pageable.class)))
                    .thenReturn(new PageImpl<>(Collections.emptyList()));
 
             mockMvc.perform(get("/api/anuncios/meus"))
@@ -179,10 +181,10 @@ class AnuncioControllerTest {
     @DisplayName("cenarios para favoritos")
     class Favoritos {
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve listar favoritos do usuario logado")
         void listarFavoritos() throws Exception {
-            Mockito.when(anuncioService.listarFavoritosDoUsuario("usuario@teste.com"))
+            Mockito.when(anuncioService.listarFavoritosDoUsuario(EMAIL_USUARIO_TESTE))
                     .thenReturn(Collections.emptyList());
 
             mockMvc.perform(get("/api/anuncios/favoritos"))
@@ -190,10 +192,10 @@ class AnuncioControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve listar ids de favoritos do usuario logado")
         void listarIdsFavoritos() throws Exception {
-            Mockito.when(anuncioService.listarIdsFavoritosDoUsuario("usuario@teste.com"))
+            Mockito.when(anuncioService.listarIdsFavoritosDoUsuario(EMAIL_USUARIO_TESTE))
                     .thenReturn(List.of(UUID.randomUUID()));
 
             mockMvc.perform(get("/api/anuncios/favoritos/ids"))
@@ -201,7 +203,7 @@ class AnuncioControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve favoritar anuncio com sucesso")
         void favoritarAnuncio() throws Exception {
             mockMvc.perform(post("/api/anuncios/{id}/favoritos", UUID.randomUUID()).with(csrf()))
@@ -209,7 +211,7 @@ class AnuncioControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve desfavoritar anuncio com sucesso")
         void desfavoritarAnuncio() throws Exception {
             mockMvc.perform(delete("/api/anuncios/{id}/favoritos", UUID.randomUUID()).with(csrf()))
@@ -280,7 +282,7 @@ class AnuncioControllerTest {
     @DisplayName("cenários para atualizarAnuncio")
     class AtualizarAnuncio {
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve atualizar anúncio com sucesso")
         void c1() throws Exception {
             UUID id = UUID.randomUUID();
@@ -309,7 +311,7 @@ class AnuncioControllerTest {
     @DisplayName("cenários para alterarStatus")
     class AlterarStatus {
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve alterar status do anúncio com sucesso")
         void c1() throws Exception {
             mockMvc.perform(patch("/api/anuncios/{id}/status", UUID.randomUUID())
@@ -330,7 +332,7 @@ class AnuncioControllerTest {
     @DisplayName("cenários para deletarAnuncio")
     class DeletarAnuncio {
         @Test
-        @WithMockUser(username = "usuario@teste.com")
+        @WithMockUser(username = "usuario@teste.com", roles = "USUARIO")
         @DisplayName("deve retornar 244/204 No Content ao deletar anúncio")
         void c1() throws Exception {
             mockMvc.perform(delete("/api/anuncios/{id}", UUID.randomUUID()).with(csrf()))
