@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import {
   obterConversaPorId,
   enviarMensagem,
@@ -38,7 +38,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const usuarioLogado = useMemo(() => {
+  const [usuarioLogado] = useState(() => {
     const userJson = localStorage.getItem('user');
     if (userJson) {
       try {
@@ -53,7 +53,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
       }
     }
     return { id: '', email: '', username: '' };
-  }, []);
+  });
 
   const carregarMensagens = async () => {
     if (!conversaAtiva?.id) {
@@ -86,7 +86,11 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   }, [mensagens]);
 
   useEffect(() => {
+    // Fetch de mensagens disparado pela mudanca da conversa ativa.
+    // setState dentro do effect e aceitavel: sincronizacao com API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarMensagens();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversaAtiva?.id]);
 
   const handleEnviarMensagem = async () => {

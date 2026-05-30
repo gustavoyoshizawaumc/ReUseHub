@@ -89,10 +89,11 @@ export const ResetPasswordPage: React.FC = () => {
         formData.confirmacaoSenha,
       );
       setSucesso(true);
-    } catch (err: any) {
-      setFormError(
-        err.message || "Token inválido ou expirado. Solicite um novo link.",
-      );
+    } catch (err) {
+      const mensagem = err instanceof Error
+        ? err.message
+        : "Token inválido ou expirado. Solicite um novo link.";
+      setFormError(mensagem);
     } finally {
       setIsLoading(false);
     }
