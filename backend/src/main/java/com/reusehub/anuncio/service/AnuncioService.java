@@ -33,6 +33,9 @@ import java.util.UUID;
 @Transactional
 public class AnuncioService {
 
+    private static final int MINIMO_IMAGENS_POR_ANUNCIO = 3;
+    private static final int MAXIMO_IMAGENS_POR_ANUNCIO = 5;
+
     private final AnuncioRepository anuncioRepository;
     private final AnuncioFavoritoRepository anuncioFavoritoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -50,6 +53,7 @@ public class AnuncioService {
             AnuncioCriacaoComEnderecoDTO dto,
             List<MultipartFile> imagens
     ) {
+        validarQuantidadeDeImagens(imagens);
         Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
         validarContaUsuarioComum(usuario, "criar anuncios");
         Endereco enderecoSalvo = cadastrarEnderecoEnriquecido(usuario, dto);
@@ -60,6 +64,17 @@ public class AnuncioService {
         salvarImagensDoAnuncio(salvo, imagens);
 
         return mapearParaRespostaDTO(salvo);
+    }
+
+    private void validarQuantidadeDeImagens(List<MultipartFile> imagens) {
+        int quantidade = imagens == null ? 0 : imagens.size();
+
+        if (quantidade < MINIMO_IMAGENS_POR_ANUNCIO || quantidade > MAXIMO_IMAGENS_POR_ANUNCIO) {
+            throw new OperacaoInvalidaException(
+                    "O anuncio deve conter entre " + MINIMO_IMAGENS_POR_ANUNCIO
+                            + " e " + MAXIMO_IMAGENS_POR_ANUNCIO + " imagens."
+            );
+        }
     }
 
     public AnuncioRespostaDTO obterAnuncioPorId(UUID id, String emailUsuario) {

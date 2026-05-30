@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { Camera, PlusCircle, X, Loader2, MapPin, Search } from "lucide-react";
 import type { AnuncioCriacao } from "../../types/anuncio.types";
 import { buscarEnderecoPorCEP } from "../../services/viaCepService";
+import { useCategorias } from "../../hooks/useCategorias";
+
+const QUANTIDADE_MINIMA_IMAGENS = 3;
+const QUANTIDADE_MAXIMA_IMAGENS = 5;
 
 interface FormularioAnuncioProps {
   onSubmit: (dados: AnuncioCriacao, imagens: File[]) => Promise<void>;
@@ -29,10 +33,18 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
   const [previews, setPreviews] = useState<string[]>([]);
   const [erroImagens, setErroImagens] = useState<string | null>(null);
 
+  const {
+    categorias,
+    carregando: carregandoCategorias,
+    erro: erroCategorias,
+  } = useCategorias();
+
+  const quantidadeImagensValida = imagens.length >= QUANTIDADE_MINIMA_IMAGENS;
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const novasImagens = Array.from(e.target.files);
-    const total = [...imagens, ...novasImagens].slice(0, 5);
+    const total = [...imagens, ...novasImagens].slice(0, QUANTIDADE_MAXIMA_IMAGENS);
     setImagens(total);
     setPreviews(total.map((f) => URL.createObjectURL(f)));
     setErroImagens(null);
@@ -67,8 +79,10 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (imagens.length < 5) {
-      setErroImagens("É obrigatório enviar exatamente 5 fotos para publicar o anúncio.");
+    if (!quantidadeImagensValida) {
+      setErroImagens(
+        `É obrigatório enviar entre ${QUANTIDADE_MINIMA_IMAGENS} e ${QUANTIDADE_MAXIMA_IMAGENS} fotos para publicar o anúncio.`
+      );
       return;
     }
 
@@ -114,32 +128,20 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
             className={inputClass + " cursor-pointer"}
             value={categoriaId}
             onChange={(e) => setCategoriaId(e.target.value)}
+            disabled={carregandoCategorias || categorias.length === 0}
           >
-            <option value="">Selecione...</option>
-            <option value="1">Imóveis</option>
-            <option value="2">Autos</option>
-            <option value="3">Autopeças</option>
-            <option value="4">Celulares e Telefonia</option>
-            <option value="5">Casa, Decoração e Utensílios</option>
-            <option value="6">Esportes e Fitness</option>
-            <option value="7">Serviços</option>
-            <option value="8">Moda e Beleza</option>
-            <option value="9">Artigos Infantis</option>
-            <option value="10">Animais de Estimação</option>
-            <option value="11">Música e Hobbies</option>
-            <option value="12">Agro e Indústria</option>
-            <option value="13">Vagas de Emprego</option>
-            <option value="14">Comércio</option>
-            <option value="15">Câmeras e Drones</option>
-            <option value="16">Games</option>
-            <option value="17">TVs e Vídeo</option>
-            <option value="18">Áudio</option>
-            <option value="19">Informática</option>
-            <option value="20">Eletro</option>
-            <option value="21">Móveis</option>
-            <option value="22">Materiais de Construção</option>
-            <option value="23">Escritório e Home Office</option>
+            <option value="">
+              {carregandoCategorias ? "Carregando..." : "Selecione..."}
+            </option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.nome}
+              </option>
+            ))}
           </select>
+          {erroCategorias && (
+            <p className="text-red-500 text-xs font-semibold ml-1">{erroCategorias}</p>
+          )}
         </div>
 
         <div className="md:col-span-2 space-y-2">
@@ -267,14 +269,17 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
             Fotos do Produto
           </label>
           <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-            imagens.length === 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+            quantidadeImagensValida ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
           }`}>
-            {imagens.length}/5 {imagens.length === 5 ? "✓" : "obrigatório"}
+            {imagens.length}/{QUANTIDADE_MAXIMA_IMAGENS}{" "}
+            {quantidadeImagensValida
+              ? "✓"
+              : `mínimo ${QUANTIDADE_MINIMA_IMAGENS}`}
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {imagens.length < 5 && (
+          {imagens.length < QUANTIDADE_MAXIMA_IMAGENS && (
             <label className="cursor-pointer aspect-square rounded-[20px] border-2 border-dashed border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center justify-center bg-white group">
               <PlusCircle className="text-slate-400 group-hover:text-blue-600 mb-1 transition-colors" size={24} />
               <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-500 uppercase transition-colors">
@@ -317,14 +322,15 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
         )}
 
         <p className="text-xs text-slate-400 font-medium">
-          Envie exatamente 5 fotos do item. Formatos aceitos: JPG, PNG, WEBP.
+          Envie de {QUANTIDADE_MINIMA_IMAGENS} a {QUANTIDADE_MAXIMA_IMAGENS} fotos do item.
+          Formatos aceitos: JPG, PNG, WEBP.
         </p>
       </div>
 
       {/* BOTÃO PUBLICAR */}
       <button
         type="submit"
-        disabled={loading || imagens.length < 5}
+        disabled={loading || !quantidadeImagensValida}
         className="w-full py-5 bg-orange-600 text-white font-bold rounded-lg shadow-sm hover:bg-orange-700 active:scale-[0.98] transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
