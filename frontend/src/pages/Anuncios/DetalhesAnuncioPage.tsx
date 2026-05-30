@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
 import { iniciarConversa } from "../../services/chatService";
@@ -38,7 +38,6 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [usuarioAtual, setUsuarioAtual] = useState<{ id: string; nome: string } | null>(null);
-  const [isEDono, setIsEDono] = useState(false);
   const [imagemAtual, setImagemAtual] = useState(0);
   const [modalInteresseAberto, setModalInteresseAberto] = useState(false);
   const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
@@ -76,11 +75,10 @@ export const DetalhesAnuncioPage: React.FC = () => {
     carregarDados();
   }, [id]);
 
-  useEffect(() => {
-    if (usuarioAtual && anuncio) {
-      setIsEDono(usuarioAtual.id === anuncio.usuarioId);
-    }
-  }, [usuarioAtual, anuncio]);
+  const isEDono = useMemo(
+    () => Boolean(usuarioAtual && anuncio && usuarioAtual.id === anuncio.usuarioId),
+    [usuarioAtual, anuncio]
+  );
 
   const getCondicaoColor = (condicao: string) => {
     switch (condicao) {
