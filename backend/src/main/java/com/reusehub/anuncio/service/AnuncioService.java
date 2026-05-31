@@ -25,8 +25,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,11 +73,14 @@ public class AnuncioService {
 
     private void validarQuantidadeDeImagens(List<MultipartFile> imagens) {
         int quantidade = imagens == null ? 0 : imagens.size();
+        validarRangeDeImagens(quantidade, "");
+    }
 
+    private void validarRangeDeImagens(int quantidade, String complementoMensagem) {
         if (quantidade < MINIMO_IMAGENS_POR_ANUNCIO || quantidade > MAXIMO_IMAGENS_POR_ANUNCIO) {
             throw new OperacaoInvalidaException(
                     "O anuncio deve conter entre " + MINIMO_IMAGENS_POR_ANUNCIO
-                            + " e " + MAXIMO_IMAGENS_POR_ANUNCIO + " imagens."
+                            + " e " + MAXIMO_IMAGENS_POR_ANUNCIO + " imagens" + complementoMensagem + "."
             );
         }
     }
@@ -159,6 +167,97 @@ public class AnuncioService {
 
         Anuncio atualizado = anuncioRepository.save(anuncio);
         return mapearParaRespostaDTO(atualizado);
+    }
+
+    public AnuncioRespostaDTO atualizarImagensDoAnuncio(
+            UUID anuncioId,
+            String emailUsuario,
+            AnuncioImagensAtualizacaoDTO dto,
+            List<MultipartFile> novasImagens
+    ) {
+        Anuncio anuncio = buscarAnuncioPorId(anuncioId);
+        validarPropriedadeDoAnuncio(anuncio, emailUsuario);
+
+        List<UUID> idsParaManter = dto.idsParaManter() == null ? List.of() : dto.idsParaManter();
+        List<MultipartFile> imagensNovasValidas = filtrarImagensNaoVazias(novasImagens);
+
+        int totalAposEdicao = idsParaManter.size() + imagensNovasValidas.size();
+        validarTotalDeImagensAposEdicao(totalAposEdicao);
+
+        List<ImagemAnuncio> imagensAtuais = imagemAnuncioRepository.findByAnuncioId(anuncioId);
+        Map<UUID, ImagemAnuncio> imagensAtuaisPorId = imagensAtuais.stream()
+                .collect(Collectors.toMap(ImagemAnuncio::getId, Function.identity()));
+        validarIdsPertencemAoAnuncio(idsParaManter, imagensAtuaisPorId);
+
+        removerImagensNaoMantidas(imagensAtuais, idsParaManter);
+        reordenarImagensMantidas(idsParaManter, imagensAtuaisPorId);
+        adicionarNovasImagens(anuncio, imagensNovasValidas, idsParaManter.size());
+
+        anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
+        Anuncio atualizado = anuncioRepository.save(anuncio);
+        return mapearParaRespostaDTO(atualizado);
+    }
+
+    private List<MultipartFile> filtrarImagensNaoVazias(List<MultipartFile> imagens) {
+        if (imagens == null || imagens.isEmpty()) {
+            return List.of();
+        }
+        return imagens.stream()
+                .filter(imagem -> !imagem.isEmpty())
+                .toList();
+    }
+
+    private void validarTotalDeImagensAposEdicao(int totalAposEdicao) {
+        validarRangeDeImagens(totalAposEdicao, " apos a edicao");
+    }
+
+    private void validarIdsPertencemAoAnuncio(
+            List<UUID> idsParaManter,
+            Map<UUID, ImagemAnuncio> imagensAtuaisPorId
+    ) {
+        for (UUID idDeImagem : idsParaManter) {
+            if (!imagensAtuaisPorId.containsKey(idDeImagem)) {
+                throw new RecursoNaoEncontradoException("Imagem", idDeImagem);
+            }
+        }
+    }
+
+    private void removerImagensNaoMantidas(List<ImagemAnuncio> imagensAtuais, List<UUID> idsParaManter) {
+        Set<UUID> conjuntoIdsMantidos = new HashSet<>(idsParaManter);
+        for (ImagemAnuncio imagem : imagensAtuais) {
+            if (!conjuntoIdsMantidos.contains(imagem.getId())) {
+                storageService.excluirImagem(imagem.getUrlImagem());
+                imagemAnuncioRepository.delete(imagem);
+            }
+        }
+    }
+
+    private void reordenarImagensMantidas(
+            List<UUID> idsParaManter,
+            Map<UUID, ImagemAnuncio> imagensAtuaisPorId
+    ) {
+        for (int posicao = 0; posicao < idsParaManter.size(); posicao++) {
+            ImagemAnuncio imagem = imagensAtuaisPorId.get(idsParaManter.get(posicao));
+            imagem.setOrdemExibicao((short) posicao);
+            imagem.setCapa(posicao == 0);
+            imagemAnuncioRepository.save(imagem);
+        }
+    }
+
+    private void adicionarNovasImagens(
+            Anuncio anuncio,
+            List<MultipartFile> novasImagens,
+            int posicaoInicial
+    ) {
+        if (novasImagens.isEmpty()) {
+            return;
+        }
+        List<String> urlsNovasImagens = storageService.salvarImagens(novasImagens);
+        for (int i = 0; i < urlsNovasImagens.size(); i++) {
+            int ordemFinal = posicaoInicial + i;
+            ImagemAnuncio imagem = construirImagemAnuncio(anuncio, urlsNovasImagens.get(i), ordemFinal);
+            imagemAnuncioRepository.save(imagem);
+        }
     }
 
     public AnuncioRespostaDTO alterarStatus(UUID id, String emailUsuario, Anuncio.StatusAnuncio novoStatus) {
@@ -432,7 +531,14 @@ public class AnuncioService {
     }
 
     private AnuncioRespostaDTO mapearParaRespostaDTO(Anuncio anuncio) {
-        List<String> urlsImagens = buscarUrlsImagens(anuncio.getId());
+        List<ImagemAnuncio> imagensOrdenadas = imagemAnuncioRepository
+                .findByAnuncioIdOrderByOrdemExibicaoAsc(anuncio.getId());
+        List<String> urlsImagens = imagensOrdenadas.stream()
+                .map(ImagemAnuncio::getUrlImagem)
+                .toList();
+        List<ImagemAnuncioRespostaDTO> imagensDetalhadas = imagensOrdenadas.stream()
+                .map(ImagemAnuncioRespostaDTO::deEntidade)
+                .toList();
 
         return AnuncioRespostaDTO.builder()
                 .id(anuncio.getId())
@@ -452,6 +558,7 @@ public class AnuncioService {
                 .nomeCategoria(anuncio.getCategoria().getNome())
                 .enderecoId(anuncio.getEndereco().getId())
                 .imagensUrls(urlsImagens)
+                .imagens(imagensDetalhadas)
                 .cep(anuncio.getEndereco().getCep())
                 .numero(anuncio.getEndereco().getNumero())
                 .complemento(anuncio.getEndereco().getComplemento())
@@ -462,11 +569,4 @@ public class AnuncioService {
                 .build();
     }
 
-    private List<String> buscarUrlsImagens(UUID anuncioId) {
-        return imagemAnuncioRepository
-                .findByAnuncioIdOrderByOrdemExibicaoAsc(anuncioId)
-                .stream()
-                .map(ImagemAnuncio::getUrlImagem)
-                .toList();
-    }
 }
