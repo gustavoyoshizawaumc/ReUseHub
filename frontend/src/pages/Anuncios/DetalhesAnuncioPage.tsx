@@ -25,6 +25,7 @@ import {
   ImageOff,
   Info,
   ShieldAlert,
+  FileText,
 } from "lucide-react";
 
 import { API_BASE_URL } from "../../config/api";
@@ -335,35 +336,35 @@ export const DetalhesAnuncioPage: React.FC = () => {
               <div className="space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:space-y-6 sm:p-6">
                 <h3 className="font-bold text-slate-900">Detalhes Técnicos</h3>
 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                  <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Tag size={16} /> <span>Categoria</span>
                     </div>
-                    <span className="font-bold text-slate-900 text-sm">{anuncio.nomeCategoria}</span>
+                    <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">{anuncio.nomeCategoria}</span>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Eye size={16} /> <span>Vistas</span>
                     </div>
-                    <span className="font-bold text-slate-900 text-sm">{anuncio.totalVisualizacoes}</span>
+                    <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">{anuncio.totalVisualizacoes}</span>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Star size={16} /> <span>Relevância</span>
                     </div>
-                    <span className="font-bold text-blue-600 text-sm">
+                    <span className="max-w-[55%] break-words text-right text-sm font-bold text-blue-600">
                       {anuncio.notaRelevancia ? anuncio.notaRelevancia.toFixed(2) : "0.00"}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Clock size={16} /> <span>Expira</span>
                     </div>
-                    <span className="font-bold text-slate-900 text-sm">
+                    <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">
                       {new Date(anuncio.expiraEm).toLocaleDateString("pt-BR")}
                     </span>
                   </div>
@@ -513,10 +514,3 @@ export const DetalhesAnuncioPage: React.FC = () => {
     </div>
   );
 };
-
-const FileText = ({ size, className }: { size: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-    <polyline points="14 2 14 8 20 8" />
-  </svg>
-);

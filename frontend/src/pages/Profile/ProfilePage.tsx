@@ -48,14 +48,14 @@ export const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans">
       <Header />
 
-      <main className="flex-grow py-12 px-4">
+      <main className="flex-grow px-3 py-6 sm:px-4 sm:py-12">
         <div className="max-w-[1000px] mx-auto text-left">
           <div className="bg-white rounded-lg shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
             {/* Banner Decorativo */}
             <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-700 w-full" />
 
-            <div className="px-8 pb-12">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+            <div className="px-4 pb-7 sm:px-8 sm:pb-12">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-12">
                 <div className="md:col-span-4 -mt-16 flex flex-col items-center text-center">
                   <div className="relative">
                     <div className="w-40 h-40 bg-white p-2 rounded-full shadow-lg overflow-hidden flex items-center justify-center">
@@ -102,13 +102,13 @@ export const ProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="md:col-span-8 pt-8">
-                  <h3 className="text-xl font-bold text-slate-900 mb-8 flex items-center gap-2">
+                <div className="pt-2 md:col-span-8 md:pt-8">
+                  <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-slate-900 sm:mb-8 sm:text-xl">
                     <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
                     Informações da Conta
                   </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 sm:gap-y-10">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-slate-400">
                         <Mail size={14} />
@@ -116,7 +116,7 @@ export const ProfilePage: React.FC = () => {
                           Email
                         </span>
                       </div>
-                      <p className="text-lg text-slate-900 font-semibold">
+                      <p className="break-all text-base font-semibold text-slate-900 sm:text-lg">
                         {usuario.email}
                       </p>
                     </div>
@@ -128,7 +128,7 @@ export const ProfilePage: React.FC = () => {
                           Telefone
                         </span>
                       </div>
-                      <p className="text-lg text-slate-900 font-semibold">
+                      <p className="break-words text-base font-semibold text-slate-900 sm:text-lg">
                         {usuario.phone || "Não informado"}
                       </p>
                     </div>
@@ -140,7 +140,7 @@ export const ProfilePage: React.FC = () => {
                           CPF
                         </span>
                       </div>
-                      <p className="text-lg text-slate-900 font-semibold">
+                      <p className="break-all text-base font-semibold text-slate-900 sm:text-lg">
                         {usuario.cpf}
                       </p>
                     </div>
@@ -152,7 +152,7 @@ export const ProfilePage: React.FC = () => {
                           Membro Desde
                         </span>
                       </div>
-                      <p className="text-lg text-slate-900 font-semibold">
+                      <p className="break-words text-base font-semibold text-slate-900 sm:text-lg">
                         {new Date(usuario.createdAt ?? new Date()).toLocaleDateString(
                           "pt-BR",
                           { month: "long", year: "numeric" },
@@ -160,7 +160,7 @@ export const ProfilePage: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="sm:col-span-2 space-y-1 bg-slate-50 p-6 rounded-lg border border-slate-100">
+                    <div className="space-y-1 rounded-lg border border-slate-100 bg-slate-50 p-4 sm:col-span-2 sm:p-6">
                       <div className="flex items-center gap-2 text-slate-400 mb-2">
                         <FileText size={14} />
                         <span className="text-[10px] font-extrabold uppercase tracking-widest">

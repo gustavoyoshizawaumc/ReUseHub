@@ -86,10 +86,10 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4">
       {/* Card Branco com rounded-lg */}
-      <div className="bg-white rounded-lg shadow-sm w-full max-w-md p-10 md:p-12 border border-slate-100 animate-fade-in">
+      <div className="w-[calc(100vw-2rem)] min-w-0 max-w-md rounded-lg border border-slate-100 bg-white p-6 shadow-sm animate-fade-in sm:p-10 md:p-12">
         {/* Header com a Logo Estilizada */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-plus-jakarta-sans">
+        <div className="mb-8 text-center sm:mb-10">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 font-plus-jakarta-sans sm:text-3xl">
             Faça login na sua conta
           </h1>
           <div className="mt-4 mb-6 flex justify-center">
@@ -209,7 +209,7 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Rodapé - Link para Cadastro */}
-        <div className="mt-12 text-center text-sm">
+        <div className="mt-8 text-center text-sm sm:mt-12">
           <p className="text-slate-500">
             Não tem conta?{" "}
             <Link

@@ -16,12 +16,26 @@ const getAuthHeaders = (): Record<string, string> => {
 };
 
 async function parseResponse<T>(response: Response, fallback: string): Promise<T> {
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.mensagem || payload?.message || fallback);
-  }
   if (response.status === 204) return undefined as T;
-  return response.json();
+
+  const texto = await response.text();
+  let payload: { mensagem?: string; message?: string } | T | null = null;
+
+  if (texto) {
+    try {
+      payload = JSON.parse(texto) as { mensagem?: string; message?: string } | T;
+    } catch {
+      throw new Error(fallback);
+    }
+  }
+
+  if (!response.ok) {
+    const erro = payload as { mensagem?: string; message?: string } | null;
+    throw new Error(erro?.mensagem || erro?.message || fallback);
+  }
+
+  if (!payload) throw new Error(fallback);
+  return payload as T;
 }
 
 export type StatusDenuncia = 'ABERTA' | 'ANALISADA' | 'DESCARTADA';
@@ -110,8 +124,19 @@ export interface AdminDashboard {
   denunciasResolvidas: number;
   usuariosPorMes: { label: string; valor: number }[];
   concluidosPorMes: { label: string; valor: number }[];
+  anunciosCriadosPorMes: { label: string; primeiroValor: number; segundoValor: number }[];
+  denunciasPorMes: { label: string; primeiroValor: number; segundoValor: number }[];
   anunciosMaisVisualizados: { id: string; label: string; valor: number }[];
   usuariosMelhorReputacao: { id: string; label: string; valor: number }[];
+  categoriasComMaisAnuncios: { id: string; label: string; valor: number }[];
+}
+
+export interface DashboardAdminFiltros {
+  criadoDe?: string;
+  criadoAte?: string;
+  tipo?: '' | 'DOACAO' | 'TROCA';
+  status?: '' | Anuncio['status'];
+  categoriaId?: number | '';
 }
 
 export async function listarAnunciosPendentes(page = 0, size = 10): Promise<PaginacaoResponse<Anuncio>> {
@@ -241,9 +266,27 @@ export async function listarUsuariosAdmin(
   return parseResponse(response, 'Erro ao listar usuarios');
 }
 
-export async function obterDashboardAdmin(): Promise<AdminDashboard> {
-  const response = await fetch(`${ADMIN_URL}/dashboard`, { headers: getAuthHeaders() });
-  return parseResponse(response, 'Erro ao carregar dashboard');
+export async function obterDashboardAdmin(filtros: DashboardAdminFiltros = {}): Promise<AdminDashboard> {
+  const params = new URLSearchParams();
+  if (filtros.criadoDe) params.set('criadoDe', filtros.criadoDe);
+  if (filtros.criadoAte) params.set('criadoAte', filtros.criadoAte);
+  if (filtros.tipo) params.set('tipo', filtros.tipo);
+  if (filtros.status) params.set('status', filtros.status);
+  if (filtros.categoriaId !== '' && filtros.categoriaId !== undefined) params.set('categoriaId', String(filtros.categoriaId));
+
+  const query = params.toString();
+  const response = await fetch(`${ADMIN_URL}/dashboard${query ? `?${query}` : ''}`, { headers: getAuthHeaders() });
+  const dashboard = await parseResponse<AdminDashboard>(response, 'Erro ao carregar dashboard');
+  return {
+    ...dashboard,
+    usuariosPorMes: dashboard.usuariosPorMes ?? [],
+    concluidosPorMes: dashboard.concluidosPorMes ?? [],
+    anunciosCriadosPorMes: dashboard.anunciosCriadosPorMes ?? [],
+    denunciasPorMes: dashboard.denunciasPorMes ?? [],
+    anunciosMaisVisualizados: dashboard.anunciosMaisVisualizados ?? [],
+    usuariosMelhorReputacao: dashboard.usuariosMelhorReputacao ?? [],
+    categoriasComMaisAnuncios: dashboard.categoriasComMaisAnuncios ?? [],
+  };
 }
 
 export async function criarModerador(data: {

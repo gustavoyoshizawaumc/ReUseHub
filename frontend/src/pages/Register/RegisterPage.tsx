@@ -170,8 +170,8 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4 sm:p-8">
-      <div className="bg-white rounded-lg shadow-sm w-full max-w-lg p-8 md:p-10 border border-slate-100 my-8">
+    <div className="min-h-screen bg-[#f1f5f9] flex items-start justify-center p-4 sm:items-center sm:p-8">
+      <div className="my-2 w-[calc(100vw-2rem)] min-w-0 max-w-lg rounded-lg border border-slate-100 bg-white p-5 shadow-sm sm:my-8 sm:p-8 md:p-10">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight font-plus-jakarta-sans m-0">

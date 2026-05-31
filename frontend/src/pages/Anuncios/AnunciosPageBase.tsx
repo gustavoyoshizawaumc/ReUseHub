@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   Ban,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Clock3,
   Filter,
   Megaphone,
@@ -55,6 +57,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const scrollPreservadoRef = useRef<number | null>(null);
+  const [filtrosMoveisAbertos, setFiltrosMoveisAbertos] = useState(false);
   const exibindoMeusAnuncios = modo === "privado";
   const termoMeusAnuncios = searchParams.get("termo")?.trim().toLowerCase() ?? "";
   const statusSelecionado = searchParams.get("statusFiltro") ?? "TODOS";
@@ -409,6 +412,20 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
             </div>
           )}
 
+          {!exibindoMeusAnuncios && (
+            <button
+              type="button"
+              onClick={() => setFiltrosMoveisAbertos((abertos) => !abertos)}
+              className="mb-4 flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm lg:hidden"
+            >
+              <span className="flex items-center gap-2">
+                <Filter size={17} className="text-blue-600" />
+                Filtros da busca
+              </span>
+              {filtrosMoveisAbertos ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+          )}
+
           <div className={`grid grid-cols-1 ${
             exibindoMeusAnuncios
               ? "lg:grid-cols-4 gap-8"
@@ -416,7 +433,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
           } items-start`}>
 
             {/* SIDEBAR */}
-            <aside className="lg:col-span-1 lg:sticky lg:top-24">
+            <aside className={`${!exibindoMeusAnuncios && !filtrosMoveisAbertos ? "hidden lg:block" : ""} lg:col-span-1 lg:sticky lg:top-24`}>
               <div className={`bg-white rounded-[24px] ${exibindoMeusAnuncios ? "p-6" : "p-5"} shadow-xl shadow-slate-200/50 border border-slate-100`}>
                 {exibindoMeusAnuncios ? (
                   <div className="space-y-5">
@@ -429,7 +446,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                         Filtre seus anúncios por status.
                       </p>
                     </div>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2 lg:block lg:space-y-2">
                       {opcoesStatus.map((opcao) => {
                         const ativo = statusSelecionado === opcao.value;
                         return (
@@ -456,12 +473,16 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                       <p className="text-sm text-slate-500 mt-1">Encontre rapidamente um anúncio específico.</p>
                     </div>
                     <FiltrosAnuncios
-                      onFiltrar={handleFiltrar}
+                      onFiltrar={async (filtro) => {
+                        await handleFiltrar(filtro);
+                        setFiltrosMoveisAbertos(false);
+                      }}
                       onLimpar={async () => {
                         preservarScroll();
                         setSearchParams({}, { replace: true });
                         await listar();
                         restaurarScrollPreservado();
+                        setFiltrosMoveisAbertos(false);
                       }}
                     />
                   </>
@@ -470,9 +491,9 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
             </aside>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <div className={`${exibindoMeusAnuncios ? "lg:col-span-3 space-y-6" : "space-y-4"} min-h-[720px]`}>
+            <div className={`${exibindoMeusAnuncios ? "lg:col-span-3 space-y-6" : "space-y-4"} min-h-[420px] sm:min-h-[720px]`}>
               {loading && (
-                <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center justify-center text-center">
+                <div className="flex flex-col items-center justify-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />
                   <p className="text-slate-700 font-bold">
                     {exibindoMeusAnuncios ? "Carregando seus anúncios..." : "Buscando anúncios..."}
@@ -494,7 +515,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               )}
 
               {!loading && !erro && anunciosVisiveis.length === 0 && (
-                <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center text-center">
+                <div className="flex flex-col items-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
                   <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                     <Package size={40} />
                   </div>

@@ -4,6 +4,7 @@ import com.reusehub.admin.dto.AdminCriarModeradorDTO;
 import com.reusehub.admin.dto.AdminDashboardDTO;
 import com.reusehub.admin.dto.AdminUsuarioDTO;
 import com.reusehub.admin.service.AdminService;
+import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
 import jakarta.validation.Valid;
@@ -73,8 +74,14 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard")
-    public ResponseEntity<AdminDashboardDTO> dashboard() {
-        return ResponseEntity.ok(adminService.dashboard());
+    public ResponseEntity<AdminDashboardDTO> dashboard(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate criadoDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate criadoAte,
+            @RequestParam(required = false) Anuncio.TipoAnuncio tipo,
+            @RequestParam(required = false) Anuncio.StatusAnuncio status,
+            @RequestParam(required = false) Integer categoriaId
+    ) {
+        return ResponseEntity.ok(adminService.dashboard(criadoDe, criadoAte, tipo, status, categoriaId));
     }
 
     @GetMapping("/auditoria")

@@ -164,20 +164,20 @@ export const EditarAnuncioPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] py-12 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-sm w-full max-w-3xl p-8 md:p-12 border border-slate-100">
+      <main className="flex-grow bg-[#f1f5f9] px-3 py-6 sm:px-4 sm:py-12 flex items-center justify-center">
+        <div className="w-full max-w-3xl rounded-lg border border-slate-100 bg-white p-5 shadow-sm sm:p-8 md:p-12">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-8 transition-colors group"
+            className="mb-6 flex items-center gap-2 text-sm font-bold text-slate-400 transition-colors hover:text-blue-600 group sm:mb-8"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             Voltar
           </button>
 
-          <div className="mb-10">
+          <div className="mb-7 sm:mb-10">
             <div className="flex items-center gap-3 mb-2">
               <Edit3 className="text-orange-500" size={28} />
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
                 Editar Anúncio
               </h1>
             </div>
@@ -191,8 +191,8 @@ export const EditarAnuncioPage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
               <div className="space-y-2">
                 <label className={labelClass}>Título</label>
                 <input
@@ -285,7 +285,7 @@ export const EditarAnuncioPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className={labelClass}>CEP</label>
-                  <div className="flex gap-2">
+                  <div className="flex min-w-0 gap-2">
                     <input
                       required
                       className={inputClass}
@@ -304,7 +304,7 @@ export const EditarAnuncioPage: React.FC = () => {
                       type="button"
                       onClick={handleBuscarCep}
                       disabled={buscandoCep}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                      className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-white transition-all hover:bg-blue-700 disabled:opacity-50"
                     >
                       {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                     </button>
@@ -340,7 +340,7 @@ export const EditarAnuncioPage: React.FC = () => {
 
             {/* UPLOAD DE FOTOS */}
             <div className="space-y-4 pt-6 border-t border-slate-100">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
                   <Camera size={18} className="text-blue-600" />
                   Fotos do Produto
