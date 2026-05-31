@@ -5,7 +5,7 @@ import {
   marcarComoLido,
 } from '../../services/chatService';
 import type { Conversa, ConversaDetalhe, Mensagem } from '../../types/chat.types';
-import { ArrowLeft, CheckCircle2, ImageIcon, PackageCheck, Send, Star } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ImageIcon, PackageCheck, Send, Star, User2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   confirmarRecebimentoInteresse,
@@ -189,19 +189,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.7}
-                  d="M15 19a4 4 0 0 0-8 0m4-8a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
-                />
-              </svg>
+              <User2 size={20} />
             )}
           </button>
 

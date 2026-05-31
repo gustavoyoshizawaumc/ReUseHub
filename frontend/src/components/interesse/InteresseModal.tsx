@@ -88,8 +88,8 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-lg border border-slate-200 p-6 shadow-sm shadow-slate-900/10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 py-4">
+      <div className="max-h-[calc(100svh-2rem)] w-full max-w-lg overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/10 sm:p-6">
         <h3 className="text-xl font-bold text-slate-900 mb-2">
           {isTroca ? "Quero trocar" : "Tenho interesse"}
         </h3>
@@ -135,10 +135,10 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
           />
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-lg bg-slate-100 text-slate-700 font-bold"
+            className="w-full rounded-lg bg-slate-100 px-5 py-3 font-bold text-slate-700 sm:w-auto"
             disabled={submitting}
           >
             Cancelar
@@ -147,7 +147,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="px-5 py-3 rounded-lg bg-blue-600 text-white font-bold disabled:opacity-60"
+            className="w-full rounded-lg bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-60 sm:w-auto"
           >
             {submitting ? "Enviando..." : "Enviar proposta"}
           </button>

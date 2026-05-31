@@ -103,11 +103,11 @@ export const PublicProfilePage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans">
       <Header />
 
-      <main className="flex-grow py-10 px-4">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="flex-grow px-3 py-6 sm:px-4 sm:py-10">
+        <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
           <section className="bg-white rounded-lg shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden">
             <div className="h-28 bg-gradient-to-r from-blue-600 to-teal-500" />
-            <div className="px-6 md:px-8 pb-8">
+            <div className="px-4 pb-6 sm:px-6 sm:pb-8 md:px-8">
               <div className="flex flex-col md:flex-row md:items-end gap-6 -mt-14">
                 <img
                   src={imagemUrl(perfil.avatarUrl)}
@@ -119,8 +119,8 @@ export const PublicProfilePage: React.FC = () => {
                 />
 
                 <div className="flex-1 md:pb-2">
-                  <h1 className="text-3xl font-extrabold text-slate-900">{perfil.name}</h1>
-                  <div className="flex items-center gap-3 mt-2">
+                  <h1 className="break-words text-2xl font-extrabold text-slate-900 sm:text-3xl">{perfil.name}</h1>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
                     <Estrelas nota={perfil.reputationScore || 0} />
                     <span className="font-bold text-slate-700">
                       {(perfil.reputationScore || 0).toFixed(1)}
@@ -182,7 +182,7 @@ export const PublicProfilePage: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {perfil.avaliacoesRecebidas.map((avaliacao) => (
-                  <div key={avaliacao.id} className="bg-white rounded-lg border border-slate-100 p-5">
+                  <div key={avaliacao.id} className="rounded-lg border border-slate-100 bg-white p-4 sm:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <button

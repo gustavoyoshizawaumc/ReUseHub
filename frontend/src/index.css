@@ -23,7 +23,7 @@
 
   font: 16px/150% var(--sans);
   letter-spacing: 0;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -56,6 +56,13 @@ video,
 canvas,
 svg {
   max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+  color-scheme: light;
 }
 
 /* Esconder scrollbar mantendo funcionalidade */

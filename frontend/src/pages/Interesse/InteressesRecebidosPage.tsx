@@ -38,7 +38,7 @@ const MiniImagem: React.FC<{ url?: string | null; alt: string }> = ({ url, alt }
   const src = imagemUrl(url);
 
   return (
-    <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300">
+    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-300 sm:h-20 sm:w-20">
       {src ? (
         <img src={src} alt={alt} className="h-full w-full object-cover" />
       ) : (
@@ -200,7 +200,7 @@ export const InteressesRecebidosPage: React.FC = () => {
               {item.status === "ACEITO" && item.anuncioDesejadoStatus === "CONCLUIDO" && !item.donoJaAvaliou && (
                 <button
                   onClick={() => setAvaliacao(item)}
-                  className="px-5 py-3 rounded-lg bg-orange-500 text-white font-bold"
+                  className="w-full rounded-lg bg-orange-500 px-5 py-3 font-bold text-white sm:w-auto"
                 >
                   Avaliar interessado
                 </button>

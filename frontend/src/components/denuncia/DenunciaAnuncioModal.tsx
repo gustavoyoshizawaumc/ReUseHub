@@ -59,8 +59,8 @@ export const DenunciaAnuncioModal: React.FC<DenunciaAnuncioModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 px-3 py-4 backdrop-blur-sm">
+      <div className="max-h-[calc(100svh-2rem)] w-full max-w-lg overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
           <div>
             <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
@@ -138,14 +138,14 @@ export const DenunciaAnuncioModal: React.FC<DenunciaAnuncioModalProps> = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+                className="w-full rounded-lg border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 sm:w-auto"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
                 Enviar denuncia

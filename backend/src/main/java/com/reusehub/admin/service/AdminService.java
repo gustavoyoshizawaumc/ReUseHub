@@ -21,12 +21,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -127,38 +130,114 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public AdminDashboardDTO dashboard() {
-        var usuarios = usuarioRepository.findAll();
-        var anuncios = anuncioRepository.findAll();
+    public AdminDashboardDTO dashboard(
+            LocalDate criadoDe,
+            LocalDate criadoAte,
+            Anuncio.TipoAnuncio tipo,
+            Anuncio.StatusAnuncio status,
+            Integer categoriaId
+    ) {
+        LocalDateTime inicio = criadoDe != null ? criadoDe.atStartOfDay() : null;
+        LocalDateTime fim = criadoAte != null ? criadoAte.plusDays(1).atStartOfDay() : null;
         DateTimeFormatter mesAno = DateTimeFormatter.ofPattern("MM/yyyy");
 
+        Predicate<Anuncio> filtroAnuncio = anuncio -> dentroDoPeriodo(anuncio.getCriadoEm(), inicio, fim)
+                && (tipo == null || anuncio.getTipo() == tipo)
+                && (status == null || anuncio.getStatus() == status)
+                && (categoriaId == null || anuncio.getCategoria().getId().equals(categoriaId));
+        Predicate<Anuncio> filtroNegocioAnuncio = anuncio -> (tipo == null || anuncio.getTipo() == tipo)
+                && (status == null || anuncio.getStatus() == status)
+                && (categoriaId == null || anuncio.getCategoria().getId().equals(categoriaId));
+
+        var usuarios = usuarioRepository.findAll().stream()
+                .filter(usuario -> dentroDoPeriodo(usuario.getCreatedAt(), inicio, fim))
+                .toList();
+        var anuncios = anuncioRepository.findAll().stream()
+                .filter(filtroAnuncio)
+                .toList();
+        var denuncias = denunciaRepository.findAll().stream()
+                .filter(denuncia -> dentroDoPeriodo(denuncia.getCriadoEm(), inicio, fim))
+                .filter(denuncia -> filtroNegocioAnuncio.test(denuncia.getAnuncio()))
+                .toList();
+
         var usuariosPorMes = usuarios.stream()
-                .filter(u -> u.getCreatedAt() != null)
-                .collect(Collectors.groupingBy(u -> u.getCreatedAt().format(mesAno), Collectors.counting()))
+                .filter(usuario -> usuario.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(usuario -> usuario.getCreatedAt().toLocalDate().withDayOfMonth(1), Collectors.counting()))
                 .entrySet().stream()
-                .map(e -> new AdminDashboardDTO.SerieDTO(e.getKey(), e.getValue()))
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new AdminDashboardDTO.SerieDTO(entry.getKey().format(mesAno), entry.getValue()))
                 .toList();
 
         var concluidosPorMes = anuncios.stream()
-                .filter(a -> a.getAtualizadoEm() != null && a.getStatus() == Anuncio.StatusAnuncio.CONCLUIDO)
-                .collect(Collectors.groupingBy(a -> a.getAtualizadoEm().format(mesAno), Collectors.counting()))
+                .filter(anuncio -> anuncio.getAtualizadoEm() != null && anuncio.getStatus() == Anuncio.StatusAnuncio.CONCLUIDO)
+                .collect(Collectors.groupingBy(anuncio -> anuncio.getAtualizadoEm().toLocalDate().withDayOfMonth(1), Collectors.counting()))
                 .entrySet().stream()
-                .map(e -> new AdminDashboardDTO.SerieDTO(e.getKey(), e.getValue()))
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new AdminDashboardDTO.SerieDTO(entry.getKey().format(mesAno), entry.getValue()))
                 .toList();
 
-        var topAnuncios = anuncioRepository.findTop5ByOrderByTotalVisualizacoesDesc().stream()
-                .map(a -> new AdminDashboardDTO.ItemRankingDTO(
-                        a.getId().toString(),
-                        a.getTitulo(),
-                        a.getTotalVisualizacoes() == null ? 0 : a.getTotalVisualizacoes()
+        var anunciosCriadosPorMes = anuncios.stream()
+                .filter(anuncio -> anuncio.getCriadoEm() != null)
+                .collect(Collectors.groupingBy(anuncio -> anuncio.getCriadoEm().toLocalDate().withDayOfMonth(1)))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new AdminDashboardDTO.SerieComparativaDTO(
+                        entry.getKey().format(mesAno),
+                        entry.getValue().stream().filter(anuncio -> anuncio.getTipo() == Anuncio.TipoAnuncio.DOACAO).count(),
+                        entry.getValue().stream().filter(anuncio -> anuncio.getTipo() == Anuncio.TipoAnuncio.TROCA).count()
                 ))
                 .toList();
 
-        var topUsuarios = usuarioRepository.findTop5ByOrderByReputationScoreDesc().stream()
+        var denunciasPorMes = denuncias.stream()
+                .collect(Collectors.groupingBy(denuncia -> denuncia.getCriadoEm().toLocalDate().withDayOfMonth(1)))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new AdminDashboardDTO.SerieComparativaDTO(
+                        entry.getKey().format(mesAno),
+                        entry.getValue().stream().filter(denuncia -> denuncia.getStatus() == DenunciaAnuncio.StatusDenuncia.ABERTA).count(),
+                        entry.getValue().stream().filter(denuncia -> denuncia.getStatus() != DenunciaAnuncio.StatusDenuncia.ABERTA).count()
+                ))
+                .toList();
+
+        var topAnuncios = anuncios.stream()
+                .sorted(Comparator.comparing(
+                        (Anuncio anuncio) -> anuncio.getTotalVisualizacoes() == null ? 0 : anuncio.getTotalVisualizacoes(),
+                        Comparator.reverseOrder()
+                ))
+                .limit(5)
+                .map(anuncio -> new AdminDashboardDTO.ItemRankingDTO(
+                        anuncio.getId().toString(),
+                        anuncio.getTitulo(),
+                        anuncio.getTotalVisualizacoes() == null ? 0 : anuncio.getTotalVisualizacoes()
+                ))
+                .toList();
+
+        var topUsuarios = usuarios.stream()
+                .sorted(Comparator.comparing(
+                        (Usuario usuario) -> reputacaoOuZero(usuario),
+                        Comparator.reverseOrder()
+                ))
+                .limit(5)
                 .map(u -> new AdminDashboardDTO.ItemRankingDTO(
                         u.getId().toString(),
                         u.getName(),
-                        u.getReputationScore() == null ? 0 : u.getReputationScore()
+                        reputacaoOuZero(u)
+                ))
+                .toList();
+
+        var topCategorias = anuncios.stream()
+                .collect(Collectors.groupingBy(anuncio -> anuncio.getCategoria().getId(), Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<Integer, Long>comparingByValue().reversed())
+                .limit(5)
+                .map(entry -> new AdminDashboardDTO.ItemRankingDTO(
+                        entry.getKey().toString(),
+                        anuncios.stream()
+                                .filter(anuncio -> anuncio.getCategoria().getId().equals(entry.getKey()))
+                                .findFirst()
+                                .map(anuncio -> anuncio.getCategoria().getNome())
+                                .orElse("Categoria"),
+                        entry.getValue()
                 ))
                 .toList();
 
@@ -167,19 +246,32 @@ public class AdminService {
                 usuarios.stream().filter(u -> Boolean.TRUE.equals(u.getIsActive())).count(),
                 usuarios.stream().filter(u -> Boolean.TRUE.equals(u.getBanido())).count(),
                 anuncios.size(),
-                anuncioRepository.countByStatus(Anuncio.StatusAnuncio.ATIVO),
-                anuncioRepository.countByStatus(Anuncio.StatusAnuncio.PENDENTE),
-                anuncioRepository.countByStatus(Anuncio.StatusAnuncio.REPROVADO),
-                anuncioRepository.countByStatus(Anuncio.StatusAnuncio.CONCLUIDO),
-                anuncioRepository.countByTipo(Anuncio.TipoAnuncio.DOACAO),
-                anuncioRepository.countByTipo(Anuncio.TipoAnuncio.TROCA),
-                denunciaRepository.countByStatus(DenunciaAnuncio.StatusDenuncia.ABERTA),
-                denunciaRepository.countByStatusNot(DenunciaAnuncio.StatusDenuncia.ABERTA),
+                anuncios.stream().filter(anuncio -> anuncio.getStatus() == Anuncio.StatusAnuncio.ATIVO).count(),
+                anuncios.stream().filter(anuncio -> anuncio.getStatus() == Anuncio.StatusAnuncio.PENDENTE).count(),
+                anuncios.stream().filter(anuncio -> anuncio.getStatus() == Anuncio.StatusAnuncio.REPROVADO).count(),
+                anuncios.stream().filter(anuncio -> anuncio.getStatus() == Anuncio.StatusAnuncio.CONCLUIDO).count(),
+                anuncios.stream().filter(anuncio -> anuncio.getTipo() == Anuncio.TipoAnuncio.DOACAO).count(),
+                anuncios.stream().filter(anuncio -> anuncio.getTipo() == Anuncio.TipoAnuncio.TROCA).count(),
+                denuncias.stream().filter(denuncia -> denuncia.getStatus() == DenunciaAnuncio.StatusDenuncia.ABERTA).count(),
+                denuncias.stream().filter(denuncia -> denuncia.getStatus() != DenunciaAnuncio.StatusDenuncia.ABERTA).count(),
                 usuariosPorMes,
                 concluidosPorMes,
+                anunciosCriadosPorMes,
+                denunciasPorMes,
                 topAnuncios,
-                topUsuarios
+                topUsuarios,
+                topCategorias
         );
+    }
+
+    private boolean dentroDoPeriodo(LocalDateTime valor, LocalDateTime inicio, LocalDateTime fim) {
+        return valor != null
+                && (inicio == null || !valor.isBefore(inicio))
+                && (fim == null || valor.isBefore(fim));
+    }
+
+    private BigDecimal reputacaoOuZero(Usuario usuario) {
+        return usuario.getReputationScore() == null ? BigDecimal.ZERO : usuario.getReputationScore();
     }
 
     @Transactional(readOnly = true)

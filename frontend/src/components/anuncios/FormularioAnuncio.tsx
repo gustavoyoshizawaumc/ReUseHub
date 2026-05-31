@@ -106,10 +106,10 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
     "w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 placeholder-slate-400";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
 
       {/* CAMPOS PRINCIPAIS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="space-y-2">
           <label className={labelClass}>Título</label>
           <input
@@ -205,7 +205,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className={labelClass}>CEP</label>
-            <div className="relative flex gap-2">
+            <div className="relative flex min-w-0 gap-2">
               <input
                 required
                 className={inputClass}
@@ -224,7 +224,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
                 type="button"
                 onClick={handleBuscarCep}
                 disabled={buscandoCep}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-white transition-all hover:bg-blue-700 disabled:opacity-50"
               >
                 {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
@@ -263,7 +263,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
 
       {/* UPLOAD DE FOTOS */}
       <div className="space-y-4 pt-6 border-t border-slate-100">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
             <Camera size={18} className="text-blue-600" />
             Fotos do Produto
