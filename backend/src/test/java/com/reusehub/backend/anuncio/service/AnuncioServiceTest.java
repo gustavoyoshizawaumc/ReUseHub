@@ -2,6 +2,7 @@ package com.reusehub.backend.anuncio.service;
 
 import com.reusehub.anuncio.dto.AnuncioAtualizacaoDTO;
 import com.reusehub.anuncio.dto.AnuncioCriacaoComEnderecoDTO;
+import com.reusehub.anuncio.dto.AnuncioImagensAtualizacaoDTO;
 import com.reusehub.anuncio.dto.AnuncioRespostaDTO;
 import com.reusehub.anuncio.exception.AcessoNegadoException;
 import com.reusehub.anuncio.exception.OperacaoInvalidaException;
@@ -10,6 +11,7 @@ import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.model.Categoria;
 import com.reusehub.anuncio.model.Endereco;
+import com.reusehub.anuncio.model.ImagemAnuncio;
 
 import com.reusehub.anuncio.service.AnuncioService;
 import com.reusehub.anuncio.service.ViaCepService;
@@ -39,6 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -386,6 +389,136 @@ class AnuncioServiceTest {
             assertThrows(RecursoNaoEncontradoException.class, () -> {
                 anuncioService.atualizarAnuncio(validId, "dono@reusehub.com", dto);
             });
+        }
+    }
+
+    @Nested
+    @DisplayName("Cenários para atualizarImagensDoAnuncio")
+    class AtualizarImagensCenarios {
+
+        @Test
+        @DisplayName("deve manter ids selecionados, adicionar novas imagens e voltar status para PENDENTE")
+        void atualizarImagensComSucesso() {
+            UUID anuncioId = anuncioPendente.getId();
+            anuncioPendente.setStatus(Anuncio.StatusAnuncio.ATIVO);
+
+            List<ImagemAnuncio> imagensAtuais = criarImagensAtuais(3);
+            UUID idDaSegundaImagem = imagensAtuais.get(1).getId();
+            UUID idDaTerceiraImagem = imagensAtuais.get(2).getId();
+
+            AnuncioImagensAtualizacaoDTO dto = new AnuncioImagensAtualizacaoDTO(
+                    List.of(idDaTerceiraImagem, idDaSegundaImagem)
+            );
+            List<MultipartFile> novasImagens = criarListaDeImagens(2);
+
+            prepararMocksDeEdicaoDeImagens(anuncioId, imagensAtuais, novasImagens.size());
+
+            AnuncioRespostaDTO resultado = anuncioService.atualizarImagensDoAnuncio(
+                    anuncioId, EMAIL_DONO, dto, novasImagens
+            );
+
+            assertNotNull(resultado);
+            assertEquals(Anuncio.StatusAnuncio.PENDENTE, anuncioPendente.getStatus());
+            Mockito.verify(storageService).excluirImagem(imagensAtuais.get(0).getUrlImagem());
+            Mockito.verify(imagemAnuncioRepository).delete(imagensAtuais.get(0));
+            Mockito.verify(storageService).salvarImagens(novasImagens);
+        }
+
+        @Test
+        @DisplayName("deve estourar OperacaoInvalidaException quando o total apos edicao for menor que o minimo")
+        void erroQuandoTotalFinalAbaixoDoMinimo() {
+            UUID anuncioId = anuncioPendente.getId();
+            List<ImagemAnuncio> imagensAtuais = criarImagensAtuais(3);
+
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioPendente));
+
+            AnuncioImagensAtualizacaoDTO dto = new AnuncioImagensAtualizacaoDTO(
+                    List.of(imagensAtuais.get(0).getId(), imagensAtuais.get(1).getId())
+            );
+
+            assertThrows(OperacaoInvalidaException.class,
+                    () -> anuncioService.atualizarImagensDoAnuncio(anuncioId, EMAIL_DONO, dto, List.of()));
+            Mockito.verify(storageService, Mockito.never()).salvarImagens(Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve estourar OperacaoInvalidaException quando o total apos edicao for maior que o maximo")
+        void erroQuandoTotalFinalAcimaDoMaximo() {
+            UUID anuncioId = anuncioPendente.getId();
+            List<ImagemAnuncio> imagensAtuais = criarImagensAtuais(3);
+
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioPendente));
+
+            List<UUID> idsParaManter = imagensAtuais.stream().map(ImagemAnuncio::getId).toList();
+            AnuncioImagensAtualizacaoDTO dto = new AnuncioImagensAtualizacaoDTO(idsParaManter);
+            List<MultipartFile> tresNovas = criarListaDeImagens(3);
+
+            assertThrows(OperacaoInvalidaException.class,
+                    () -> anuncioService.atualizarImagensDoAnuncio(anuncioId, EMAIL_DONO, dto, tresNovas));
+            Mockito.verify(storageService, Mockito.never()).salvarImagens(Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve estourar RecursoNaoEncontradoException quando um id nao pertencer ao anuncio")
+        void erroQuandoIdNaoPertenceAoAnuncio() {
+            UUID anuncioId = anuncioPendente.getId();
+            List<ImagemAnuncio> imagensAtuais = criarImagensAtuais(3);
+
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioPendente));
+            Mockito.when(imagemAnuncioRepository.findByAnuncioId(anuncioId)).thenReturn(imagensAtuais);
+
+            UUID idIntruso = UUID.randomUUID();
+            AnuncioImagensAtualizacaoDTO dto = new AnuncioImagensAtualizacaoDTO(
+                    List.of(imagensAtuais.get(0).getId(), imagensAtuais.get(1).getId(), idIntruso)
+            );
+
+            assertThrows(RecursoNaoEncontradoException.class,
+                    () -> anuncioService.atualizarImagensDoAnuncio(anuncioId, EMAIL_DONO, dto, List.of()));
+            Mockito.verify(imagemAnuncioRepository, Mockito.never()).delete(Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve estourar AcessoNegadoException quando usuario nao for o dono do anuncio")
+        void erroQuandoUsuarioNaoForDono() {
+            UUID anuncioId = anuncioPendente.getId();
+
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioPendente));
+
+            AnuncioImagensAtualizacaoDTO dto = new AnuncioImagensAtualizacaoDTO(List.of());
+
+            assertThrows(AcessoNegadoException.class,
+                    () -> anuncioService.atualizarImagensDoAnuncio(
+                            anuncioId, "hacker@reusehub.com", dto, criarListaDeImagens(3)
+                    ));
+        }
+
+        private List<ImagemAnuncio> criarImagensAtuais(int quantidade) {
+            List<ImagemAnuncio> imagens = new ArrayList<>();
+            for (int i = 0; i < quantidade; i++) {
+                imagens.add(ImagemAnuncio.builder()
+                        .id(UUID.randomUUID())
+                        .anuncio(anuncioPendente)
+                        .urlImagem("https://reusehub-uploads.s3.us-east-2.amazonaws.com/foto-" + i + ".png")
+                        .ordemExibicao((short) i)
+                        .capa(i == 0)
+                        .build());
+            }
+            return imagens;
+        }
+
+        private void prepararMocksDeEdicaoDeImagens(
+                UUID anuncioId,
+                List<ImagemAnuncio> imagensAtuais,
+                int quantidadeNovas
+        ) {
+            Mockito.when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncioPendente));
+            Mockito.when(imagemAnuncioRepository.findByAnuncioId(anuncioId)).thenReturn(imagensAtuais);
+            Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class))).thenAnswer(i -> i.getArgument(0));
+
+            List<String> urlsNovas = IntStream.rangeClosed(1, quantidadeNovas)
+                    .mapToObj(i -> "https://reusehub-uploads.s3.us-east-2.amazonaws.com/nova-" + i + ".png")
+                    .toList();
+            Mockito.when(storageService.salvarImagens(Mockito.anyList())).thenReturn(urlsNovas);
         }
     }
 
