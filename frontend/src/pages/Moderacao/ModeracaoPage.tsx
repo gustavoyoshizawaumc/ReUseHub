@@ -329,6 +329,10 @@ export const ModeracaoPage: React.FC = () => {
   }, [isAdmin]);
 
   useEffect(() => {
+    // Carregamento inicial dos dados do painel: fetch unico no mount.
+    // A regra set-state-in-effect e overly strict para este padrao;
+    // refator futuro: migrar para TanStack Query ou useEffectEvent.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, [carregar]);
 
