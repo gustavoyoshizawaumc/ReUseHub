@@ -35,6 +35,7 @@ public class AnuncioRespostaDTO {
     private String nomeCategoria;
     private UUID enderecoId;
     private List<String> imagensUrls;
+    private List<ImagemAnuncioRespostaDTO> imagens;
 
     private String cep;
     private String numero;

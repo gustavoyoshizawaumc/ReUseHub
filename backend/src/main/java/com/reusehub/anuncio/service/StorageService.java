@@ -10,9 +10,12 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,6 +61,43 @@ public class StorageService {
         }
 
         return urls;
+    }
+
+    /**
+     * Remove uma imagem do S3 a partir da URL publica armazenada no banco.
+     * Falhas de remocao sao toleradas (defesa em profundidade): a imagem ja
+     * foi desreferenciada no banco, entao um orfao no S3 nao quebra o usuario.
+     */
+    public void excluirImagem(String urlImagem) {
+        if (urlImagem == null || urlImagem.isBlank()) {
+            return;
+        }
+
+        String chaveDoObjeto = extrairChaveDaUrl(urlImagem);
+        if (chaveDoObjeto == null) {
+            return;
+        }
+
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(chaveDoObjeto)
+                    .build());
+        } catch (RuntimeException ignored) {
+            // Orfaos no S3 sao aceitaveis; nao bloqueamos a operacao do usuario.
+        }
+    }
+
+    private String extrairChaveDaUrl(String urlImagem) {
+        try {
+            String caminho = new URI(urlImagem).getPath();
+            if (caminho == null || caminho.length() <= 1) {
+                return null;
+            }
+            return caminho.startsWith("/") ? caminho.substring(1) : caminho;
+        } catch (URISyntaxException e) {
+            return null;
+        }
     }
 
     private S3Client construirClienteS3() {

@@ -27,6 +27,13 @@ export interface DadosCEP {
   uf: string;
 }
 
+export interface ImagemAnuncio {
+  id: string;
+  urlImagem: string;
+  ordemExibicao: number;
+  capa: boolean;
+}
+
 export interface Anuncio {
   id: string;
   titulo: string;
@@ -46,6 +53,7 @@ export interface Anuncio {
   enderecoId: string;
   endereco?: Endereco;
   imagensUrls?: string[];
+  imagens?: ImagemAnuncio[];
   cep?: string;
   numero?: string;
   complemento?: string;
