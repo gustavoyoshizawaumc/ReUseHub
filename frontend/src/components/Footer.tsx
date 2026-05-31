@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#0f172a] text-slate-400 py-8 border-t border-slate-800/50">
-      <div className="max-w-[1200px] mx-auto px-4 grid grid-cols-1 md:grid-cols-10 gap-12 text-left">
-        <div className="md:col-span-4 flex flex-col items-start">
+    <footer className="border-t border-slate-800/50 bg-[#0f172a] py-8 text-slate-400">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 px-4 text-left md:grid-cols-10 md:gap-12">
+        <div className="col-span-2 flex flex-col items-start md:col-span-4">
           <div className="mb-1">
             <h2 className="text-2xl font-bold">
               <span className="text-blue-600">Re</span>
@@ -140,8 +140,8 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-4">
-        <div className="text-center text-xs mt-16 pt-8 border-t border-slate-800/50 text-slate-500">
+      <div className="mx-auto max-w-[1200px] px-4">
+        <div className="mt-10 border-t border-slate-800/50 pt-6 text-center text-xs text-slate-500 md:mt-16 md:pt-8">
           &copy; {new Date().getFullYear()} ReUseHub. Todos os direitos
           reservados.
         </div>
