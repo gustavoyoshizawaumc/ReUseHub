@@ -108,6 +108,32 @@ export const atualizarAnuncio = async (
   return response.data;
 };
 
+/**
+ * Atualiza o conjunto de imagens do anuncio.
+ *
+ * @param idsParaManter ids das imagens existentes que devem permanecer,
+ *                      na ordem desejada. Imagens nao listadas sao removidas.
+ * @param novasImagens  novos arquivos a serem anexados ao final da lista.
+ *
+ * O backend valida que o total final (idsParaManter.length + novasImagens.length)
+ * fique entre 3 e 5 e devolve o anuncio com o status forcado para PENDENTE
+ * para passar novamente pela moderacao.
+ */
+export const atualizarImagensDoAnuncio = async (
+  id: string,
+  idsParaManter: string[],
+  novasImagens: File[]
+): Promise<Anuncio> => {
+  const formData = new FormData();
+  formData.append(
+    "dados",
+    new Blob([JSON.stringify({ idsParaManter })], { type: "application/json" })
+  );
+  novasImagens.forEach((imagem) => formData.append("novasImagens", imagem));
+  const response = await api.put(`/${id}/imagens`, formData);
+  return response.data;
+};
+
 export const alterarStatus = async (
   id: string,
   status: "ATIVO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO"

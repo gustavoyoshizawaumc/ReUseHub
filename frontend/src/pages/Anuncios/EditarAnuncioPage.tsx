@@ -1,12 +1,31 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
-import type { Anuncio } from "../../types/anuncio.types";
+import type { Anuncio, ImagemAnuncio } from "../../types/anuncio.types";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
-import { AlertCircle, ArrowLeft, Edit3, Loader2, MapPin, Search, Camera, PlusCircle, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Edit3, Loader2, MapPin, Search } from "lucide-react";
 import { buscarEnderecoPorCEP } from "../../services/viaCepService";
-import { API_BASE_URL } from "../../config/api";
+import { GerenciadorDeImagens, type SelecaoDeImagens } from "../../components/GerenciadorDeImagens";
+
+const QUANTIDADE_MINIMA_IMAGENS = 3;
+const QUANTIDADE_MAXIMA_IMAGENS = 5;
+
+const haMudancaNasImagens = (
+  selecao: SelecaoDeImagens,
+  imagensOriginais: ImagemAnuncio[]
+): boolean => {
+  if (selecao.novasImagens.length > 0) {
+    return true;
+  }
+  if (selecao.idsParaManter.length !== imagensOriginais.length) {
+    return true;
+  }
+  const ordemOriginal = [...imagensOriginais]
+    .sort((a, b) => a.ordemExibicao - b.ordemExibicao)
+    .map((imagem) => imagem.id);
+  return selecao.idsParaManter.some((id, indice) => id !== ordemOriginal[indice]);
+};
 
 export const EditarAnuncioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,8 +46,11 @@ export const EditarAnuncioPage: React.FC = () => {
   const [enderecoDisplay, setEnderecoDisplay] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erroCep, setErroCep] = useState<string | null>(null);
-  const [imagens, setImagens] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [selecaoImagens, setSelecaoImagens] = useState<SelecaoDeImagens>({
+    idsParaManter: [],
+    novasImagens: [],
+    totalFinal: 0,
+  });
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -51,13 +73,6 @@ export const EditarAnuncioPage: React.FC = () => {
               `${dados.rua}, ${dados.bairro} — ${dados.cidade}/${dados.uf}`
             );
           }
-
-          if (dados.imagensUrls && dados.imagensUrls.length > 0) {
-            const urls = dados.imagensUrls.map((url) =>
-              url.startsWith("http") ? url : `${API_BASE_URL}${url}`
-            );
-            setPreviews(urls);
-          }
         }
       } catch (err) {
         setErro(err instanceof Error ? err.message : "Erro ao carregar anúncio");
@@ -68,6 +83,10 @@ export const EditarAnuncioPage: React.FC = () => {
 
     carregarDados();
   }, [id]);
+
+  const aoAtualizarSelecaoDeImagens = useCallback((selecao: SelecaoDeImagens) => {
+    setSelecaoImagens(selecao);
+  }, []);
 
   const handleBuscarCep = async () => {
     if (cep.replace(/\D/g, "").length !== 8) {
@@ -87,23 +106,19 @@ export const EditarAnuncioPage: React.FC = () => {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const novasImagens = Array.from(e.target.files);
-    const total = [...imagens, ...novasImagens].slice(0, 5);
-    setImagens(total);
-    setPreviews(total.map((f) => URL.createObjectURL(f)));
-    e.target.value = "";
-  };
-
-  const removerImagem = (index: number) => {
-    setImagens(imagens.filter((_, i) => i !== index));
-    setPreviews(previews.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !anuncio) return;
+
+    if (
+      selecaoImagens.totalFinal < QUANTIDADE_MINIMA_IMAGENS ||
+      selecaoImagens.totalFinal > QUANTIDADE_MAXIMA_IMAGENS
+    ) {
+      setErro(
+        `O anuncio deve conter entre ${QUANTIDADE_MINIMA_IMAGENS} e ${QUANTIDADE_MAXIMA_IMAGENS} imagens.`
+      );
+      return;
+    }
 
     setLoading(true);
     setErro(null);
@@ -122,6 +137,15 @@ export const EditarAnuncioPage: React.FC = () => {
       };
 
       const anuncioAtualizado = await anuncioService.atualizarAnuncio(id, dadosAtualizacao);
+
+      if (haMudancaNasImagens(selecaoImagens, anuncio.imagens ?? [])) {
+        await anuncioService.atualizarImagensDoAnuncio(
+          id,
+          selecaoImagens.idsParaManter,
+          selecaoImagens.novasImagens
+        );
+      }
+
       navigate(`/anuncios/${anuncioAtualizado.id}`);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao atualizar anúncio");
@@ -338,47 +362,12 @@ export const EditarAnuncioPage: React.FC = () => {
               </div>
             </div>
 
-            {/* UPLOAD DE FOTOS */}
-            <div className="space-y-4 pt-6 border-t border-slate-100">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-                  <Camera size={18} className="text-blue-600" />
-                  Fotos do Produto
-                </label>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  imagens.length === 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                }`}>
-                  {imagens.length}/5 {imagens.length === 5 ? "✓" : "opcional"}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {imagens.length < 5 && (
-                  <label className="cursor-pointer aspect-square rounded-[20px] border-2 border-dashed border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center justify-center bg-white group">
-                    <PlusCircle className="text-slate-400 group-hover:text-blue-600 mb-1 transition-colors" size={24} />
-                    <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-500 uppercase transition-colors">
-                      Adicionar
-                    </span>
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
-                  </label>
-                )}
-                {previews.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border border-slate-100 shadow-sm">
-                    <img src={url} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removerImagem(index)}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow transition-all hover:scale-110"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-slate-400 font-medium">
-                Adicione novas fotos para substituir as existentes. Formatos aceitos: JPG, PNG, WEBP.
-              </p>
-            </div>
+            {anuncio && (
+              <GerenciadorDeImagens
+                imagensExistentes={anuncio.imagens ?? []}
+                onSelecaoMudou={aoAtualizarSelecaoDeImagens}
+              />
+            )}
 
             <button
               type="submit"

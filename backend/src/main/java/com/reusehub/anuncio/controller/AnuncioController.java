@@ -127,6 +127,19 @@ public class AnuncioController {
         return ResponseEntity.ok(resposta);
     }
 
+    @PutMapping(value = "/{id}/imagens", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AnuncioRespostaDTO> atualizarImagensDoAnuncio(
+            @PathVariable UUID id,
+            @RequestPart("dados") @Valid AnuncioImagensAtualizacaoDTO dto,
+            @RequestPart(value = "novasImagens", required = false) List<MultipartFile> novasImagens,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+        AnuncioRespostaDTO resposta = anuncioService.atualizarImagensDoAnuncio(id, email, dto, novasImagens);
+        return ResponseEntity.ok(resposta);
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AnuncioRespostaDTO> alterarStatus(
