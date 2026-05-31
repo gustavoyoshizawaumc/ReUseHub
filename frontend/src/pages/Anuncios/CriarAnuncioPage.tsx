@@ -31,11 +31,11 @@ export const CriarAnuncioPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] py-12 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-sm w-full max-w-3xl p-8 md:p-12 border border-slate-100">
+      <main className="flex-grow bg-[#f1f5f9] px-3 py-6 sm:px-4 sm:py-12 flex items-center justify-center">
+        <div className="w-full max-w-3xl rounded-lg border border-slate-100 bg-white p-5 shadow-sm sm:p-8 md:p-12">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-8 transition-colors group"
+            className="mb-6 flex items-center gap-2 text-sm font-bold text-slate-400 transition-colors hover:text-blue-600 group sm:mb-8"
           >
             <ArrowLeft
               size={18}
@@ -44,10 +44,10 @@ export const CriarAnuncioPage: React.FC = () => {
             Voltar
           </button>
 
-          <div className="mb-10">
+          <div className="mb-7 sm:mb-10">
             <div className="flex items-center gap-3 mb-2">
               <PlusCircle className="text-orange-500" size={28} />
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
                 Novo Anúncio
               </h1>
             </div>

@@ -53,14 +53,14 @@ export const FavoritosPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-plus-jakarta-sans text-left">
       <Header />
 
-      <main className="flex-grow bg-[#f1f5f9] py-10 md:py-12">
+      <main className="flex-grow bg-[#f1f5f9] py-6 sm:py-10 md:py-12">
         <div className="max-w-6xl mx-auto px-4">
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur px-3 py-1.5 border border-slate-200 text-slate-600 text-sm font-semibold shadow-sm mb-4">
               <Heart size={16} className="text-rose-500" fill="currentColor" />
               Sua curadoria
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
               Favoritos
             </h1>
             <p className="text-slate-500 mt-2 max-w-2xl leading-relaxed">
@@ -69,7 +69,7 @@ export const FavoritosPage: React.FC = () => {
           </div>
 
           {loading && (
-            <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center justify-center text-center">
+            <div className="flex flex-col items-center justify-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
               <LoaderCircle size={40} className="animate-spin text-blue-600 mb-4" />
               <p className="text-slate-700 font-bold">Carregando seus favoritos...</p>
             </div>
@@ -83,7 +83,7 @@ export const FavoritosPage: React.FC = () => {
           )}
 
           {!loading && !erro && anunciosFavoritos.length === 0 && (
-            <div className="bg-white rounded-[32px] p-16 shadow-md border border-slate-100 flex flex-col items-center text-center">
+            <div className="flex flex-col items-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
               <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-300 mb-4">
                 <Heart size={36} />
               </div>

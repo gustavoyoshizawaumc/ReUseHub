@@ -163,7 +163,7 @@ function App() {
           }
         />
         <Route
-          path="/moderacao"
+          path="/moderacao/*"
           element={
             <ModeratorRoute>
               <ModeracaoPage />
@@ -174,10 +174,10 @@ function App() {
         <Route
           path="*"
           element={
-            <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] font-plus-jakarta-sans">
-              <h1 className="text-9xl font-black text-slate-200">404</h1>
-              <div className="text-center -mt-12">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] px-4 font-plus-jakarta-sans">
+              <h1 className="text-7xl font-black text-slate-200 sm:text-9xl">404</h1>
+              <div className="-mt-7 max-w-lg text-center sm:-mt-12">
+                <h2 className="mb-2 text-xl font-bold text-slate-900 sm:text-2xl">
                   Ops! Página não encontrada.
                 </h2>
                 <p className="text-slate-500 mb-8">

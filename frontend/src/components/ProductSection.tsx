@@ -26,7 +26,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
         {products.map((product) => (
           <div
             key={product.id}
-            className="group flex cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:border-blue-200"
+            className="group flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:border-blue-200"
           >
             <div className="relative aspect-square w-full">
               <div
@@ -61,7 +61,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
             </div>
 
             <div className="flex flex-1 flex-col px-3 pb-4 sm:px-4 sm:pb-5">
-              <h3 className="min-h-[2.4rem] pt-2 text-[12px] font-semibold leading-snug text-slate-800 line-clamp-2 sm:text-[13px]">
+              <h3 className="min-h-[2.4rem] break-words pt-2 text-[12px] font-semibold leading-snug text-slate-800 line-clamp-2 sm:text-[13px]">
                 {product.titulo}
               </h3>
 
