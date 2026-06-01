@@ -86,3 +86,43 @@ export interface AnuncioAtualizacao {
   complemento?: string;
   enderecoId: string;
 }
+
+// Tipos do modulo de destaque da home (PR D)
+
+export type ContextoDestaque =
+  | "RECOMENDADOS_PARA_VOCE"
+  | "MAIS_PROCURADOS"
+  | "POPULARES"
+  | "RECENTES";
+
+export type CenarioHome = "HISTORICO_USUARIO" | "SEM_HISTORICO" | "ANONIMO";
+
+export type TipoSelecaoCategoria = "INTERESSE_USUARIO" | "ROTATIVA";
+
+export interface CategoriaEmDestaque {
+  id: number;
+  nome: string;
+  slug: string;
+  tipoSelecao: TipoSelecaoCategoria;
+}
+
+export interface AnuncioDestaque {
+  anuncio: Anuncio;
+  scoreDestaque: number | null;
+}
+
+export interface SecaoHome {
+  contexto: ContextoDestaque;
+  categoriaId: number | null;
+  titulo: string;
+  linkVerTodos: string | null;
+  anuncios: AnuncioDestaque[];
+}
+
+export interface BootstrapHome {
+  cenario: CenarioHome;
+  categoriaEmDestaque: CategoriaEmDestaque | null;
+  secoes: SecaoHome[];
+  geradoEm: string;
+  dataRotacao: string;
+}

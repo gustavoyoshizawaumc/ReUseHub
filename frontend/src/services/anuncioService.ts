@@ -3,6 +3,9 @@ import type {
   Anuncio,
   AnuncioCriacao,
   AnuncioAtualizacao,
+  AnuncioDestaque,
+  BootstrapHome,
+  ContextoDestaque,
   PaginacaoResponse,
 } from "../types/anuncio.types";
 import type { BuscaFiltro } from "../types/busca.types";
@@ -165,6 +168,31 @@ export const favoritarAnuncio = async (id: string): Promise<void> => {
 
 export const desfavoritarAnuncio = async (id: string): Promise<void> => {
   await api.delete(`/${id}/favoritos`);
+};
+
+/**
+ * Endpoint principal da home: devolve cenario, categoria em destaque e
+ * todas as secoes ja populadas com seus anuncios. 1 request, sem waterfall.
+ */
+export const bootstrapHome = async (): Promise<BootstrapHome> => {
+  const response = await api.get<BootstrapHome>("/destaques/bootstrap-home");
+  return response.data;
+};
+
+/**
+ * Endpoint complementar. NAO usado pela home (que usa bootstrapHome).
+ * Util para paginas que querem apenas uma secao isolada ou refresh granular.
+ */
+export const listarDestaques = async (
+  contexto: ContextoDestaque,
+  size?: number,
+  categoriaId?: number
+): Promise<AnuncioDestaque[]> => {
+  const params: Record<string, string | number> = { contexto };
+  if (size !== undefined) params.size = size;
+  if (categoriaId !== undefined) params.categoriaId = categoriaId;
+  const response = await api.get<AnuncioDestaque[]>("/destaques", { params });
+  return response.data;
 };
 
 const removerParametrosVazios = (
