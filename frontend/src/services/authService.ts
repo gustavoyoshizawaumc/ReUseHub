@@ -6,6 +6,7 @@
   UpdateProfileRequest,
 } from "../types/auth.types";
 import { apiUrl } from "../config/api";
+import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
 
 const API_URL = apiUrl("/api/auth");
 
@@ -51,7 +52,7 @@ export const authService = {
   },
 
   getProfile: async (): Promise<UsuarioRespostaDTO> => {
-    const token = localStorage.getItem("token");
+    const token = obterTokenAtivoOuEncerrarSessao();
 
     if (!token) {
       throw new Error("Token não encontrado. Faça login novamente.");
@@ -77,7 +78,7 @@ export const authService = {
     data: UpdateProfileRequest,
     avatarFile?: File,
   ): Promise<UsuarioRespostaDTO> => {
-    const token = localStorage.getItem("token");
+    const token = obterTokenAtivoOuEncerrarSessao();
 
     if (!token) {
       throw new Error("Token não encontrado. Faça login novamente.");
@@ -128,7 +129,7 @@ export const authService = {
   },
 
   deleteAccount: async (): Promise<void> => {
-    const token = localStorage.getItem("token");
+    const token = obterTokenAtivoOuEncerrarSessao();
 
     if (!token) {
       throw new Error("Token não encontrado. Faça login novamente.");

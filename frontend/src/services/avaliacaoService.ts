@@ -3,16 +3,19 @@
   AvaliacaoResposta,
 } from "../types/avaliacao.types";
 import { apiUrl } from "../config/api";
+import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
 
 const BASE_URL = apiUrl("/api/avaliacoes");
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-
-  return {
+function getAuthHeaders(): Record<string, string> {
+  const token = obterTokenAtivoOuEncerrarSessao();
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 export async function criarAvaliacao(
