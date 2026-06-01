@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import JanelaChat from '../../components/chat/JanelaChat';
 import ListaConversas from '../../components/chat/ListaConversas';
@@ -14,6 +15,8 @@ type ChatLocationState = {
   conversaId?: string;
 };
 
+const INTERVALO_ATUALIZACAO_CONVERSAS_MS = 5000;
+
 export const ChatPage: React.FC = () => {
   const location = useLocation();
   const state = (location.state as ChatLocationState) || null;
@@ -21,6 +24,16 @@ export const ChatPage: React.FC = () => {
   const [conversas, setConversas] = useState<Conversa[]>([]);
   const [conversaAtiva, setConversaAtiva] = useState<Conversa | null>(null);
   const [carregando, setCarregando] = useState(true);
+
+  const atualizarConversas = useCallback(async () => {
+    const lista = await listarConversas();
+    setConversas(lista);
+    setConversaAtiva((atual) => {
+      if (!atual) return null;
+      return lista.find((conversa) => conversa.id === atual.id) ?? atual;
+    });
+    return lista;
+  }, []);
 
   useEffect(() => {
     const carregar = async () => {
@@ -36,8 +49,7 @@ export const ChatPage: React.FC = () => {
           conversaInicialId = conversaCriada?.id;
         }
 
-        const lista = await listarConversas();
-        setConversas(lista);
+        const lista = await atualizarConversas();
 
         if (conversaInicialId) {
           const encontrada = lista.find((c) => c.id === conversaInicialId);
@@ -53,7 +65,25 @@ export const ChatPage: React.FC = () => {
     };
 
     carregar();
-  }, [state?.anuncioId, state?.destinatarioId, state?.conversaId]);
+  }, [atualizarConversas, state?.anuncioId, state?.destinatarioId, state?.conversaId]);
+
+  useEffect(() => {
+    const atualizarSeVisivel = () => {
+      if (document.visibilityState === 'visible') {
+        atualizarConversas().catch((error) => {
+          console.warn('Não foi possível atualizar a lista de conversas:', error);
+        });
+      }
+    };
+
+    const interval = window.setInterval(atualizarSeVisivel, INTERVALO_ATUALIZACAO_CONVERSAS_MS);
+    document.addEventListener('visibilitychange', atualizarSeVisivel);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', atualizarSeVisivel);
+    };
+  }, [atualizarConversas]);
 
   if (carregando) {
     return (
