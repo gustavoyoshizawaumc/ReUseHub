@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import {
   obterConversaPorId,
   enviarMensagem,
@@ -16,6 +17,7 @@ import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
 import { API_BASE_URL } from '../../config/api';
 
 const BASE_URL = API_BASE_URL;
+const INTERVALO_ATUALIZACAO_MENSAGENS_MS = 2500;
 
 const montarUrlImagem = (url?: string | null) => {
   if (!url) return null;
@@ -37,6 +39,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   const [processandoFechamento, setProcessandoFechamento] = useState(false);
   const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversaAtivaId = conversaAtiva?.id;
 
   const [usuarioLogado] = useState(() => {
     const userJson = localStorage.getItem('user');
@@ -55,43 +58,58 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
     return { id: '', email: '', username: '' };
   });
 
-  const carregarMensagens = async () => {
-    if (!conversaAtiva?.id) {
+  const carregarMensagens = useCallback(async (silencioso = false) => {
+    if (!conversaAtivaId) {
       setMensagens([]);
       setConversaDetalhe(null);
       return;
     }
 
-    setCarregandoMensagens(true);
+    if (!silencioso) setCarregandoMensagens(true);
     try {
-      const conversaDetalhe = await obterConversaPorId(conversaAtiva.id);
+      const conversaDetalhe = await obterConversaPorId(conversaAtivaId);
       setConversaDetalhe(conversaDetalhe);
       setMensagens(conversaDetalhe?.mensagens ?? []);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
-      setMensagens([]);
     } finally {
-      setCarregandoMensagens(false);
+      if (!silencioso) setCarregandoMensagens(false);
     }
 
     try {
-      await marcarComoLido(conversaAtiva.id);
+      await marcarComoLido(conversaAtivaId);
     } catch (error) {
       console.warn('Não foi possível marcar a conversa como lida:', error);
     }
-  };
+  }, [conversaAtivaId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensagens]);
 
   useEffect(() => {
-    // Fetch de mensagens disparado pela mudanca da conversa ativa.
-    // setState dentro do effect e aceitavel: sincronizacao com API.
+    // Sincroniza a conversa selecionada com o historico salvo na API.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarMensagens();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversaAtiva?.id]);
+  }, [carregarMensagens]);
+
+  useEffect(() => {
+    if (!conversaAtivaId) return;
+
+    const atualizarSeVisivel = () => {
+      if (document.visibilityState === 'visible') {
+        carregarMensagens(true);
+      }
+    };
+
+    const interval = window.setInterval(atualizarSeVisivel, INTERVALO_ATUALIZACAO_MENSAGENS_MS);
+    document.addEventListener('visibilitychange', atualizarSeVisivel);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', atualizarSeVisivel);
+    };
+  }, [carregarMensagens, conversaAtivaId]);
 
   const handleEnviarMensagem = async () => {
     if (!conversaAtiva?.id || !novaMensagem.trim() || conversaInfo.chatFechado) return;
@@ -100,7 +118,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
     try {
       await enviarMensagem(conversaAtiva.id, novaMensagem.trim());
       setNovaMensagem('');
-      await carregarMensagens();
+      await carregarMensagens(true);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
     } finally {
@@ -114,7 +132,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
     try {
       setProcessandoFechamento(true);
       await marcarInteresseComoEntregue(conversaInfo.interesseId);
-      await carregarMensagens();
+      await carregarMensagens(true);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erro ao marcar como entregue');
     } finally {
@@ -128,7 +146,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
     try {
       setProcessandoFechamento(true);
       await confirmarRecebimentoInteresse(conversaInfo.interesseId);
-      await carregarMensagens();
+      await carregarMensagens(true);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erro ao confirmar recebimento');
     } finally {
