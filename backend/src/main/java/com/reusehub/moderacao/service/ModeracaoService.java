@@ -31,11 +31,17 @@ import java.util.List;
 import java.util.UUID;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class ModeracaoService {
+
+    private static final LocalDateTime INICIO_FILTRO = LocalDate.of(1900, 1, 1).atStartOfDay();
+    private static final LocalDateTime FIM_FILTRO = LocalDate.of(9999, 12, 31).atStartOfDay();
+    private static final UUID UUID_SENTINELA = new UUID(0, 0);
 
     private final UsuarioRepository usuarioRepository;
     private final AnuncioRepository anuncioRepository;
@@ -68,8 +74,16 @@ public class ModeracaoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DenunciaRespostaDTO> listarDenuncias(DenunciaAnuncio.StatusDenuncia status, Pageable pageable) {
-        return denunciaRepository.findByStatusOrderByCriadoEmDesc(status, pageable)
+    public Page<DenunciaRespostaDTO> listarDenuncias(
+            String termo,
+            DenunciaAnuncio.StatusDenuncia status,
+            Pageable pageable
+    ) {
+        return denunciaRepository.buscarParaModeracao(
+                        normalizarPesquisa(termo),
+                        status == null ? "" : status.name(),
+                        pageable
+                )
                 .map(this::mapearDenuncia);
     }
 
@@ -90,9 +104,17 @@ public class ModeracaoService {
     }
 
     @Transactional(readOnly = true)
-    public List<AnuncioSuspeitoDTO> listarSuspeitos(long minimoDenuncias) {
+    public List<AnuncioSuspeitoDTO> listarSuspeitos(
+            long minimoDenuncias,
+            String termo,
+            Anuncio.StatusAnuncio status
+    ) {
         long minimo = Math.max(1, minimoDenuncias);
-        return denunciaRepository.listarAnunciosSuspeitos(minimo).stream()
+        return denunciaRepository.listarAnunciosSuspeitos(
+                        minimo,
+                        normalizarPesquisa(termo),
+                        status == null ? "" : status.name()
+                ).stream()
                 .map(row -> {
                     UUID anuncioId = (UUID) row[0];
                     long total = (Long) row[1];
@@ -151,15 +173,42 @@ public class ModeracaoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AvaliacaoRespostaDTO> listarAvaliacoes(Pageable pageable) {
-        return avaliacaoRepository.findAllByOrderByCriadoEmDesc(pageable)
+    public Page<AvaliacaoRespostaDTO> listarAvaliacoes(
+            String termo,
+            Integer nota,
+            LocalDate criadoDe,
+            LocalDate criadoAte,
+            Pageable pageable
+    ) {
+        return avaliacaoRepository.buscarParaModeracao(
+                        normalizarPesquisa(termo),
+                        nota == null ? 0 : nota,
+                        inicioDoDia(criadoDe),
+                        inicioDoDiaSeguinte(criadoAte),
+                        pageable
+                )
                 .map(this::mapearAvaliacao);
     }
 
     @Transactional(readOnly = true)
-    public Page<HistoricoModeracaoDTO> meuHistorico(String emailModerador, Pageable pageable) {
+    public Page<HistoricoModeracaoDTO> meuHistorico(
+            String emailModerador,
+            String termo,
+            String acao,
+            LocalDate criadoDe,
+            LocalDate criadoAte,
+            Pageable pageable
+    ) {
         Usuario moderador = validarModerador(emailModerador);
-        return historicoRepository.findByModeradorIdOrderByCriadoEmDesc(moderador.getId(), pageable)
+        return historicoRepository.buscar(
+                        moderador.getId(),
+                        UUID_SENTINELA,
+                        normalizarPesquisa(termo),
+                        normalizarPesquisa(acao),
+                        inicioDoDia(criadoDe),
+                        inicioDoDiaSeguinte(criadoAte),
+                        pageable
+                )
                 .map(this::mapearHistorico);
     }
 
@@ -257,5 +306,17 @@ public class ModeracaoService {
                 .stream()
                 .map(ImagemAnuncio::getUrlImagem)
                 .toList();
+    }
+
+    private String normalizarPesquisa(String valor) {
+        return valor == null || valor.isBlank() ? "" : valor.trim();
+    }
+
+    private LocalDateTime inicioDoDia(LocalDate data) {
+        return data != null ? data.atStartOfDay() : INICIO_FILTRO;
+    }
+
+    private LocalDateTime inicioDoDiaSeguinte(LocalDate data) {
+        return data != null ? data.plusDays(1).atStartOfDay() : FIM_FILTRO;
     }
 }
