@@ -139,11 +139,57 @@ export interface DashboardAdminFiltros {
   categoriaId?: number | '';
 }
 
+export interface AnuncioModeracaoFiltros {
+  termo?: string;
+  status?: '' | Anuncio['status'];
+}
+
+export interface DenunciaModeracaoFiltros {
+  termo?: string;
+  status?: '' | StatusDenuncia;
+}
+
+export interface SuspeitoModeracaoFiltros {
+  termo?: string;
+  status?: '' | Anuncio['status'];
+  minimoDenuncias?: number;
+}
+
+export interface AvaliacaoModeracaoFiltros {
+  termo?: string;
+  nota?: number | '';
+  criadoDe?: string;
+  criadoAte?: string;
+}
+
+export interface HistoricoModeracaoFiltros {
+  termo?: string;
+  acao?: string;
+  criadoDe?: string;
+  criadoAte?: string;
+}
+
+const adicionarParametro = (params: URLSearchParams, nome: string, valor?: string | number) => {
+  if (valor !== undefined && valor !== '') params.set(nome, String(valor));
+};
+
 export async function listarAnunciosPendentes(page = 0, size = 10): Promise<PaginacaoResponse<Anuncio>> {
   const response = await fetch(`${ANUNCIOS_URL}/moderacao/pendentes?page=${page}&size=${size}`, {
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao listar anuncios pendentes');
+}
+
+export async function listarAnunciosModeracao(
+  filtros: AnuncioModeracaoFiltros = {},
+  page = 0,
+  size = 100
+): Promise<PaginacaoResponse<Anuncio>> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  adicionarParametro(params, 'termo', filtros.termo?.trim());
+  adicionarParametro(params, 'status', filtros.status);
+  const response = await fetch(`${ANUNCIOS_URL}/moderacao?${params.toString()}`, { headers: getAuthHeaders() });
+  return parseResponse(response, 'Erro ao listar anuncios');
 }
 
 export async function aprovarAnuncio(id: string): Promise<Anuncio> {
@@ -162,8 +208,16 @@ export async function reprovarAnuncio(id: string): Promise<Anuncio> {
   return parseResponse(response, 'Erro ao reprovar anuncio');
 }
 
-export async function listarDenuncias(status: StatusDenuncia, page = 0, size = 10): Promise<PaginacaoResponse<DenunciaModeracao>> {
-  const response = await fetch(`${MODERACAO_URL}/denuncias?status=${status}&page=${page}&size=${size}`, {
+export async function listarDenuncias(
+  filtros: DenunciaModeracaoFiltros | StatusDenuncia = {},
+  page = 0,
+  size = 100
+): Promise<PaginacaoResponse<DenunciaModeracao>> {
+  const normalizados = typeof filtros === 'string' ? { status: filtros } : filtros;
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  adicionarParametro(params, 'termo', normalizados.termo?.trim());
+  adicionarParametro(params, 'status', normalizados.status);
+  const response = await fetch(`${MODERACAO_URL}/denuncias?${params.toString()}`, {
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao listar denuncias');
@@ -187,8 +241,13 @@ export async function descartarDenuncia(id: string, justificativa?: string): Pro
   return parseResponse(response, 'Erro ao descartar denuncia');
 }
 
-export async function listarSuspeitos(minimoDenuncias = 2): Promise<AnuncioSuspeito[]> {
-  const response = await fetch(`${MODERACAO_URL}/suspeitos?minimoDenuncias=${minimoDenuncias}`, {
+export async function listarSuspeitos(filtros: SuspeitoModeracaoFiltros | number = {}): Promise<AnuncioSuspeito[]> {
+  const normalizados = typeof filtros === 'number' ? { minimoDenuncias: filtros } : filtros;
+  const params = new URLSearchParams();
+  adicionarParametro(params, 'minimoDenuncias', normalizados.minimoDenuncias ?? 2);
+  adicionarParametro(params, 'termo', normalizados.termo?.trim());
+  adicionarParametro(params, 'status', normalizados.status);
+  const response = await fetch(`${MODERACAO_URL}/suspeitos?${params.toString()}`, {
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao listar suspeitos');
@@ -221,15 +280,33 @@ export async function reprovarSuspeito(id: string, justificativa?: string): Prom
   return parseResponse(response, 'Erro ao reprovar anuncio');
 }
 
-export async function listarMeuHistorico(page = 0, size = 12): Promise<PaginacaoResponse<HistoricoModeracao>> {
-  const response = await fetch(`${MODERACAO_URL}/historico/me?page=${page}&size=${size}`, {
+export async function listarMeuHistorico(
+  filtros: HistoricoModeracaoFiltros = {},
+  page = 0,
+  size = 100
+): Promise<PaginacaoResponse<HistoricoModeracao>> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  adicionarParametro(params, 'termo', filtros.termo?.trim());
+  adicionarParametro(params, 'acao', filtros.acao?.trim());
+  adicionarParametro(params, 'criadoDe', filtros.criadoDe);
+  adicionarParametro(params, 'criadoAte', filtros.criadoAte);
+  const response = await fetch(`${MODERACAO_URL}/historico/me?${params.toString()}`, {
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao listar historico');
 }
 
-export async function listarAvaliacoesModeracao(page = 0, size = 20): Promise<PaginacaoResponse<AvaliacaoModeracao>> {
-  const response = await fetch(`${MODERACAO_URL}/avaliacoes?page=${page}&size=${size}`, {
+export async function listarAvaliacoesModeracao(
+  filtros: AvaliacaoModeracaoFiltros = {},
+  page = 0,
+  size = 100
+): Promise<PaginacaoResponse<AvaliacaoModeracao>> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  adicionarParametro(params, 'termo', filtros.termo?.trim());
+  adicionarParametro(params, 'nota', filtros.nota);
+  adicionarParametro(params, 'criadoDe', filtros.criadoDe);
+  adicionarParametro(params, 'criadoAte', filtros.criadoAte);
+  const response = await fetch(`${MODERACAO_URL}/avaliacoes?${params.toString()}`, {
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao listar avaliacoes');
@@ -323,8 +400,17 @@ export async function alterarUsuarioAdmin(id: string, acao: 'ativar' | 'desativa
   return parseResponse(response, 'Erro ao alterar usuario');
 }
 
-export async function listarAuditoria(page = 0, size = 12): Promise<PaginacaoResponse<HistoricoModeracao>> {
-  const response = await fetch(`${ADMIN_URL}/auditoria?page=${page}&size=${size}`, {
+export async function listarAuditoria(
+  filtros: HistoricoModeracaoFiltros = {},
+  page = 0,
+  size = 100
+): Promise<PaginacaoResponse<HistoricoModeracao>> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  adicionarParametro(params, 'termo', filtros.termo?.trim());
+  adicionarParametro(params, 'acao', filtros.acao?.trim());
+  adicionarParametro(params, 'criadoDe', filtros.criadoDe);
+  adicionarParametro(params, 'criadoAte', filtros.criadoAte);
+  const response = await fetch(`${ADMIN_URL}/auditoria?${params.toString()}`, {
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao listar auditoria');

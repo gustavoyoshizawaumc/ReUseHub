@@ -19,6 +19,24 @@ public interface DenunciaAnuncioRepository extends JpaRepository<DenunciaAnuncio
             Pageable pageable
     );
 
+    @Query("""
+            select d from DenunciaAnuncio d
+            where (:status = '' or cast(d.status as string) = :status)
+              and (
+                :termo = ''
+                or lower(d.anuncio.titulo) like lower(concat('%', :termo, '%'))
+                or lower(d.denunciante.name) like lower(concat('%', :termo, '%'))
+                or lower(d.motivo) like lower(concat('%', :termo, '%'))
+                or cast(d.id as string) like concat('%', :termo, '%')
+              )
+            order by d.criadoEm desc
+            """)
+    Page<DenunciaAnuncio> buscarParaModeracao(
+            @Param("termo") String termo,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
     long countByStatus(DenunciaAnuncio.StatusDenuncia status);
 
     long countByStatusNot(DenunciaAnuncio.StatusDenuncia status);
@@ -31,9 +49,20 @@ public interface DenunciaAnuncioRepository extends JpaRepository<DenunciaAnuncio
             select d.anuncio.id, count(d.id)
             from DenunciaAnuncio d
             where d.status = 'ABERTA'
+              and (:status = '' or cast(d.anuncio.status as string) = :status)
+              and (
+                :termo = ''
+                or lower(d.anuncio.titulo) like lower(concat('%', :termo, '%'))
+                or lower(d.anuncio.usuario.name) like lower(concat('%', :termo, '%'))
+                or cast(d.anuncio.id as string) like concat('%', :termo, '%')
+              )
             group by d.anuncio.id
             having count(d.id) >= :minimo
             order by count(d.id) desc
             """)
-    List<Object[]> listarAnunciosSuspeitos(@Param("minimo") long minimo);
+    List<Object[]> listarAnunciosSuspeitos(
+            @Param("minimo") long minimo,
+            @Param("termo") String termo,
+            @Param("status") String status
+    );
 }

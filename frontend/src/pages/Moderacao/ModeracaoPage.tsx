@@ -37,6 +37,7 @@ import {
   criarModerador,
   descartarDenuncia,
   listarAnunciosPendentes,
+  listarAnunciosModeracao,
   listarAuditoria,
   listarAvaliacoesModeracao,
   listarDenuncias,
@@ -51,11 +52,16 @@ import {
   suspenderAnuncio,
   type AdminDashboard,
   type AdminUsuario,
+  type AnuncioModeracaoFiltros,
   type AnuncioSuspeito,
+  type AvaliacaoModeracaoFiltros,
   type AvaliacaoModeracao,
   type DashboardAdminFiltros,
+  type DenunciaModeracaoFiltros,
   type DenunciaModeracao,
+  type HistoricoModeracaoFiltros,
   type HistoricoModeracao,
+  type SuspeitoModeracaoFiltros,
   type UsuarioAdminFiltros,
 } from '../../services/moderacaoService';
 import { useCategorias } from '../../hooks/useCategorias';
@@ -120,21 +126,23 @@ const FILTROS_USUARIO_INICIAIS: UsuarioAdminFiltros = {
 };
 
 const CHAVE_FILTROS_USUARIO = 'reusehub:moderacao:filtros-usuarios';
-const CHAVE_FILTROS_OPERACIONAIS = 'reusehub:moderacao:filtros-operacionais';
+const CHAVE_FILTROS_OPERACIONAIS = 'reusehub:moderacao:filtros-operacionais-v2';
 const CHAVE_FILTROS_DASHBOARD = 'reusehub:moderacao:filtros-dashboard';
 
 type FiltrosOperacionais = {
-  anuncios: string;
-  denuncias: string;
-  suspeitos: string;
-  avaliacoes: string;
+  anuncios: AnuncioModeracaoFiltros;
+  denuncias: DenunciaModeracaoFiltros;
+  suspeitos: SuspeitoModeracaoFiltros;
+  avaliacoes: AvaliacaoModeracaoFiltros;
+  historico: HistoricoModeracaoFiltros;
 };
 
 const FILTROS_OPERACIONAIS_INICIAIS: FiltrosOperacionais = {
-  anuncios: '',
-  denuncias: '',
-  suspeitos: '',
-  avaliacoes: '',
+  anuncios: { termo: '', status: '' },
+  denuncias: { termo: '', status: '' },
+  suspeitos: { termo: '', status: '', minimoDenuncias: 2 },
+  avaliacoes: { termo: '', nota: '', criadoDe: '', criadoAte: '' },
+  historico: { termo: '', acao: '', criadoDe: '', criadoAte: '' },
 };
 
 const dataIso = (data: Date) => data.toISOString().slice(0, 10);
@@ -190,25 +198,32 @@ const ListToolbar = ({
   onChange,
   placeholder,
   resultCount,
+  children,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   resultCount: number;
+  children?: React.ReactNode;
 }) => (
-  <div className="mb-4 flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-    <label className="relative block w-full max-w-xl">
-      <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none transition-colors focus:border-blue-500 focus:bg-white"
-      />
-    </label>
-    <span className="shrink-0 text-xs font-bold text-slate-400">{resultCount} resultado(s)</span>
+  <div className="mb-4 rounded-md border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <label className="relative block w-full max-w-xl">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none transition-colors focus:border-blue-500 focus:bg-white"
+        />
+      </label>
+      <span className="shrink-0 text-xs font-bold text-slate-400">{resultCount} resultado(s)</span>
+    </div>
+    {children && <div className="mt-3 flex flex-wrap gap-2">{children}</div>}
   </div>
 );
+
+const filterControlClass = 'h-10 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500';
 
 const Thumb = ({ urls, title }: { urls?: string[]; title: string }) => {
   const src = imageUrl(urls?.[0]);
@@ -233,7 +248,9 @@ export const ModeracaoPage: React.FC = () => {
   const aba = obterAbaPelaRota(location.pathname, isAdmin);
   const paginaAtual = paginaConfig[aba];
   const [pendentes, setPendentes] = useState<Anuncio[]>([]);
+  const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [denuncias, setDenuncias] = useState<DenunciaModeracao[]>([]);
+  const [totalDenunciasAbertas, setTotalDenunciasAbertas] = useState(0);
   const [suspeitos, setSuspeitos] = useState<AnuncioSuspeito[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoModeracao[]>([]);
   const [historico, setHistorico] = useState<HistoricoModeracao[]>([]);
@@ -248,12 +265,15 @@ export const ModeracaoPage: React.FC = () => {
   const [processando, setProcessando] = useState<string | null>(null);
   const filtrosUsuariosInicializadosRef = useRef(false);
   const filtrosDashboardInicializadosRef = useRef(false);
+  const filtrosOperacionaisInicializadosRef = useRef(false);
   const [usuarioFiltros, setUsuarioFiltros] = useState<UsuarioAdminFiltros>(carregarFiltrosUsuariosSalvos);
   const [filtrosOperacionais, setFiltrosOperacionais] = useState<FiltrosOperacionais>(carregarFiltrosOperacionaisSalvos);
   const [dashboardFiltros, setDashboardFiltros] = useState<DashboardAdminFiltros>(carregarFiltrosDashboardSalvos);
   const filtrosUsuariosIniciaisRef = useRef(usuarioFiltros);
   const filtrosDashboardAtuaisRef = useRef(dashboardFiltros);
+  const filtrosOperacionaisAtuaisRef = useRef(filtrosOperacionais);
   filtrosDashboardAtuaisRef.current = dashboardFiltros;
+  filtrosOperacionaisAtuaisRef.current = filtrosOperacionais;
   const [moderadorForm, setModeradorForm] = useState({
     name: '',
     email: '',
@@ -289,18 +309,47 @@ export const ModeracaoPage: React.FC = () => {
     }
   }, [dashboardFiltros, isAdmin]);
 
+  const carregarOperacionais = useCallback(async (filtros = filtrosOperacionais) => {
+    try {
+      const [anunciosData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
+        listarAnunciosModeracao(filtros.anuncios),
+        listarDenuncias(filtros.denuncias),
+        listarSuspeitos(filtros.suspeitos),
+        listarAvaliacoesModeracao(filtros.avaliacoes),
+        listarMeuHistorico(filtros.historico),
+      ]);
+      setAnuncios(anunciosData.content ?? []);
+      setDenuncias(denunciasData.content ?? []);
+      setSuspeitos(suspeitosData ?? []);
+      setAvaliacoes(avaliacoesData.content ?? []);
+      setHistorico(historicoData.content ?? []);
+
+      if (isAdmin) {
+        const auditoriaData = await listarAuditoria(filtros.historico);
+        setAuditoria(auditoriaData.content ?? []);
+      }
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Nao foi possivel atualizar as listagens.');
+    }
+  }, [filtrosOperacionais, isAdmin]);
+
   const carregar = useCallback(async () => {
     setLoading(true);
     setErro(null);
     try {
-      const [pendentesData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
+      const filtrosAtuais = filtrosOperacionaisAtuaisRef.current;
+      const [pendentesData, anunciosData, denunciasAbertasData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
         listarAnunciosPendentes(0, 20),
-        listarDenuncias('ABERTA', 0, 20),
-        listarSuspeitos(2),
-        listarAvaliacoesModeracao(0, 20),
-        listarMeuHistorico(0, 20),
+        listarAnunciosModeracao(filtrosAtuais.anuncios),
+        listarDenuncias({ status: 'ABERTA' }, 0, 1),
+        listarDenuncias(filtrosAtuais.denuncias),
+        listarSuspeitos(filtrosAtuais.suspeitos),
+        listarAvaliacoesModeracao(filtrosAtuais.avaliacoes),
+        listarMeuHistorico(filtrosAtuais.historico),
       ]);
       setPendentes(pendentesData.content ?? []);
+      setAnuncios(anunciosData.content ?? []);
+      setTotalDenunciasAbertas(denunciasAbertasData.totalElements ?? 0);
       setDenuncias(denunciasData.content ?? []);
       setSuspeitos(suspeitosData ?? []);
       setAvaliacoes(avaliacoesData.content ?? []);
@@ -310,7 +359,7 @@ export const ModeracaoPage: React.FC = () => {
         const [dashResult, usuariosResult, auditoriaResult] = await Promise.allSettled([
           obterDashboardAdmin(filtrosDashboardAtuaisRef.current),
           listarUsuariosAdmin(0, 20, filtrosUsuariosIniciaisRef.current),
-          listarAuditoria(0, 20),
+          listarAuditoria(filtrosAtuais.historico),
         ]);
         if (dashResult.status === 'fulfilled') {
           setDashboard(dashResult.value);
@@ -355,7 +404,18 @@ export const ModeracaoPage: React.FC = () => {
 
   useEffect(() => {
     window.localStorage.setItem(CHAVE_FILTROS_OPERACIONAIS, JSON.stringify(filtrosOperacionais));
-  }, [filtrosOperacionais]);
+
+    if (!filtrosOperacionaisInicializadosRef.current) {
+      filtrosOperacionaisInicializadosRef.current = true;
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      carregarOperacionais();
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [carregarOperacionais, filtrosOperacionais]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -425,8 +485,14 @@ export const ModeracaoPage: React.FC = () => {
     setUsuarioFiltros((prev) => ({ ...prev, [campo]: valor }));
   };
 
-  const alterarFiltroOperacional = (campo: keyof FiltrosOperacionais, valor: string) => {
-    setFiltrosOperacionais((prev) => ({ ...prev, [campo]: valor }));
+  const alterarFiltroOperacional = <
+    K extends keyof FiltrosOperacionais,
+    F extends keyof FiltrosOperacionais[K]
+  >(grupo: K, campo: F, valor: FiltrosOperacionais[K][F]) => {
+    setFiltrosOperacionais((prev) => ({
+      ...prev,
+      [grupo]: { ...prev[grupo], [campo]: valor },
+    }));
   };
 
   const alterarFiltroDashboard = <K extends keyof DashboardAdminFiltros>(campo: K, valor: DashboardAdminFiltros[K]) => {
@@ -445,26 +511,26 @@ export const ModeracaoPage: React.FC = () => {
     return !normalizado || valores.some((valor) => valor?.toLocaleLowerCase('pt-BR').includes(normalizado));
   };
 
-  const pendentesFiltrados = pendentes.filter((anuncio) =>
-    contemTermo(filtrosOperacionais.anuncios, anuncio.titulo, anuncio.descricao, anuncio.nomeUsuario, anuncio.nomeCategoria)
+  const anunciosFiltrados = anuncios.filter((anuncio) =>
+    contemTermo(filtrosOperacionais.anuncios.termo ?? '', anuncio.id, anuncio.titulo, anuncio.descricao, anuncio.nomeUsuario, anuncio.nomeCategoria)
   );
   const denunciasFiltradas = denuncias.filter((denuncia) =>
-    contemTermo(filtrosOperacionais.denuncias, denuncia.tituloAnuncio, denuncia.nomeDenunciante, denuncia.motivo, denuncia.descricao)
+    contemTermo(filtrosOperacionais.denuncias.termo ?? '', denuncia.id, denuncia.tituloAnuncio, denuncia.nomeDenunciante, denuncia.motivo, denuncia.descricao)
   );
   const suspeitosFiltrados = suspeitos.filter((anuncio) =>
-    contemTermo(filtrosOperacionais.suspeitos, anuncio.titulo, anuncio.nomeUsuario, anuncio.status)
+    contemTermo(filtrosOperacionais.suspeitos.termo ?? '', anuncio.anuncioId, anuncio.titulo, anuncio.nomeUsuario, anuncio.status)
   );
   const avaliacoesFiltradas = avaliacoes.filter((avaliacao) =>
-    contemTermo(filtrosOperacionais.avaliacoes, avaliacao.anuncioTitulo, avaliacao.avaliadorNome, avaliacao.avaliadoNome, avaliacao.comentario)
+    contemTermo(filtrosOperacionais.avaliacoes.termo ?? '', avaliacao.id, avaliacao.anuncioTitulo, avaliacao.avaliadorNome, avaliacao.avaliadoNome, avaliacao.comentario)
   );
   const counts = useMemo(
     () => ({
       anuncios: pendentes.length,
-      denuncias: denuncias.length,
+      denuncias: totalDenunciasAbertas,
       suspeitos: suspeitos.length,
       avaliacoes: avaliacoes.length,
     }),
-    [avaliacoes.length, denuncias.length, pendentes.length, suspeitos.length]
+    [avaliacoes.length, pendentes.length, suspeitos.length, totalDenunciasAbertas]
   );
 
   const metricas = dashboard
@@ -477,6 +543,38 @@ export const ModeracaoPage: React.FC = () => {
         { label: 'Denuncias abertas', value: dashboard.denunciasAbertas },
       ]
     : [];
+
+  const acoesUsuario = (usuario: AdminUsuario) => {
+    const isSelf = usuario.id === user?.id;
+    return (
+      <div className="flex flex-wrap justify-end gap-2">
+        <button onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
+        <button
+          disabled={isSelf}
+          onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
+          className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Desativar
+        </button>
+        <button
+          disabled={isSelf}
+          onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
+          className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Banir
+        </button>
+      </div>
+    );
+  };
+
+  const statusUsuario = (usuario: AdminUsuario) => (
+    <div className="flex flex-wrap gap-1">
+      <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${usuario.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+        {usuario.ativo ? 'Ativo' : 'Inativo'}
+      </span>
+      {usuario.banido && <span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-black uppercase text-rose-700">Banido</span>}
+    </div>
+  );
 
   return (
     <ModeracaoLayout
@@ -500,7 +598,7 @@ export const ModeracaoPage: React.FC = () => {
             <section className="space-y-6">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <MetricCard label="Anuncios pendentes" value={pendentes.length} icon={Clock3} />
-                <MetricCard label="Denuncias abertas" value={denuncias.length} icon={AlertTriangle} tone="orange" />
+                <MetricCard label="Denuncias abertas" value={totalDenunciasAbertas} icon={AlertTriangle} tone="orange" />
                 <MetricCard label="Anuncios suspeitos" value={suspeitos.length} icon={ShieldOff} tone="orange" />
                 <MetricCard label="Avaliacoes registradas" value={avaliacoes.length} icon={Star} />
               </div>
@@ -707,13 +805,22 @@ export const ModeracaoPage: React.FC = () => {
               {aba === 'anuncios' && (
                 <section>
                   <ListToolbar
-                    value={filtrosOperacionais.anuncios}
-                    onChange={(value) => alterarFiltroOperacional('anuncios', value)}
-                    placeholder="Buscar por titulo, anunciante ou categoria"
-                    resultCount={pendentesFiltrados.length}
-                  />
-                  {pendentesFiltrados.length === 0 ? (
-                    <EmptyState text="Nenhum anuncio pendente agora." />
+                    value={filtrosOperacionais.anuncios.termo ?? ''}
+                    onChange={(value) => alterarFiltroOperacional('anuncios', 'termo', value)}
+                    placeholder="Buscar por titulo, anunciante ou ID"
+                    resultCount={anunciosFiltrados.length}
+                  >
+                    <select
+                      value={filtrosOperacionais.anuncios.status ?? ''}
+                      onChange={(event) => alterarFiltroOperacional('anuncios', 'status', event.target.value as AnuncioModeracaoFiltros['status'])}
+                      className={filterControlClass}
+                    >
+                      <option value="">Todos os status</option>
+                      {Object.keys(statusClass).map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                  </ListToolbar>
+                  {anunciosFiltrados.length === 0 ? (
+                    <EmptyState text="Nenhum anuncio encontrado com os filtros atuais." />
                   ) : (
                     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                       <table className="w-full min-w-[820px] text-left text-sm">
@@ -722,11 +829,12 @@ export const ModeracaoPage: React.FC = () => {
                             <th className="px-4 py-3">Anuncio</th>
                             <th className="px-4 py-3">Anunciante</th>
                             <th className="px-4 py-3">Tipo</th>
+                            <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3 text-right">Acoes</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {pendentesFiltrados.map((anuncio) => (
+                          {anunciosFiltrados.map((anuncio) => (
                             <tr key={anuncio.id} className="transition-colors hover:bg-slate-50">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
@@ -747,14 +855,21 @@ export const ModeracaoPage: React.FC = () => {
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <div className="flex justify-end gap-2">
-                                  <button onClick={() => executar(anuncio.id, () => reprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
-                                    <XCircle size={15} /> Reprovar
-                                  </button>
-                                  <button onClick={() => executar(anuncio.id, () => aprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
-                                    <CheckCircle2 size={15} /> Aprovar
-                                  </button>
-                                </div>
+                                <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase ${statusClass[anuncio.status] ?? statusClass.PENDENTE}`}>
+                                  {anuncio.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                {anuncio.status === 'PENDENTE' ? (
+                                  <div className="flex justify-end gap-2">
+                                    <button onClick={() => executar(anuncio.id, () => reprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
+                                      <XCircle size={15} /> Reprovar
+                                    </button>
+                                    <button onClick={() => executar(anuncio.id, () => aprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
+                                      <CheckCircle2 size={15} /> Aprovar
+                                    </button>
+                                  </div>
+                                ) : <p className="text-right text-xs font-bold text-slate-400">Sem acao pendente</p>}
                               </td>
                             </tr>
                           ))}
@@ -768,11 +883,22 @@ export const ModeracaoPage: React.FC = () => {
               {aba === 'denuncias' && (
                 <section>
                   <ListToolbar
-                    value={filtrosOperacionais.denuncias}
-                    onChange={(value) => alterarFiltroOperacional('denuncias', value)}
-                    placeholder="Buscar por anuncio, denunciante ou motivo"
+                    value={filtrosOperacionais.denuncias.termo ?? ''}
+                    onChange={(value) => alterarFiltroOperacional('denuncias', 'termo', value)}
+                    placeholder="Buscar por anuncio, denunciante, motivo ou ID"
                     resultCount={denunciasFiltradas.length}
-                  />
+                  >
+                    <select
+                      value={filtrosOperacionais.denuncias.status ?? ''}
+                      onChange={(event) => alterarFiltroOperacional('denuncias', 'status', event.target.value as DenunciaModeracaoFiltros['status'])}
+                      className={filterControlClass}
+                    >
+                      <option value="">Todos os status</option>
+                      <option value="ABERTA">Aberta</option>
+                      <option value="ANALISADA">Analisada</option>
+                      <option value="DESCARTADA">Descartada</option>
+                    </select>
+                  </ListToolbar>
                   {denunciasFiltradas.length === 0 ? (
                     <EmptyState text="Nenhuma denuncia aberta." />
                   ) : (
@@ -784,6 +910,7 @@ export const ModeracaoPage: React.FC = () => {
                             <th className="px-4 py-3">Motivo</th>
                             <th className="px-4 py-3">Denunciante</th>
                             <th className="px-4 py-3">Recorrencia</th>
+                            <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3 text-right">Acoes</th>
                           </tr>
                         </thead>
@@ -806,15 +933,16 @@ export const ModeracaoPage: React.FC = () => {
                                   {denuncia.denunciasAbertasDoAnuncio} aberta(s)
                                 </span>
                               </td>
+                              <td className="px-4 py-3 text-xs font-black text-slate-600">{denuncia.status}</td>
                               <td className="px-4 py-3">
-                                <div className="flex justify-end gap-2">
+                                {denuncia.status === 'ABERTA' ? <div className="flex justify-end gap-2">
                                   <button onClick={() => executar(denuncia.id, () => descartarDenuncia(denuncia.id, 'Denuncia improcedente.'))} disabled={processando === denuncia.id} className="rounded-md bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-50">
                                     Descartar
                                   </button>
                                   <button onClick={() => executar(denuncia.id, () => analisarDenuncia(denuncia.id, 'Denuncia analisada.'))} disabled={processando === denuncia.id} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
                                     Analisar
                                   </button>
-                                </div>
+                                </div> : <p className="text-right text-xs font-bold text-slate-400">Resolvida</p>}
                               </td>
                             </tr>
                           ))}
@@ -828,11 +956,31 @@ export const ModeracaoPage: React.FC = () => {
               {aba === 'suspeitos' && (
                 <section>
                   <ListToolbar
-                    value={filtrosOperacionais.suspeitos}
-                    onChange={(value) => alterarFiltroOperacional('suspeitos', value)}
-                    placeholder="Buscar por titulo, anunciante ou status"
+                    value={filtrosOperacionais.suspeitos.termo ?? ''}
+                    onChange={(value) => alterarFiltroOperacional('suspeitos', 'termo', value)}
+                    placeholder="Buscar por titulo, anunciante ou ID"
                     resultCount={suspeitosFiltrados.length}
-                  />
+                  >
+                    <select
+                      value={filtrosOperacionais.suspeitos.status ?? ''}
+                      onChange={(event) => alterarFiltroOperacional('suspeitos', 'status', event.target.value as SuspeitoModeracaoFiltros['status'])}
+                      className={filterControlClass}
+                    >
+                      <option value="">Todos os status</option>
+                      {Object.keys(statusClass).map((status) => <option key={status} value={status}>{status}</option>)}
+                    </select>
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                      Minimo de denuncias
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={filtrosOperacionais.suspeitos.minimoDenuncias ?? 2}
+                        onChange={(event) => alterarFiltroOperacional('suspeitos', 'minimoDenuncias', Number(event.target.value) || 1)}
+                        className={`${filterControlClass} w-20`}
+                      />
+                    </label>
+                  </ListToolbar>
                   {suspeitosFiltrados.length === 0 ? (
                     <EmptyState text="Nenhum anuncio suspeito pelos filtros atuais." />
                   ) : (
@@ -865,9 +1013,9 @@ export const ModeracaoPage: React.FC = () => {
                               <td className="px-4 py-3 font-black text-orange-700">{anuncio.denunciasAbertas}</td>
                               <td className="px-4 py-3">
                                 <div className="flex justify-end gap-2">
-                                  <button onClick={() => executar(anuncio.anuncioId, () => suspenderAnuncio(anuncio.anuncioId, 'Suspenso para analise.'))} className="rounded-md bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 transition-colors hover:bg-orange-100">Suspender</button>
-                                  <button onClick={() => executar(anuncio.anuncioId, () => reativarAnuncio(anuncio.anuncioId, 'Reativado apos analise.'))} className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">Reativar</button>
-                                  <button onClick={() => executar(anuncio.anuncioId, () => reprovarSuspeito(anuncio.anuncioId, 'Reprovado apos denuncias.'))} className="rounded-md bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100">Reprovar</button>
+                                  {anuncio.status !== 'SUSPENSO' && <button onClick={() => executar(anuncio.anuncioId, () => suspenderAnuncio(anuncio.anuncioId, 'Suspenso para analise.'))} className="rounded-md bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 transition-colors hover:bg-orange-100">Suspender</button>}
+                                  {anuncio.status === 'SUSPENSO' && <button onClick={() => executar(anuncio.anuncioId, () => reativarAnuncio(anuncio.anuncioId, 'Reativado apos analise.'))} className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">Reativar</button>}
+                                  {anuncio.status !== 'REPROVADO' && <button onClick={() => executar(anuncio.anuncioId, () => reprovarSuspeito(anuncio.anuncioId, 'Reprovado apos denuncias.'))} className="rounded-md bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100">Reprovar</button>}
                                 </div>
                               </td>
                             </tr>
@@ -882,11 +1030,22 @@ export const ModeracaoPage: React.FC = () => {
               {aba === 'avaliacoes' && (
                 <section>
                   <ListToolbar
-                    value={filtrosOperacionais.avaliacoes}
-                    onChange={(value) => alterarFiltroOperacional('avaliacoes', value)}
-                    placeholder="Buscar por anuncio, avaliador ou comentario"
+                    value={filtrosOperacionais.avaliacoes.termo ?? ''}
+                    onChange={(value) => alterarFiltroOperacional('avaliacoes', 'termo', value)}
+                    placeholder="Buscar por anuncio, participante, comentario ou ID"
                     resultCount={avaliacoesFiltradas.length}
-                  />
+                  >
+                    <select
+                      value={filtrosOperacionais.avaliacoes.nota ?? ''}
+                      onChange={(event) => alterarFiltroOperacional('avaliacoes', 'nota', event.target.value === '' ? '' : Number(event.target.value))}
+                      className={filterControlClass}
+                    >
+                      <option value="">Todas as notas</option>
+                      {[1, 2, 3, 4, 5].map((nota) => <option key={nota} value={nota}>{nota} estrela(s)</option>)}
+                    </select>
+                    <input type="date" aria-label="Avaliacoes desde" value={filtrosOperacionais.avaliacoes.criadoDe ?? ''} onChange={(event) => alterarFiltroOperacional('avaliacoes', 'criadoDe', event.target.value)} className={filterControlClass} />
+                    <input type="date" aria-label="Avaliacoes ate" value={filtrosOperacionais.avaliacoes.criadoAte ?? ''} onChange={(event) => alterarFiltroOperacional('avaliacoes', 'criadoAte', event.target.value)} className={filterControlClass} />
+                  </ListToolbar>
                   {avaliacoesFiltradas.length === 0 ? (
                     <EmptyState text="Nenhuma avaliacao registrada." />
                   ) : (
@@ -937,6 +1096,16 @@ export const ModeracaoPage: React.FC = () => {
 
               {aba === 'historico' && (
                 <section>
+                  <ListToolbar
+                    value={filtrosOperacionais.historico.termo ?? ''}
+                    onChange={(value) => alterarFiltroOperacional('historico', 'termo', value)}
+                    placeholder="Buscar por acao, alvo, responsavel ou ID"
+                    resultCount={(isAdmin ? auditoria : historico).length}
+                  >
+                    <input value={filtrosOperacionais.historico.acao ?? ''} onChange={(event) => alterarFiltroOperacional('historico', 'acao', event.target.value)} placeholder="Filtrar acao exata" className={filterControlClass} />
+                    <input type="date" aria-label="Historico desde" value={filtrosOperacionais.historico.criadoDe ?? ''} onChange={(event) => alterarFiltroOperacional('historico', 'criadoDe', event.target.value)} className={filterControlClass} />
+                    <input type="date" aria-label="Historico ate" value={filtrosOperacionais.historico.criadoAte ?? ''} onChange={(event) => alterarFiltroOperacional('historico', 'criadoAte', event.target.value)} className={filterControlClass} />
+                  </ListToolbar>
                   <HistoricoList itens={isAdmin ? auditoria : historico} />
                 </section>
               )}
@@ -1044,16 +1213,56 @@ export const ModeracaoPage: React.FC = () => {
                       >
                         Limpar filtros de usuarios
                       </button>
+                      <p className="mb-4 text-xs font-semibold text-slate-400">
+                        Dados pessoais aparecem mascarados por padrao para reduzir exposicao desnecessaria.
+                      </p>
                       {loadingUsuarios && (
                         <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
                           Atualizando usuarios...
                         </div>
                       )}
-                      <div className="overflow-x-auto rounded-lg border border-slate-200">
+                      <div className="rounded-lg border border-slate-200">
                         {!loadingUsuarios && usuarios.length === 0 && (
                           <EmptyState text="Nenhum usuario encontrado com os filtros atuais." />
                         )}
                         {usuarios.length > 0 && (
+                          <div className="divide-y divide-slate-100 md:hidden">
+                            {usuarios.map((usuario) => {
+                              const isSelf = usuario.id === user?.id;
+                              return (
+                                <article key={usuario.id} className="space-y-3 p-4">
+                                  <div className="flex flex-wrap items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="break-words font-black text-slate-950">
+                                        {usuario.name}
+                                        {isSelf && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase text-blue-700">Voce</span>}
+                                      </p>
+                                      <p className="mt-0.5 break-all text-xs font-semibold text-slate-500">{usuario.email}</p>
+                                    </div>
+                                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-black uppercase text-slate-600">{usuario.perfil}</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                      <p className="font-bold uppercase text-slate-400">Status</p>
+                                      <div className="mt-1">{statusUsuario(usuario)}</div>
+                                    </div>
+                                    <div>
+                                      <p className="font-bold uppercase text-slate-400">Reputacao</p>
+                                      <p className="mt-1 font-black text-slate-700">{Number(usuario.notaReputacao ?? 0).toFixed(1)}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                      <p className="font-bold uppercase text-slate-400">Cadastro</p>
+                                      <p className="mt-1 font-semibold text-slate-600">{usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString('pt-BR') : '-'}</p>
+                                    </div>
+                                  </div>
+                                  <div className="border-t border-slate-100 pt-3">{acoesUsuario(usuario)}</div>
+                                </article>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {usuarios.length > 0 && (
+                          <div className="hidden overflow-x-auto md:block">
                           <table className="min-w-[760px] w-full border-collapse bg-white text-sm">
                             <thead className="bg-slate-50 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">
                               <tr>
@@ -1081,41 +1290,21 @@ export const ModeracaoPage: React.FC = () => {
                                       <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-black uppercase text-slate-600">{usuario.perfil}</span>
                                     </td>
                                     <td className="px-3 py-3">
-                                      <div className="flex flex-wrap gap-1">
-                                        <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${usuario.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                                          {usuario.ativo ? 'Ativo' : 'Inativo'}
-                                        </span>
-                                        {usuario.banido && <span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-black uppercase text-rose-700">Banido</span>}
-                                      </div>
+                                      {statusUsuario(usuario)}
                                     </td>
                                     <td className="px-3 py-3 font-bold text-slate-700">{Number(usuario.notaReputacao ?? 0).toFixed(1)}</td>
                                     <td className="px-3 py-3 text-xs font-semibold text-slate-500">
                                       {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString('pt-BR') : '-'}
                                     </td>
                                     <td className="px-3 py-3">
-                                      <div className="flex justify-end gap-2">
-                                        <button onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
-                                        <button
-                                          disabled={isSelf}
-                                          onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
-                                          className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                        >
-                                          Desativar
-                                        </button>
-                                        <button
-                                          disabled={isSelf}
-                                          onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
-                                          className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                        >
-                                          Banir
-                                        </button>
-                                      </div>
+                                      {acoesUsuario(usuario)}
                                     </td>
                                   </tr>
                                 );
                               })}
                             </tbody>
                           </table>
+                          </div>
                         )}
                       </div>
                     </div>

@@ -282,6 +282,17 @@ public class AnuncioService {
                 .map(this::mapearParaRespostaDTO);
     }
 
+    public Page<AnuncioRespostaDTO> listarAnunciosParaModeracao(
+            String termo,
+            Anuncio.StatusAnuncio status,
+            Pageable pageable
+    ) {
+        String termoNormalizado = termo == null || termo.isBlank() ? "" : termo.trim();
+        String statusNormalizado = status == null ? "" : status.name();
+        return anuncioRepository.buscarParaModeracao(termoNormalizado, statusNormalizado, pageable)
+                .map(this::mapearParaRespostaDTO);
+    }
+
     public AnuncioRespostaDTO aprovarAnuncio(UUID id, String emailModerador) {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncioPorId(id);

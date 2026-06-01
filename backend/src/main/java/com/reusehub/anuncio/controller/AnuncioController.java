@@ -196,6 +196,16 @@ public class AnuncioController {
     }
 
     @PreAuthorize("hasAnyRole('MODERADOR', 'ADMIN')")
+    @GetMapping("/moderacao")
+    public ResponseEntity<Page<AnuncioRespostaDTO>> listarParaModeracao(
+            @RequestParam(required = false) String termo,
+            @RequestParam(required = false) Anuncio.StatusAnuncio status,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(anuncioService.listarAnunciosParaModeracao(termo, status, pageable));
+    }
+
+    @PreAuthorize("hasAnyRole('MODERADOR', 'ADMIN')")
     @PatchMapping("/moderacao/{id}/aprovar")
     public ResponseEntity<AnuncioRespostaDTO> aprovar(
             @PathVariable UUID id,
