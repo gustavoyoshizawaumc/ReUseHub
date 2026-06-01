@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, ROTAS_LEITURA_PUBLICA).permitAll()
                         .requestMatchers(HttpMethod.HEAD, ROTAS_LEITURA_PUBLICA).permitAll()
                         .requestMatchers("/static/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/uploads/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/ws/**").permitAll()
 

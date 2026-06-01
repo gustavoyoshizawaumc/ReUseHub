@@ -37,6 +37,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class AdminService {
 
+    private static final LocalDateTime INICIO_FILTRO = LocalDate.of(1900, 1, 1).atStartOfDay();
+    private static final LocalDateTime FIM_FILTRO = LocalDate.of(9999, 12, 31).atStartOfDay();
+    private static final UUID UUID_SENTINELA = new UUID(0, 0);
+
     private final UsuarioRepository usuarioRepository;
     private final AnuncioRepository anuncioRepository;
     private final DenunciaAnuncioRepository denunciaRepository;
@@ -84,10 +88,7 @@ public class AdminService {
                 .filter(u -> banido == null || Boolean.valueOf(banido).equals(u.getBanido()))
                 .filter(u -> criadoDeInicio == null || (u.getCreatedAt() != null && !u.getCreatedAt().isBefore(criadoDeInicio)))
                 .filter(u -> criadoAteFim == null || (u.getCreatedAt() != null && u.getCreatedAt().isBefore(criadoAteFim)))
-                .filter(u -> termo == null || termo.isBlank()
-                        || u.getName().toLowerCase(Locale.ROOT).contains(termo.toLowerCase(Locale.ROOT))
-                        || u.getEmail().toLowerCase(Locale.ROOT).contains(termo.toLowerCase(Locale.ROOT))
-                        || u.getCpf().contains(termo.replaceAll("\\D", "")))
+                .filter(u -> correspondePesquisa(u, termo))
                 .sorted(Comparator.comparing(Usuario::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(this::mapearUsuario)
                 .toList();
@@ -275,8 +276,22 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public Page<HistoricoModeracaoDTO> logsAuditoria(Pageable pageable) {
-        return historicoRepository.findAllByOrderByCriadoEmDesc(pageable)
+    public Page<HistoricoModeracaoDTO> logsAuditoria(
+            String termo,
+            String acao,
+            LocalDate criadoDe,
+            LocalDate criadoAte,
+            Pageable pageable
+    ) {
+        return historicoRepository.buscar(
+                        UUID_SENTINELA,
+                        UUID_SENTINELA,
+                        normalizarPesquisa(termo),
+                        normalizarPesquisa(acao),
+                        criadoDe != null ? criadoDe.atStartOfDay() : INICIO_FILTRO,
+                        criadoAte != null ? criadoAte.plusDays(1).atStartOfDay() : FIM_FILTRO,
+                        pageable
+                )
                 .map(this::mapearHistorico);
     }
 
@@ -312,16 +327,86 @@ public class AdminService {
     private AdminUsuarioDTO mapearUsuario(Usuario usuario) {
         return new AdminUsuarioDTO(
                 usuario.getId(),
-                usuario.getName(),
-                usuario.getEmail(),
-                usuario.getCpf(),
-                usuario.getPhone(),
+                mascararNome(usuario.getName()),
+                mascararEmail(usuario.getEmail()),
+                mascararDocumento(usuario.getCpf()),
+                mascararTelefone(usuario.getPhone()),
                 usuario.getPerfil(),
                 usuario.getIsActive(),
                 usuario.getBanido(),
                 usuario.getReputationScore(),
                 usuario.getCreatedAt()
         );
+    }
+
+    private String normalizarPesquisa(String valor) {
+        return valor == null || valor.isBlank() ? "" : valor.trim();
+    }
+
+    private String mascararNome(String nome) {
+        if (nome == null || nome.isBlank()) return "";
+        String[] partes = nome.trim().split("\\s+");
+        return java.util.stream.IntStream.range(0, partes.length)
+                .mapToObj(indice -> indice == 0 ? partes[indice] : mascararPalavra(partes[indice]))
+                .collect(Collectors.joining(" "));
+    }
+
+    private String mascararEmail(String email) {
+        if (email == null || !email.contains("@")) return "";
+        String[] partes = email.split("@", 2);
+        String usuario = partes[0];
+        if (usuario.length() <= 2) return "*".repeat(usuario.length()) + "@" + partes[1];
+        if (usuario.length() <= 4) {
+            return usuario.charAt(0)
+                    + "*".repeat(Math.max(1, usuario.length() - 2))
+                    + usuario.charAt(usuario.length() - 1)
+                    + "@" + partes[1];
+        }
+        return usuario.substring(0, 2)
+                + "*".repeat(Math.max(3, usuario.length() - 4))
+                + usuario.substring(usuario.length() - 2)
+                + "@" + partes[1];
+    }
+
+    private boolean correspondePesquisa(Usuario usuario, String termo) {
+        if (termo == null || termo.isBlank()) return true;
+
+        String termoNormalizado = termo.trim().toLowerCase(Locale.ROOT);
+        String digitosPesquisados = termo.replaceAll("\\D", "");
+        return contemIgnoreCase(usuario.getName(), termoNormalizado)
+                || contemIgnoreCase(usuario.getEmail(), termoNormalizado)
+                || (!digitosPesquisados.isBlank()
+                    && somenteDigitos(usuario.getCpf()).contains(digitosPesquisados))
+                || (usuario.getId() != null
+                    && usuario.getId().toString().toLowerCase(Locale.ROOT).contains(termoNormalizado));
+    }
+
+    private boolean contemIgnoreCase(String valor, String termoNormalizado) {
+        return valor != null && valor.toLowerCase(Locale.ROOT).contains(termoNormalizado);
+    }
+
+    private String somenteDigitos(String valor) {
+        return valor == null ? "" : valor.replaceAll("\\D", "");
+    }
+
+    private String mascararPalavra(String palavra) {
+        return palavra.length() <= 1
+                ? palavra
+                : palavra.charAt(0) + "*".repeat(palavra.length() - 1);
+    }
+
+    private String mascararDocumento(String documento) {
+        if (documento == null || documento.isBlank()) return "";
+        String digitos = documento.replaceAll("\\D", "");
+        if (digitos.length() < 4) return "*".repeat(digitos.length());
+        return "*".repeat(digitos.length() - 4) + digitos.substring(digitos.length() - 4);
+    }
+
+    private String mascararTelefone(String telefone) {
+        if (telefone == null || telefone.isBlank()) return null;
+        String digitos = telefone.replaceAll("\\D", "");
+        if (digitos.length() < 4) return "*".repeat(digitos.length());
+        return "*".repeat(digitos.length() - 4) + digitos.substring(digitos.length() - 4);
     }
 
     private HistoricoModeracaoDTO mapearHistorico(HistoricoModeracao historico) {
