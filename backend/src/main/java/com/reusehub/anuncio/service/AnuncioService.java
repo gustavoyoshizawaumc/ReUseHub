@@ -52,6 +52,7 @@ public class AnuncioService {
     private final StorageService storageService;
     private final ImagemAnuncioRepository imagemAnuncioRepository;
     private final ModeracaoService moderacaoService;
+    private final com.reusehub.anuncio.mapper.AnuncioRespostaMapper anuncioRespostaMapper;
 
     public AnuncioRespostaDTO criarAnuncioComEndereco(
             String emailUsuario,
@@ -542,42 +543,7 @@ public class AnuncioService {
     }
 
     private AnuncioRespostaDTO mapearParaRespostaDTO(Anuncio anuncio) {
-        List<ImagemAnuncio> imagensOrdenadas = imagemAnuncioRepository
-                .findByAnuncioIdOrderByOrdemExibicaoAsc(anuncio.getId());
-        List<String> urlsImagens = imagensOrdenadas.stream()
-                .map(ImagemAnuncio::getUrlImagem)
-                .toList();
-        List<ImagemAnuncioRespostaDTO> imagensDetalhadas = imagensOrdenadas.stream()
-                .map(ImagemAnuncioRespostaDTO::deEntidade)
-                .toList();
-
-        return AnuncioRespostaDTO.builder()
-                .id(anuncio.getId())
-                .titulo(anuncio.getTitulo())
-                .descricao(anuncio.getDescricao())
-                .tipo(anuncio.getTipo())
-                .condicao(anuncio.getCondicao())
-                .status(anuncio.getStatus())
-                .totalVisualizacoes(anuncio.getTotalVisualizacoes())
-                .notaRelevancia(anuncio.getNotaRelevancia() != null ? anuncio.getNotaRelevancia() : BigDecimal.ZERO)
-                .expiraEm(anuncio.getExpiraEm())
-                .criadoEm(anuncio.getCriadoEm())
-                .atualizadoEm(anuncio.getAtualizadoEm())
-                .usuarioId(anuncio.getUsuario().getId())
-                .nomeUsuario(anuncio.getUsuario().getName())
-                .categoriaId(anuncio.getCategoria().getId())
-                .nomeCategoria(anuncio.getCategoria().getNome())
-                .enderecoId(anuncio.getEndereco().getId())
-                .imagensUrls(urlsImagens)
-                .imagens(imagensDetalhadas)
-                .cep(anuncio.getEndereco().getCep())
-                .numero(anuncio.getEndereco().getNumero())
-                .complemento(anuncio.getEndereco().getComplemento())
-                .rua(anuncio.getEndereco().getRua())
-                .bairro(anuncio.getEndereco().getBairro())
-                .cidade(anuncio.getEndereco().getCidade())
-                .uf(anuncio.getEndereco().getUf())
-                .build();
+        return anuncioRespostaMapper.mapear(anuncio);
     }
 
 }

@@ -38,6 +38,7 @@ public class SecurityConfig {
             "/api/anuncios/filtrar",
             "/api/anuncios/categoria/**",
             "/api/anuncios/tipo/**",
+            "/api/anuncios/destaques/**",
             "/api/anuncios/{id}",
             "/api/categorias",
             "/api/perfis/**",
