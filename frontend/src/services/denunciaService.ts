@@ -1,7 +1,9 @@
+import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
+
 const API_URL = "http://localhost:8080/api/denuncias";
 
 const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("token");
+  const token = obterTokenAtivoOuEncerrarSessao();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

@@ -1,14 +1,15 @@
 ﻿import type { Anuncio, PaginacaoResponse } from '../types/anuncio.types';
 
 import { apiUrl } from '../config/api';
+import { obterTokenAtivoOuEncerrarSessao } from '../utils/sessao';
 
 const ANUNCIOS_URL = apiUrl('/api/anuncios');
 const MODERACAO_URL = apiUrl('/api/moderacao');
 const ADMIN_URL = apiUrl('/api/admin');
 
 const getAuthHeaders = (): Record<string, string> => {
-  const raw = localStorage.getItem('token');
-  const token = raw ? raw.replace(/"/g, '').trim() : null;
+  const tokenAtivo = obterTokenAtivoOuEncerrarSessao();
+  const token = tokenAtivo ? tokenAtivo.replace(/"/g, '').trim() : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -10,6 +10,7 @@ import type {
 } from "../types/anuncio.types";
 import type { BuscaFiltro } from "../types/busca.types";
 import { apiUrl } from "../config/api";
+import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
 
 const API_URL = apiUrl("/api/anuncios");
 
@@ -18,7 +19,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = obterTokenAtivoOuEncerrarSessao();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
