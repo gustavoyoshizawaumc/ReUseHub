@@ -154,4 +154,68 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             "AND a.expiraEm IS NOT NULL " +
             "AND a.expiraEm <= CURRENT_TIMESTAMP")
     List<Anuncio> findAnunciosExpirados();
+
+    // ====================================================================
+    // Queries do modulo de destaque da home (PR D)
+    // ====================================================================
+
+    /**
+     * Anuncios elegiveis para destaque: ATIVOS e nao expirados.
+     * Retorna ate {@code Pageable.size} candidatos ordenados por data desc;
+     * o ranking final por score acontece em memoria no service.
+     */
+    @Query("""
+            select a from Anuncio a
+            where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
+              and (a.expiraEm is null or a.expiraEm > CURRENT_TIMESTAMP)
+            order by a.criadoEm desc
+            """)
+    List<Anuncio> findElegiveisParaDestaque(Pageable pageable);
+
+    /**
+     * Variante por categoria; mesmos filtros de elegibilidade.
+     */
+    @Query("""
+            select a from Anuncio a
+            where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
+              and (a.expiraEm is null or a.expiraEm > CURRENT_TIMESTAMP)
+              and a.categoria.id = :categoriaId
+            order by a.criadoEm desc
+            """)
+    List<Anuncio> findElegiveisParaDestaquePorCategoria(
+            @Param("categoriaId") Integer categoriaId,
+            Pageable pageable
+    );
+
+    /**
+     * Anuncios elegiveis ordenados diretamente por popularidade
+     * (totalVisualizacoes desc, criadoEm desc como tiebreaker).
+     * Usado pelo contexto POPULARES, que nao aplica score multi-fator.
+     */
+    @Query("""
+            select a from Anuncio a
+            where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
+              and (a.expiraEm is null or a.expiraEm > CURRENT_TIMESTAMP)
+            order by coalesce(a.totalVisualizacoes, 0) desc, a.criadoEm desc
+            """)
+    List<Anuncio> findElegiveisOrdenadosPorPopularidade(Pageable pageable);
+
+    /**
+     * Top categorias com pelo menos {@code minimoAnuncios} anuncios ATIVOS,
+     * ordenadas pela soma de visualizacoes (DESC).
+     * Cada linha retornada e um par {@code [categoriaId (Integer), totalVisualizacoes (Long)]}.
+     */
+    @Query("""
+            select a.categoria.id, sum(coalesce(a.totalVisualizacoes, 0))
+            from Anuncio a
+            where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
+              and (a.expiraEm is null or a.expiraEm > CURRENT_TIMESTAMP)
+            group by a.categoria.id
+            having count(a) >= :minimoAnuncios
+            order by sum(coalesce(a.totalVisualizacoes, 0)) desc
+            """)
+    List<Object[]> listarCategoriasMaisPopulares(
+            @Param("minimoAnuncios") long minimoAnuncios,
+            Pageable pageable
+    );
 }
