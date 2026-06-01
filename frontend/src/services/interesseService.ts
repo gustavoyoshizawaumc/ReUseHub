@@ -1,16 +1,19 @@
 ﻿import type { InteresseCriacaoPayload, InteresseResposta } from "../types/interesse.types";
 
 import { API_BASE_URL } from "../config/api";
+import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
 
 const BASE_URL = API_BASE_URL;
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-
-  return {
+function getAuthHeaders(): Record<string, string> {
+  const token = obterTokenAtivoOuEncerrarSessao();
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 export async function criarInteresse(

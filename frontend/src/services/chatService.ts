@@ -1,24 +1,12 @@
 ﻿import type { Conversa, ConversaDetalhe, Mensagem } from '../types/chat.types';
 
 import { apiUrl } from '../config/api';
+import { obterTokenAtivoOuEncerrarSessao } from '../utils/sessao';
 
 const BASE_URL = apiUrl('/api/chat');
 
 const getAuthHeaders = (): Record<string, string> => {
-  let token = localStorage.getItem('token');
-
-  if (!token) {
-    const userJson = localStorage.getItem('user');
-    if (userJson) {
-      try {
-        const userData = JSON.parse(userJson);
-        token = userData.token;
-      } catch (e) {
-        console.error('Erro ao ler objeto user', e);
-      }
-    }
-  }
-
+  const token = obterTokenAtivoOuEncerrarSessao();
   const headers: Record<string, string> = {};
 
   if (token) {
