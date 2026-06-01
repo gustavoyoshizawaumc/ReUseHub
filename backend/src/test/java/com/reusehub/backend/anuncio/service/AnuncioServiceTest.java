@@ -16,6 +16,7 @@ import com.reusehub.anuncio.model.ImagemAnuncio;
 import com.reusehub.anuncio.service.AnuncioService;
 import com.reusehub.anuncio.service.ViaCepService;
 import com.reusehub.anuncio.service.StorageService;
+import com.reusehub.anuncio.mapper.AnuncioRespostaMapper;
 
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
@@ -88,6 +89,8 @@ class AnuncioServiceTest {
     private NominatimService nominatimService;
     @Mock
     private ModeracaoService moderacaoService;
+    @Mock
+    private AnuncioRespostaMapper anuncioRespostaMapper;
 
     @InjectMocks
     private AnuncioService anuncioService;
@@ -128,6 +131,18 @@ class AnuncioServiceTest {
                 .endereco(Endereco.builder().id(UUID.randomUUID()).build())
                 .categoria(Categoria.builder().id(1).nome("Móveis").build())
                 .build();
+
+        // O mapper foi extraido pra um @Component dedicado; aqui simulamos
+        // o comportamento copiando os campos relevantes do anuncio mockado.
+        Mockito.lenient().when(anuncioRespostaMapper.mapear(Mockito.any(Anuncio.class)))
+                .thenAnswer(invocacao -> {
+                    Anuncio entrada = invocacao.getArgument(0);
+                    return AnuncioRespostaDTO.builder()
+                            .id(entrada.getId())
+                            .titulo(entrada.getTitulo())
+                            .status(entrada.getStatus())
+                            .build();
+                });
     }
 
     private void prepararResolucaoEnderecoComSucesso() {

@@ -2,6 +2,8 @@ package com.reusehub.interesse.repository;
 
 import com.reusehub.interesse.model.InteresseTroca;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,4 +33,19 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             UUID interessadoId,
             InteresseTroca.StatusInteresse status
     );
+
+    /**
+     * Conta interesses enviados pelo usuario agrupados pela categoria do anuncio desejado.
+     * Cada linha retornada e um par {@code [categoriaId (Integer), quantidade (Long)]}.
+     * Usado para calcular afinidade do usuario por categoria no score de destaque.
+     */
+    @Query("""
+            select interesse.anuncioDesejado.categoria.id, count(interesse)
+            from InteresseTroca interesse
+            where interesse.interessado.id = :usuarioId
+            group by interesse.anuncioDesejado.categoria.id
+            """)
+    List<Object[]> contarInteressesPorCategoria(@Param("usuarioId") UUID usuarioId);
+
+    long countByInteressadoId(UUID usuarioId);
 }
