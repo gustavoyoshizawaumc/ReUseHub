@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.util.Collections;
@@ -83,19 +84,56 @@ class JwtAuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("deve acionar o HandlerExceptionResolver se o JwtService disparar uma exceção de token corrompido")
-        void tratarErroDeToken() throws Exception {
-            request.addHeader("Authorization", "Bearer token_hackeado");
+        @DisplayName("deve seguir como anonimo (sem bloquear) quando o token estiver expirado ou corrompido")
+        void tokenInvalidoSegueComoAnonimo() throws Exception {
+            request.addHeader("Authorization", "Bearer token_expirado");
 
-            Mockito.when(jwtService.extrairEmail("token_hackeado"))
-                   .thenThrow(new OperacaoInvalidaException("Token inválido ou assinatura corrompida."));
+            Mockito.when(jwtService.extrairEmail("token_expirado"))
+                   .thenThrow(new OperacaoInvalidaException("O token enviado está expirado."));
+
+            filter.doFilter(request, response, filterChain);
+
+            // Comportamento esperado: nao autentica, mas segue a chain.
+            // Em rota publica isso permite anonimo; em rota protegida o
+            // Spring Security devolve 403 naturalmente. Resolver NAO e
+            // acionado - rota publica nao pode ser quebrada por sessao expirada.
+            assertNull(SecurityContextHolder.getContext().getAuthentication());
+            Mockito.verify(filterChain, Mockito.times(1)).doFilter(request, response);
+            Mockito.verify(resolver, Mockito.never())
+                   .resolveException(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve seguir como anonimo quando o usuario do token nao for mais encontrado (desativado/banido)")
+        void usuarioInexistenteSegueComoAnonimo() throws Exception {
+            request.addHeader("Authorization", "Bearer token_de_usuario_removido");
+
+            Mockito.when(jwtService.extrairEmail("token_de_usuario_removido"))
+                   .thenReturn("removido@reusehub.com");
+            Mockito.when(userDetailsService.loadUserByUsername("removido@reusehub.com"))
+                   .thenThrow(new UsernameNotFoundException("Usuario nao encontrado ou conta indisponivel"));
 
             filter.doFilter(request, response, filterChain);
 
             assertNull(SecurityContextHolder.getContext().getAuthentication());
-            
+            Mockito.verify(filterChain, Mockito.times(1)).doFilter(request, response);
+            Mockito.verify(resolver, Mockito.never())
+                   .resolveException(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve acionar o HandlerExceptionResolver em excecoes inesperadas (preserva observabilidade de bugs)")
+        void excecaoInesperadaPropagada() throws Exception {
+            request.addHeader("Authorization", "Bearer token_qualquer");
+
+            RuntimeException bugInterno = new RuntimeException("falha inesperada nao relacionada a JWT");
+            Mockito.when(jwtService.extrairEmail("token_qualquer")).thenThrow(bugInterno);
+
+            filter.doFilter(request, response, filterChain);
+
+            assertNull(SecurityContextHolder.getContext().getAuthentication());
             Mockito.verify(resolver, Mockito.times(1))
-                   .resolveException(Mockito.eq(request), Mockito.eq(response), Mockito.isNull(), Mockito.any(Exception.class));
+                   .resolveException(request, response, null, bugInterno);
         }
     }
 }

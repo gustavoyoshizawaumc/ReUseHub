@@ -1,5 +1,6 @@
 package com.reusehub.auth.filter;
 
+import com.reusehub.anuncio.exception.OperacaoInvalidaException;
 import com.reusehub.auth.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -56,16 +58,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 if (jwtService.tokenValido(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken authentication = 
+                    UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    
+
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
-            
+
             filterChain.doFilter(request, response);
-            
+
+        } catch (OperacaoInvalidaException | UsernameNotFoundException e) {
+            // Token JWT expirado/invalido OU usuario nao mais disponivel
+            // (deletado, desativado, banido). Em ambos os casos a request
+            // segue sem autenticacao: rotas publicas permanecem acessiveis
+            // como anonimo; rotas protegidas recebem 403 do Spring Security
+            // de forma natural. Isso evita que sessao expirada quebre paginas
+            // publicas como a home.
+            SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
         } catch (Exception e) {
             resolver.resolveException(request, response, null, e);
         }
