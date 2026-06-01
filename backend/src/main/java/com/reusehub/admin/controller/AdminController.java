@@ -85,7 +85,13 @@ public class AdminController {
     }
 
     @GetMapping("/auditoria")
-    public ResponseEntity<Page<HistoricoModeracaoDTO>> auditoria(Pageable pageable) {
-        return ResponseEntity.ok(adminService.logsAuditoria(pageable));
+    public ResponseEntity<Page<HistoricoModeracaoDTO>> auditoria(
+            @RequestParam(required = false) String termo,
+            @RequestParam(required = false) String acao,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate criadoDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate criadoAte,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(adminService.logsAuditoria(termo, acao, criadoDe, criadoAte, pageable));
     }
 }

@@ -35,6 +35,23 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
 
     Page<Anuncio> findByStatusOrderByCriadoEmDesc(Anuncio.StatusAnuncio status, Pageable pageable);
 
+    @Query("""
+            select a from Anuncio a
+            where (:status = '' or cast(a.status as string) = :status)
+              and (
+                :termo = ''
+                or lower(a.titulo) like lower(concat('%', :termo, '%'))
+                or lower(a.usuario.name) like lower(concat('%', :termo, '%'))
+                or cast(a.id as string) like concat('%', :termo, '%')
+              )
+            order by a.criadoEm desc
+            """)
+    Page<Anuncio> buscarParaModeracao(
+            @Param("termo") String termo,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
     long countByStatus(Anuncio.StatusAnuncio status);
 
     long countByTipo(Anuncio.TipoAnuncio tipo);
