@@ -158,7 +158,20 @@ export const Header: React.FC = () => {
         setTemTrocaPendente(false);
       }
     };
+    const atualizarSeVisivel = () => {
+      if (document.visibilityState === "visible") {
+        carregarIndicadores();
+      }
+    };
+
     carregarIndicadores();
+    const interval = window.setInterval(atualizarSeVisivel, 5000);
+    document.addEventListener("visibilitychange", atualizarSeVisivel);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", atualizarSeVisivel);
+    };
   }, [user]);
 
   useEffect(() => {
