@@ -32,5 +32,11 @@ export AWS_SECRET_ACCESS_KEY="sua_secret_access_key"
 export AWS_BUCKET_NAME="reusehub-uploads"
 export AWS_REGION="us-east-2"
 
+# TomTom (geocoding de enderecos para latitude/longitude)
+# Sem essa chave o geocoding fica desabilitado e anuncios novos
+# sao salvos com precisao_localizacao=INDEFINIDA (saem do filtro por raio).
+export TOMTOM_API_KEY="sua_chave_tomtom"
+export TOMTOM_BASE_URL="https://api.tomtom.com/search/2"
+
 # Inicializa a API
 exec java -jar /home/ubuntu/backend-0.0.1-SNAPSHOT.jar
