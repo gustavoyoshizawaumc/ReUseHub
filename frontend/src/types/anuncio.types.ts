@@ -95,6 +95,13 @@ export type ContextoDestaque =
   | "POPULARES"
   | "RECENTES";
 
+/**
+ * Superset de ContextoDestaque que inclui secoes geradas no cliente
+ * (nao vem do backend). Use em estruturas que misturam as duas origens
+ * — por exemplo, a lista final de secoes renderizada na home.
+ */
+export type ContextoSecaoHome = ContextoDestaque | "ULTIMAS_BUSCAS";
+
 export type CenarioHome = "HISTORICO_USUARIO" | "SEM_HISTORICO" | "ANONIMO";
 
 export type TipoSelecaoCategoria = "INTERESSE_USUARIO" | "ROTATIVA";
@@ -112,7 +119,7 @@ export interface AnuncioDestaque {
 }
 
 export interface SecaoHome {
-  contexto: ContextoDestaque;
+  contexto: ContextoSecaoHome;
   categoriaId: number | null;
   titulo: string;
   linkVerTodos: string | null;
