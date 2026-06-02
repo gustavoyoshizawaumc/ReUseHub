@@ -13,6 +13,7 @@ import { FavoritosPage } from "./pages/Anuncios/FavoritosPage";
 import { ProfilePage } from "./pages/Profile/ProfilePage";
 import { EditProfilePage } from "./pages/Profile/EditProfilePage";
 import { DeleteAccountPage } from "./pages/Profile/DeleteAccountPage";
+import { DeactivateAccountPage } from "./pages/Profile/DeactivateAccountPage";
 import { PublicProfilePage } from "./pages/Profile/PublicProfilePage";
 import { ChatPage } from "./pages/Chat/ChatPage";
 import { InteressesRecebidosPage } from "./pages/Interesse/InteressesRecebidosPage";
@@ -123,6 +124,15 @@ function App() {
           element={
             <UserOnlyRoute>
               <EditProfilePage />
+            </UserOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/profile/deactivate"
+          element={
+            <UserOnlyRoute>
+              <DeactivateAccountPage />
             </UserOnlyRoute>
           }
         />

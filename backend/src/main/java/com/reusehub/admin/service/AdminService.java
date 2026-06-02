@@ -100,8 +100,12 @@ public class AdminService {
 
     public AdminUsuarioDTO ativarUsuario(UUID usuarioId) {
         Usuario usuario = buscarUsuario(usuarioId);
+        if (Boolean.TRUE.equals(usuario.getContaExcluida())) {
+            throw new RegraNegocioException("Uma conta excluida e anonimizada nao pode ser reativada.");
+        }
         usuario.setIsActive(true);
         usuario.setBanido(false);
+        usuario.setDesativadoEm(null);
         return mapearUsuario(usuarioRepository.save(usuario));
     }
 
@@ -110,6 +114,7 @@ public class AdminService {
         Usuario usuario = buscarUsuario(usuarioId);
         validarProtecaoAdmin(adminLogado, usuario, "desativar");
         usuario.setIsActive(false);
+        usuario.setDesativadoEm(LocalDateTime.now());
         return mapearUsuario(usuarioRepository.save(usuario));
     }
 
@@ -119,6 +124,7 @@ public class AdminService {
         validarProtecaoAdmin(adminLogado, usuario, "banir");
         usuario.setIsActive(false);
         usuario.setBanido(true);
+        usuario.setDesativadoEm(LocalDateTime.now());
         return mapearUsuario(usuarioRepository.save(usuario));
     }
 

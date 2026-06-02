@@ -341,7 +341,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                     </div>
                     <div>
                       <p className="font-extrabold">Anúncio atualizado</p>
-                      <p className="text-sm text-blue-800 mt-1">As alterações foram salvas com sucesso.</p>
+                      <p className="text-sm text-blue-800 mt-1">As alterações foram salvas. O anúncio aguarda uma nova aprovação da moderação.</p>
                     </div>
                   </div>
                   <button onClick={limparFeedbackUrl} className="self-start sm:self-center text-sm font-bold text-blue-700 hover:text-blue-900 transition-colors">Fechar</button>
@@ -366,19 +366,19 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
           {/* CARDS DE STATUS */}
           {exibindoMeusAnuncios && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+            <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
               {statusCards.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className={`rounded-[24px] border p-5 shadow-sm ${item.wrapper}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-slate-500">{item.label}</p>
-                        <p className={`text-3xl font-extrabold mt-2 ${item.text}`}>{item.value}</p>
-                        <p className="text-sm text-slate-500 mt-2">{item.subtext}</p>
+                  <div key={item.label} className={`rounded-lg border p-3 shadow-sm sm:p-4 ${item.wrapper}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold leading-tight text-slate-500 sm:text-xs">{item.label}</p>
+                        <p className={`mt-1 text-2xl font-extrabold leading-none ${item.text}`}>{item.value}</p>
+                        <p className="mt-1.5 hidden text-xs text-slate-500 lg:block">{item.subtext}</p>
                       </div>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${item.iconBox}`}>
-                        <Icon size={22} />
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 ${item.iconBox}`}>
+                        <Icon size={17} />
                       </div>
                     </div>
                   </div>
@@ -389,8 +389,8 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
           {/* BARRA DE BUSCA MODO PRIVADO */}
           {exibindoMeusAnuncios && (
-            <div className="mb-8 rounded-[24px] bg-white border border-slate-100 shadow-sm p-4 md:p-5">
-              <div className="flex flex-col xl:flex-row xl:items-center gap-4">
+            <div className="mb-5 rounded-lg border border-slate-100 bg-white p-3 shadow-sm sm:p-4">
+              <div className="flex items-center gap-2">
                 <label className="relative flex-1">
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -398,16 +398,37 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                     value={searchParams.get("termo") ?? ""}
                     onChange={(e) => handleBuscar(e.target.value)}
                     placeholder="Buscar entre os seus anúncios"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
                   />
                 </label>
                 <button
                   type="button"
                   onClick={limparFiltrosPrivados}
-                  className="px-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all"
+                  title="Limpar filtros"
+                  className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                 >
-                  Limpar filtros
+                  <XCircle size={17} />
+                  <span className="hidden sm:inline">Limpar</span>
                 </button>
+              </div>
+              <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+                {opcoesStatus.map((opcao) => {
+                  const ativo = statusSelecionado === opcao.value;
+                  return (
+                    <button
+                      key={opcao.value}
+                      type="button"
+                      onClick={() => handleFiltrarStatus(opcao.value)}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${
+                        ativo
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      {opcao.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -428,45 +449,14 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
           <div className={`grid grid-cols-1 ${
             exibindoMeusAnuncios
-              ? "lg:grid-cols-4 gap-8"
+              ? ""
               : "lg:grid-cols-[260px_minmax(0,1fr)] gap-5"
           } items-start`}>
 
             {/* SIDEBAR */}
-            <aside className={`${!exibindoMeusAnuncios && !filtrosMoveisAbertos ? "hidden lg:block" : ""} lg:col-span-1 lg:sticky lg:top-24`}>
-              <div className={`bg-white rounded-[24px] ${exibindoMeusAnuncios ? "p-6" : "p-5"} shadow-xl shadow-slate-200/50 border border-slate-100`}>
-                {exibindoMeusAnuncios ? (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                        <Filter size={18} className="text-blue-600" />
-                        Gestão rápida
-                      </h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Filtre seus anúncios por status.
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 lg:block lg:space-y-2">
-                      {opcoesStatus.map((opcao) => {
-                        const ativo = statusSelecionado === opcao.value;
-                        return (
-                          <button
-                            key={opcao.value}
-                            type="button"
-                            onClick={() => handleFiltrarStatus(opcao.value)}
-                            className={`w-full rounded-2xl px-4 py-3 text-sm font-bold text-left transition-all border ${
-                              ativo
-                                ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
-                                : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                            }`}
-                          >
-                            {opcao.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
+            {!exibindoMeusAnuncios && (
+              <aside className={`${!filtrosMoveisAbertos ? "hidden lg:block" : ""} lg:sticky lg:top-24`}>
+                <div className="rounded-[24px] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50">
                   <>
                     <div className="mb-4">
                       <h2 className="text-lg font-extrabold text-slate-900">Filtros</h2>
@@ -486,12 +476,12 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                       }}
                     />
                   </>
-                )}
-              </div>
-            </aside>
+                </div>
+              </aside>
+            )}
 
             {/* CONTEÚDO PRINCIPAL */}
-            <div className={`${exibindoMeusAnuncios ? "lg:col-span-3 space-y-6" : "space-y-4"} min-h-[420px] sm:min-h-[720px]`}>
+            <div className="min-h-[420px] space-y-4 sm:min-h-[720px]">
               {loading && (
                 <div className="flex flex-col items-center justify-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />

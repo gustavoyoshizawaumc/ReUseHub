@@ -9,6 +9,13 @@ import com.reusehub.auth.dto.UsuarioRespostaDTO;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.auth.repository.TokenUsuarioRepository;
+import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
+import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.anuncio.repository.EnderecoRepository;
+import com.reusehub.anuncio.service.StorageService;
+import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.notificacao.repository.NotificacaoRepository;
 
 import com.reusehub.auth.service.AuthService;
 import com.reusehub.auth.service.JwtService;
@@ -42,6 +49,20 @@ class AuthServiceTest {
     private JwtService jwtService;
     @Mock
     private AuthenticationManager authenticationManager;
+    @Mock
+    private TokenUsuarioRepository tokenUsuarioRepository;
+    @Mock
+    private AnuncioRepository anuncioRepository;
+    @Mock
+    private InteresseTrocaRepository interesseTrocaRepository;
+    @Mock
+    private AnuncioFavoritoRepository anuncioFavoritoRepository;
+    @Mock
+    private NotificacaoRepository notificacaoRepository;
+    @Mock
+    private EnderecoRepository enderecoRepository;
+    @Mock
+    private StorageService storageService;
 
     @InjectMocks
     private AuthService authService;
@@ -58,6 +79,82 @@ class AuthServiceTest {
         usuarioModelo.setPasswordHash("hash_seguro");
         usuarioModelo.setPerfil(Perfil.USUARIO);
         usuarioModelo.setIsActive(true);
+    }
+
+    @Nested
+    @DisplayName("Cenarios para ciclo de vida da conta")
+    class CicloVidaContaCenarios {
+
+        @Test
+        @DisplayName("deve desativar conta sem negociacao em andamento")
+        void desativarConta() {
+            Mockito.when(usuarioRepository.findByEmail(usuarioModelo.getEmail()))
+                    .thenReturn(Optional.of(usuarioModelo));
+
+            authService.desativarContaPorEmail(usuarioModelo.getEmail());
+
+            assertFalse(usuarioModelo.getIsActive());
+            assertNotNull(usuarioModelo.getDesativadoEm());
+            Mockito.verify(tokenUsuarioRepository).invalidarTokensAtivos(usuarioModelo.getId());
+            Mockito.verify(interesseTrocaRepository).cancelarPendentesRelacionadosAoUsuario(usuarioModelo.getId());
+            Mockito.verify(anuncioRepository).cancelarPublicacoesDoUsuario(Mockito.eq(usuarioModelo.getId()), Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve bloquear encerramento se houver negociacao em andamento")
+        void bloquearEncerramentoComNegociacao() {
+            Mockito.when(usuarioRepository.findByEmail(usuarioModelo.getEmail()))
+                    .thenReturn(Optional.of(usuarioModelo));
+            Mockito.when(interesseTrocaRepository.existsNegociacaoEmAndamento(usuarioModelo.getId()))
+                    .thenReturn(true);
+
+            assertThrows(
+                    RegraNegocioException.class,
+                    () -> authService.desativarContaPorEmail(usuarioModelo.getEmail())
+            );
+            Mockito.verify(tokenUsuarioRepository, Mockito.never()).invalidarTokensAtivos(Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve reativar conta desativada com senha valida")
+        void reativarConta() {
+            LoginRequest request = new LoginRequest();
+            request.setEmail(usuarioModelo.getEmail());
+            request.setPassword("senha123");
+            usuarioModelo.setIsActive(false);
+
+            Mockito.when(usuarioRepository.findByEmail(request.getEmail()))
+                    .thenReturn(Optional.of(usuarioModelo));
+            Mockito.when(passwordEncoder.matches(request.getPassword(), usuarioModelo.getPasswordHash()))
+                    .thenReturn(true);
+            Mockito.when(jwtService.gerarToken(Mockito.any())).thenReturn("token_reativado");
+
+            AuthResponse response = authService.reativarConta(request);
+
+            assertTrue(usuarioModelo.getIsActive());
+            assertEquals("token_reativado", response.getToken());
+            Mockito.verify(authenticationManager, Mockito.never()).authenticate(Mockito.any());
+        }
+
+        @Test
+        @DisplayName("deve anonimizar dados ao excluir conta")
+        void excluirConta() {
+            Mockito.when(usuarioRepository.findByEmail(usuarioModelo.getEmail()))
+                    .thenReturn(Optional.of(usuarioModelo));
+            Mockito.when(enderecoRepository.findByUsuarioIdOrderByPrincipalDescCriadoEmDesc(usuarioModelo.getId()))
+                    .thenReturn(java.util.List.of());
+            Mockito.when(passwordEncoder.encode(Mockito.anyString())).thenReturn("senha_inutilizada");
+
+            authService.deletarContaPorEmail(usuarioModelo.getEmail());
+
+            assertFalse(usuarioModelo.getIsActive());
+            assertTrue(usuarioModelo.getContaExcluida());
+            assertEquals("Usuario excluido", usuarioModelo.getName());
+            assertTrue(usuarioModelo.getEmail().startsWith("excluido+"));
+            assertNull(usuarioModelo.getPhone());
+            Mockito.verify(anuncioFavoritoRepository).deleteByUsuarioId(usuarioModelo.getId());
+            Mockito.verify(notificacaoRepository).deleteByUsuarioId(usuarioModelo.getId());
+        }
     }
 
     @Nested

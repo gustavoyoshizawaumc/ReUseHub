@@ -25,6 +25,7 @@ public record InteresseRespostaDTO(
         LocalDateTime criadoEm,
         LocalDateTime entreguePeloDonoEm,
         LocalDateTime recebimentoConfirmadoEm,
+        LocalDateTime canceladoEm,
         boolean donoJaAvaliou,
         String conversaId
 ) {

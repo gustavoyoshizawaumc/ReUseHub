@@ -18,10 +18,13 @@ public record ConversaRespostaDTO(
     String statusAnuncio,
     LocalDateTime entreguePeloDonoEm,
     LocalDateTime recebimentoConfirmadoEm,
+    LocalDateTime canceladoEm,
     boolean podeMarcarEntregue,
     boolean podeConfirmarRecebimento,
+    boolean podeCancelarNegociacao,
     boolean podeAvaliarOutroUsuario,
     boolean usuarioJaAvaliou,
+    boolean negociacaoCancelada,
     boolean chatFechado,
     List<MensagemDto> mensagens
 ) {

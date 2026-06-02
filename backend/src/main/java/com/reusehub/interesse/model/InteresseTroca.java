@@ -49,6 +49,13 @@ public class InteresseTroca {
     @Column(name = "recebimento_confirmado_em")
     private LocalDateTime recebimentoConfirmadoEm;
 
+    @Column(name = "cancelado_em")
+    private LocalDateTime canceladoEm;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelado_por_id")
+    private Usuario canceladoPor;
+
     public enum StatusInteresse {
         PENDENTE,
         ACEITO,

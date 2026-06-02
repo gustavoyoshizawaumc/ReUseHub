@@ -8,4 +8,6 @@ import java.util.UUID;
 
 @Repository
 public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> {
+
+    void deleteByUsuarioId(UUID usuarioId);
 }
