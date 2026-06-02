@@ -12,6 +12,7 @@ import {
   FileText,
   Star,
   Edit3,
+  Power,
   Trash2,
 } from "lucide-react";
 import { API_BASE_URL } from "../../config/api";
@@ -92,6 +93,12 @@ export const ProfilePage: React.FC = () => {
                       className="w-full bg-blue-600 text-white font-bold py-4 rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                     >
                       <Edit3 size={18} /> Editar Perfil
+                    </button>
+                    <button
+                      onClick={() => navigate("/profile/deactivate")}
+                      className="w-full border border-orange-100 bg-orange-50 py-4 font-bold text-orange-700 transition-all hover:bg-orange-100 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <Power size={18} /> Desativar Conta
                     </button>
                     <button
                       onClick={() => navigate("/profile/delete")}

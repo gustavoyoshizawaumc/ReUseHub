@@ -6,10 +6,11 @@ import {
   marcarComoLido,
 } from '../../services/chatService';
 import type { Conversa, ConversaDetalhe, Mensagem } from '../../types/chat.types';
-import { ArrowLeft, CheckCircle2, ImageIcon, PackageCheck, Send, Star, User2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CircleX, ImageIcon, PackageCheck, Send, Star, User2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   confirmarRecebimentoInteresse,
+  cancelarNegociacaoInteresse,
   marcarInteresseComoEntregue,
 } from '../../services/interesseService';
 import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
@@ -154,6 +155,21 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
     }
   };
 
+  const handleCancelarNegociacao = async () => {
+    if (!conversaInfo.interesseId) return;
+    if (!window.confirm('Deseja cancelar esta negociacao? O historico continuara visivel.')) return;
+
+    try {
+      setProcessandoFechamento(true);
+      await cancelarNegociacaoInteresse(conversaInfo.interesseId);
+      await carregarMensagens(true);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erro ao cancelar negociacao');
+    } finally {
+      setProcessandoFechamento(false);
+    }
+  };
+
   if (!conversaAtiva) {
     return (
       <div className="hidden flex-1 md:flex md:flex-col md:items-center md:justify-center md:bg-zinc-50 md:text-zinc-500">
@@ -169,6 +185,8 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   const imagemAnuncioOferecido = montarUrlImagem(conversaInfo.imagemAnuncioOferecido);
   const statusFechamento = conversaInfo.usuarioJaAvaliou
     ? 'Você já avaliou esta negociação'
+    : conversaInfo.negociacaoCancelada
+      ? 'Negociação cancelada'
     : conversaInfo.chatFechado
       ? 'Chat fechado após avaliação'
       : conversaInfo.statusAnuncio === 'RESERVADO'
@@ -287,6 +305,11 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
                     Obrigado pela avaliação. O chat desta negociação foi fechado.
                   </p>
                 )}
+                {conversaInfo.negociacaoCancelada && (
+                  <p className="mt-1 text-xs text-blue-700/70">
+                    A negociação foi cancelada. O histórico continua disponível para consulta.
+                  </p>
+                )}
                 {!conversaInfo.usuarioJaAvaliou && conversaInfo.recebimentoConfirmadoEm && (
                   <p className="mt-1 text-xs text-blue-700/70">
                     Avaliações liberadas para os dois participantes.
@@ -326,6 +349,18 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
                 >
                   <Star size={16} />
                   Avaliar usuário
+                </button>
+              )}
+
+              {conversaInfo.podeCancelarNegociacao && (
+                <button
+                  type="button"
+                  onClick={handleCancelarNegociacao}
+                  disabled={processandoFechamento}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 sm:w-auto"
+                >
+                  <CircleX size={16} />
+                  {processandoFechamento ? 'Salvando...' : 'Cancelar negociação'}
                 </button>
               )}
             </div>
@@ -396,7 +431,9 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
         <div className="mx-auto w-full max-w-4xl">
           {conversaInfo.chatFechado ? (
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm font-medium text-zinc-500">
-              Chat fechado após a avaliação desta negociação.
+              {conversaInfo.negociacaoCancelada
+                ? 'Chat fechado após o cancelamento desta negociação.'
+                : 'Chat fechado após a avaliação desta negociação.'}
             </div>
           ) : (
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-1.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all sm:gap-3 sm:rounded-lg">

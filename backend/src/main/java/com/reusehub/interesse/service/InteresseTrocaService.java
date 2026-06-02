@@ -229,6 +229,50 @@ public class InteresseTrocaService {
         return mapear(salvo, null);
     }
 
+    public InteresseRespostaDTO cancelarNegociacao(UUID interesseId, String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        InteresseTroca interesse = buscarInteresse(interesseId);
+
+        boolean usuarioEhDono = interesse.getAnuncioDesejado().getUsuario().getId().equals(usuario.getId());
+        boolean usuarioEhInteressado = interesse.getInteressado().getId().equals(usuario.getId());
+
+        if (!usuarioEhDono && !usuarioEhInteressado) {
+            throw new AcessoNegadoException("Somente os participantes podem cancelar esta negociacao.");
+        }
+
+        if (interesse.getStatus() != InteresseTroca.StatusInteresse.ACEITO) {
+            throw new RegraNegocioException("Somente uma negociacao aceita pode ser cancelada.");
+        }
+
+        if (interesse.getRecebimentoConfirmadoEm() != null
+                || interesse.getAnuncioDesejado().getStatus() == Anuncio.StatusAnuncio.CONCLUIDO) {
+            throw new RegraNegocioException("Uma negociacao concluida nao pode ser cancelada.");
+        }
+
+        interesse.setStatus(InteresseTroca.StatusInteresse.CANCELADO);
+        interesse.setCanceladoEm(LocalDateTime.now());
+        interesse.setCanceladoPor(usuario);
+
+        if (interesse.getAnuncioDesejado().getStatus() == Anuncio.StatusAnuncio.RESERVADO) {
+            interesse.getAnuncioDesejado().setStatus(Anuncio.StatusAnuncio.ATIVO);
+            anuncioRepository.save(interesse.getAnuncioDesejado());
+        }
+
+        InteresseTroca salvo = interesseTrocaRepository.save(interesse);
+        Usuario outroParticipante = usuarioEhDono
+                ? interesse.getInteressado()
+                : interesse.getAnuncioDesejado().getUsuario();
+        notificacaoService.criar(
+                outroParticipante,
+                "NEGOCIACAO_CANCELADA",
+                "Negociacao cancelada",
+                usuario.getName() + " cancelou a negociacao de " + interesse.getAnuncioDesejado().getTitulo() + ".",
+                salvo.getId(),
+                "INTERESSE"
+        );
+        return mapear(salvo, null);
+    }
+
     public InteresseRespostaDTO rejeitarInteresse(UUID interesseId, String emailUsuario) {
         Usuario dono = buscarUsuarioPorEmail(emailUsuario);
 
@@ -297,6 +341,7 @@ public class InteresseTrocaService {
                 interesse.getCriadoEm(),
                 interesse.getEntreguePeloDonoEm(),
                 interesse.getRecebimentoConfirmadoEm(),
+                interesse.getCanceladoEm(),
                 avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(
                         interesse.getAnuncioDesejado().getUsuario().getId(),
                         interesse.getAnuncioDesejado().getId()

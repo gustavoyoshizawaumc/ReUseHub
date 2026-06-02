@@ -28,4 +28,13 @@ public interface TokenUsuarioRepository extends JpaRepository<TokenUsuario, UUID
               AND t.usadoEm IS NULL
             """)
     void invalidarTokensAntigos(UUID usuarioId, TipoToken tipo);
+
+    @Modifying
+    @Query("""
+            UPDATE TokenUsuario t
+            SET t.usadoEm = CURRENT_TIMESTAMP
+            WHERE t.usuario.id = :usuarioId
+              AND t.usadoEm IS NULL
+            """)
+    void invalidarTokensAtivos(UUID usuarioId);
 }

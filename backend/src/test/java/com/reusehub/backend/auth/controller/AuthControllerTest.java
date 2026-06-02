@@ -151,6 +151,27 @@ class AuthControllerTest {
     }
 
     @Nested
+    @DisplayName("Cenarios para /reativar-conta")
+    class ReativarContaCenarios {
+
+        @Test
+        @DisplayName("deve permitir reativacao sem sessao ativa")
+        void reativarConta() throws Exception {
+            LoginRequest request = new LoginRequest();
+            request.setEmail("usuario@email.com");
+            request.setPassword("senha123");
+
+            Mockito.when(authService.reativarConta(Mockito.any())).thenReturn(Mockito.mock(AuthResponse.class));
+
+            mockMvc.perform(post("/api/auth/reativar-conta")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request))
+                    .with(csrf()))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
     @DisplayName("Cenários para /minha-conta (GET)")
     class ObterPerfilCenarios {
 
@@ -251,5 +272,20 @@ class AuthControllerTest {
             Mockito.verify(authService, Mockito.times(1)).deletarContaPorEmail("usuario@email.com");
         }
         
+    }
+
+    @Nested
+    @DisplayName("Cenarios para /minha-conta/desativar (PATCH)")
+    class DesativarContaCenarios {
+
+        @Test
+        @WithMockUser(username = "usuario@email.com")
+        @DisplayName("deve desativar conta do usuario logado")
+        void desativarSucesso() throws Exception {
+            mockMvc.perform(patch("/api/auth/minha-conta/desativar").with(csrf()))
+                    .andExpect(status().isNoContent());
+
+            Mockito.verify(authService).desativarContaPorEmail("usuario@email.com");
+        }
     }
 }

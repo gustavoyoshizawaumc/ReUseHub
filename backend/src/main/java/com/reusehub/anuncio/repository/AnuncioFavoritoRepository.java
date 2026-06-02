@@ -18,6 +18,8 @@ public interface AnuncioFavoritoRepository extends JpaRepository<AnuncioFavorito
 
     void deleteByUsuarioIdAndAnuncioId(UUID usuarioId, UUID anuncioId);
 
+    void deleteByUsuarioId(UUID usuarioId);
+
     @Query("""
             select favorito.anuncio.id
             from AnuncioFavorito favorito

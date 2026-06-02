@@ -15,6 +15,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string>("");
+  const [canReactivate, setCanReactivate] = useState(false);
 
   const [formData, setFormData] = useState<LoginRequest>({
     email: "",
@@ -45,11 +46,13 @@ export const LoginPage: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setCanReactivate(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    setCanReactivate(false);
     setIsLoading(true);
 
     let hasErrors = false;
@@ -78,6 +81,21 @@ export const LoginPage: React.FC = () => {
         ? err.message
         : "Erro ao fazer login. Verifique suas credenciais.";
       setFormError(mensagem);
+      setCanReactivate(mensagem.toLowerCase().includes("desativada"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setIsLoading(true);
+    setFormError("");
+
+    try {
+      const usuario = await authService.reactivateAccount(formData);
+      navigate(isPerfilOperacional(usuario.perfil) ? "/moderacao" : "/");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Erro ao reativar conta.");
     } finally {
       setIsLoading(false);
     }
@@ -102,8 +120,18 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {formError && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-sm animate-shake">
-            {formError}
+          <div className="mb-6 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-4 text-sm text-red-700 animate-shake">
+            <p>{formError}</p>
+            {canReactivate && (
+              <button
+                type="button"
+                onClick={handleReactivate}
+                disabled={isLoading}
+                className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Reativar minha conta
+              </button>
+            )}
           </div>
         )}
 

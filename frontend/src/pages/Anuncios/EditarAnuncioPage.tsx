@@ -143,7 +143,7 @@ export const EditarAnuncioPage: React.FC = () => {
         enderecoId: anuncio.enderecoId,
       };
 
-      const anuncioAtualizado = await anuncioService.atualizarAnuncio(id, dadosAtualizacao);
+      await anuncioService.atualizarAnuncio(id, dadosAtualizacao);
 
       if (haMudancaNasImagens(selecaoImagens, anuncio.imagens ?? [])) {
         await anuncioService.atualizarImagensDoAnuncio(
@@ -153,7 +153,7 @@ export const EditarAnuncioPage: React.FC = () => {
         );
       }
 
-      navigate(`/anuncios/${anuncioAtualizado.id}`);
+      navigate("/meus-anuncios?status=atualizado");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao atualizar anúncio");
     } finally {
@@ -213,6 +213,13 @@ export const EditarAnuncioPage: React.FC = () => {
               </h1>
             </div>
             <p className="text-slate-500 text-[16px]">Atualize os detalhes do seu anúncio.</p>
+          </div>
+
+          <div className="mb-8 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <AlertCircle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+            <p>
+              Ao salvar qualquer alteração, o anúncio será enviado novamente para análise da moderação.
+            </p>
           </div>
 
           {erro && (
