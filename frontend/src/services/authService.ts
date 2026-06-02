@@ -11,6 +11,15 @@ import { limparUltimasBuscas } from "../utils/ultimasBuscas";
 
 const API_URL = apiUrl("/api/auth");
 
+const lerMensagemErro = async (response: Response, fallback: string): Promise<string> => {
+  try {
+    const error = await response.json();
+    return error.mensagem || error.message || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export const authService = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await fetch(`${API_URL}/registrar`, {
@@ -22,8 +31,7 @@ export const authService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Erro ao cadastrar");
+      throw new Error(await lerMensagemErro(response, "Erro ao cadastrar"));
     }
 
     const result: AuthResponse = await response.json();
@@ -42,8 +50,26 @@ export const authService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Erro ao fazer login");
+      throw new Error(await lerMensagemErro(response, "Erro ao fazer login"));
+    }
+
+    const result: AuthResponse = await response.json();
+    localStorage.setItem("token", result.token);
+    localStorage.setItem("user", JSON.stringify(result));
+    return result;
+  },
+
+  reactivateAccount: async (data: LoginRequest): Promise<AuthResponse> => {
+    const response = await fetch(`${API_URL}/reativar-conta`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(await lerMensagemErro(response, "Erro ao reativar conta"));
     }
 
     const result: AuthResponse = await response.json();
@@ -145,8 +171,30 @@ export const authService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Erro ao deletar conta");
+      throw new Error(await lerMensagemErro(response, "Erro ao deletar conta"));
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    limparUltimasBuscas();
+  },
+
+  deactivateAccount: async (): Promise<void> => {
+    const token = obterTokenAtivoOuEncerrarSessao();
+
+    if (!token) {
+      throw new Error("Token não encontrado. Faça login novamente.");
+    }
+
+    const response = await fetch(`${API_URL}/minha-conta/desativar`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(await lerMensagemErro(response, "Erro ao desativar conta"));
     }
 
     localStorage.removeItem("token");

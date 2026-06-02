@@ -1,6 +1,7 @@
 package com.reusehub.backend.admin.service;
 
 import com.reusehub.admin.service.AdminService;
+import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +46,7 @@ class AdminServiceTest {
     void prepararUsuarios() {
         gustavo = usuario("Gustavo Santos", "gustavo@email.com", "12345678901");
         nadia = usuario("Nadia Alves", "nadia@email.com", "98765432100");
-        when(usuarioRepository.findAll()).thenReturn(List.of(gustavo, nadia));
+        org.mockito.Mockito.lenient().when(usuarioRepository.findAll()).thenReturn(List.of(gustavo, nadia));
     }
 
     @Test
@@ -71,6 +73,15 @@ class AdminServiceTest {
         assertEquals("Gustavo S*****", usuario.name());
         assertEquals("gu***vo@email.com", usuario.email());
         assertEquals("*******8901", usuario.cpf());
+    }
+
+    @Test
+    @DisplayName("nao deve reativar conta excluida e anonimizada")
+    void naoReativarContaExcluida() {
+        gustavo.setContaExcluida(true);
+        when(usuarioRepository.findById(gustavo.getId())).thenReturn(java.util.Optional.of(gustavo));
+
+        assertThrows(RegraNegocioException.class, () -> adminService.ativarUsuario(gustavo.getId()));
     }
 
     private Usuario usuario(String nome, String email, String cpf) {

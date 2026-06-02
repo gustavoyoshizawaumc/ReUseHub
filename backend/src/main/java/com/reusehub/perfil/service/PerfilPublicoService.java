@@ -32,6 +32,21 @@ public class PerfilPublicoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", usuarioId));
 
+        if (Boolean.FALSE.equals(usuario.getIsActive())) {
+            if (Boolean.TRUE.equals(usuario.getContaExcluida())) {
+                return new PerfilPublicoDTO(
+                        usuario.getId(),
+                        "Usuario excluido",
+                        null,
+                        null,
+                        BigDecimal.ZERO,
+                        List.of(),
+                        List.of()
+                );
+            }
+            throw new RecursoNaoEncontradoException("Usuario", usuarioId);
+        }
+
         List<AnuncioRespostaDTO> anunciosAtivos = anuncioRepository
                 .findByUsuarioIdAndStatusOrderByCriadoEmDesc(usuarioId, Anuncio.StatusAnuncio.ATIVO)
                 .stream()

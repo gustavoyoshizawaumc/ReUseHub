@@ -26,6 +26,7 @@ export type InteresseResposta = {
   criadoEm: string;
   entreguePeloDonoEm?: string | null;
   recebimentoConfirmadoEm?: string | null;
+  canceladoEm?: string | null;
   donoJaAvaliou?: boolean;
   conversaId?: string | null;
 };

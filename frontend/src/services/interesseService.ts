@@ -112,3 +112,17 @@ export async function confirmarRecebimentoInteresse(id: string): Promise<Interes
 
   return response.json();
 }
+
+export async function cancelarNegociacaoInteresse(id: string): Promise<InteresseResposta> {
+  const response = await fetch(`${BASE_URL}/api/interesses/${id}/cancelar`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const erro = await response.text();
+    throw new Error(erro || "Erro ao cancelar negociacao");
+  }
+
+  return response.json();
+}
