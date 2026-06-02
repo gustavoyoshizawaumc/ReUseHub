@@ -159,9 +159,12 @@ public class AnuncioService {
         Endereco endereco = enderecoRepository.findByIdAndUsuarioId(dto.getEnderecoId(), anuncio.getUsuario().getId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Endereço", dto.getEnderecoId()));
 
+        Categoria categoria = buscarCategoriaPorId(dto.getCategoriaId());
+
         anuncio.setTitulo(dto.getTitulo());
         anuncio.setDescricao(dto.getDescricao());
         anuncio.setCondicao(dto.getCondicao());
+        anuncio.setCategoria(categoria);
         anuncio.setEndereco(endereco);
         anuncio.setExpiraEm(dto.getExpiraEm());
         anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);

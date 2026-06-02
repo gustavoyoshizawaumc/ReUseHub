@@ -141,7 +141,15 @@ class AnuncioServiceTest {
                             .id(entrada.getId())
                             .titulo(entrada.getTitulo())
                             .status(entrada.getStatus())
+                            .categoriaId(entrada.getCategoria() != null ? entrada.getCategoria().getId() : null)
                             .build();
+                });
+
+        // Categoria padrao usada pelos testes de edicao que nao focam nesse fator.
+        Mockito.lenient().when(categoriaRepository.findById(Mockito.anyInt()))
+                .thenAnswer(invocacao -> {
+                    Integer idCategoria = invocacao.getArgument(0);
+                    return Optional.of(Categoria.builder().id(idCategoria).nome("Categoria " + idCategoria).build());
                 });
     }
 
@@ -339,6 +347,7 @@ class AnuncioServiceTest {
             AnuncioAtualizacaoDTO dto = new AnuncioAtualizacaoDTO();
             dto.setEnderecoId(randomEnderecoId);
             dto.setTitulo("Título Novo");
+            dto.setCategoriaId(1);
 
             Mockito.when(anuncioRepository.findById(validId)).thenReturn(Optional.of(anuncioPendente));
             Mockito.when(enderecoRepository.findByIdAndUsuarioId(Mockito.any(UUID.class), Mockito.any()))
@@ -352,6 +361,55 @@ class AnuncioServiceTest {
         }
 
         @Test
+        @DisplayName("deve persistir a categoria nova quando o dono trocar a categoria do anuncio")
+        void atualizarPersisteCategoriaNova() {
+            UUID validId = anuncioPendente.getId();
+            Integer idCategoriaOriginal = anuncioPendente.getCategoria().getId();
+            Integer idCategoriaNova = idCategoriaOriginal + 5;
+
+            AnuncioAtualizacaoDTO dto = new AnuncioAtualizacaoDTO();
+            dto.setTitulo(anuncioPendente.getTitulo());
+            dto.setEnderecoId(UUID.randomUUID());
+            dto.setCategoriaId(idCategoriaNova);
+
+            Mockito.when(anuncioRepository.findById(validId))
+                    .thenReturn(Optional.of(anuncioPendente));
+            Mockito.when(enderecoRepository.findByIdAndUsuarioId(Mockito.any(UUID.class), Mockito.any()))
+                    .thenReturn(Optional.of(Endereco.builder().build()));
+            Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class)))
+                    .thenAnswer(i -> i.getArgument(0));
+
+            AnuncioRespostaDTO resultado = anuncioService.atualizarAnuncio(validId, EMAIL_DONO, dto);
+
+            assertEquals(idCategoriaNova, anuncioPendente.getCategoria().getId(),
+                    "categoria do anuncio deveria refletir o id enviado no DTO");
+            assertEquals(idCategoriaNova, resultado.getCategoriaId(),
+                    "resposta da API deveria devolver a categoria atualizada");
+        }
+
+        @Test
+        @DisplayName("deve estourar RecursoNaoEncontradoException se categoriaId nao existir")
+        void erroAoAtualizarComCategoriaInexistente() {
+            UUID validId = anuncioPendente.getId();
+            Integer idCategoriaInexistente = 999;
+
+            AnuncioAtualizacaoDTO dto = new AnuncioAtualizacaoDTO();
+            dto.setTitulo("Título Novo");
+            dto.setEnderecoId(UUID.randomUUID());
+            dto.setCategoriaId(idCategoriaInexistente);
+
+            Mockito.when(anuncioRepository.findById(validId))
+                    .thenReturn(Optional.of(anuncioPendente));
+            Mockito.when(enderecoRepository.findByIdAndUsuarioId(Mockito.any(UUID.class), Mockito.any()))
+                    .thenReturn(Optional.of(Endereco.builder().build()));
+            Mockito.when(categoriaRepository.findById(idCategoriaInexistente))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(RecursoNaoEncontradoException.class,
+                    () -> anuncioService.atualizarAnuncio(validId, EMAIL_DONO, dto));
+        }
+
+        @Test
         @DisplayName("deve forcar status para PENDENTE quando anúncio ATIVO for editado (regra de reanalise)")
         void devolverAnuncioParaReanaliseAposEdicao() {
             UUID validId = anuncioPendente.getId();
@@ -360,6 +418,7 @@ class AnuncioServiceTest {
             AnuncioAtualizacaoDTO dto = new AnuncioAtualizacaoDTO();
             dto.setEnderecoId(UUID.randomUUID());
             dto.setTitulo("Título Editado");
+            dto.setCategoriaId(1);
 
             Mockito.when(anuncioRepository.findById(validId))
                     .thenReturn(Optional.of(anuncioPendente));
