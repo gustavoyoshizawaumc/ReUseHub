@@ -25,6 +25,9 @@ public class AnuncioAtualizacaoDTO {
     @NotNull(message = "Condição do item é obrigatória")
     private Anuncio.CondicaoItem condicao;
 
+    @NotNull(message = "Categoria é obrigatória")
+    private Integer categoriaId;
+
     @NotNull(message = "Endereço é obrigatório")
     private UUID enderecoId;
 
