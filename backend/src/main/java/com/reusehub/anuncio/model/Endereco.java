@@ -1,5 +1,6 @@
-package com.reusehub.anuncio.model; 
+package com.reusehub.anuncio.model;
 
+import com.reusehub.anuncio.enums.PrecisaoLocalizacao;
 import com.reusehub.auth.model.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
@@ -51,6 +52,11 @@ public class Endereco {
 
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "precisao_localizacao", nullable = false, length = 30)
+    @Builder.Default
+    private PrecisaoLocalizacao precisaoLocalizacao = PrecisaoLocalizacao.INDEFINIDA;
 
     @Column(name = "principal", nullable = false)
     @Builder.Default

@@ -47,7 +47,7 @@ public class AnuncioService {
     private final CategoriaRepository categoriaRepository;
     private final EnderecoRepository enderecoRepository;
     private final ViaCepService viaCepService;
-    private final NominatimService nominatimService;
+    private final GeocodingHibridoService geocodingHibridoService;
     private final LocalizacaoService localizacaoService;
     private final StorageService storageService;
     private final ImagemAnuncioRepository imagemAnuncioRepository;
@@ -427,9 +427,9 @@ public class AnuncioService {
 
     private Endereco cadastrarEnderecoEnriquecido(Usuario usuario, AnuncioCriacaoComEnderecoDTO dto) {
         ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(dto.getCep());
-        NominatimService.Coordenadas coordenadas = obterCoordenadasDoEndereco(dadosCEP, dto);
+        ResultadoGeocoding geocoding = obterCoordenadasDoEndereco(dadosCEP, dto);
 
-        Endereco endereco = construirEndereco(usuario, dto, dadosCEP, coordenadas);
+        Endereco endereco = construirEndereco(usuario, dto, dadosCEP, geocoding);
         return enderecoRepository.save(endereco);
     }
 
@@ -437,7 +437,7 @@ public class AnuncioService {
             Usuario usuario,
             AnuncioCriacaoComEnderecoDTO dto,
             ViaCepService.DadosCEP dadosCEP,
-            NominatimService.Coordenadas coordenadas
+            ResultadoGeocoding geocoding
     ) {
         return Endereco.builder()
                 .usuario(usuario)
@@ -448,22 +448,19 @@ public class AnuncioService {
                 .bairro(dadosCEP.bairro())
                 .cidade(dadosCEP.cidade())
                 .uf(dadosCEP.uf())
-                .latitude(BigDecimal.valueOf(coordenadas.latitude()))
-                .longitude(BigDecimal.valueOf(coordenadas.longitude()))
+                .latitude(geocoding.latitude())
+                .longitude(geocoding.longitude())
+                .precisaoLocalizacao(geocoding.precisao())
                 .principal(false)
                 .build();
     }
 
-    private NominatimService.Coordenadas obterCoordenadasDoEndereco(
+    private ResultadoGeocoding obterCoordenadasDoEndereco(
             ViaCepService.DadosCEP dadosCEP,
             AnuncioCriacaoComEnderecoDTO dto
     ) {
-        try {
-            String enderecoCompleto = montarEnderecoCompleto(dadosCEP, dto.getNumero());
-            return nominatimService.buscarCoordenadasPorEndereco(enderecoCompleto);
-        } catch (Exception e) {
-            return new NominatimService.Coordenadas(0.0, 0.0);
-        }
+        String enderecoCompleto = montarEnderecoCompleto(dadosCEP, dto.getNumero());
+        return geocodingHibridoService.obterCoordenadasPorEndereco(enderecoCompleto);
     }
 
     private String montarEnderecoCompleto(ViaCepService.DadosCEP dadosCEP, String numero) {

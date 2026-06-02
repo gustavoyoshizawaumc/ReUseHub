@@ -13,8 +13,19 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 
+/**
+ * @deprecated Substituido pelo {@link TomTomGeocodingService} (orquestrado por
+ * {@link GeocodingHibridoService}) a partir da PR E.2 (junho/2026). O Nominatim
+ * mostrou falhas frequentes em endereços brasileiros (Suzano, regiões rurais,
+ * loteamentos novos), gerando coordenadas {@code (0,0)} silenciosamente.
+ *
+ * <p>Este service permanece no projeto por enquanto como ponto de retomada caso
+ * o TomTom precise ser substituído ou complementado. Não é mais injetado por
+ * nenhum service do fluxo principal.
+ */
 @Slf4j
 @Service
+@Deprecated(forRemoval = false, since = "PR E.2")
 public class NominatimService {
 
     private static final String RECURSO_ENDERECO = "endereco";
