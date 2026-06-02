@@ -143,10 +143,13 @@ public class ChatService {
                     : conversa.getRemetente();
 
             InteresseTroca interesse = interesseTrocaRepository
-                    .findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusOrderByCriadoEmDesc(
+                    .findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusInOrderByCriadoEmDesc(
                             anuncioId,
                             UUID.fromString(interessadoId),
-                            InteresseTroca.StatusInteresse.ACEITO
+                            List.of(
+                                    InteresseTroca.StatusInteresse.ACEITO,
+                                    InteresseTroca.StatusInteresse.CANCELADO
+                            )
                     )
                     .orElse(null);
 
@@ -162,22 +165,29 @@ public class ChatService {
                         anuncio.getStatus().name(),
                         null,
                         null,
+                        null,
+                        false,
                         false,
                         false,
                         false,
                         usuarioJaAvaliou,
+                        false,
                         chatFechado
                 );
             }
 
             boolean usuarioEhDono = usuarioAtualId.equals(donoId);
             boolean usuarioEhInteressado = usuarioAtualId.equals(interesse.getInteressado().getId().toString());
+            boolean negociacaoCancelada = interesse.getStatus() == InteresseTroca.StatusInteresse.CANCELADO;
+            chatFechado = chatFechado || negociacaoCancelada;
             boolean podeMarcarEntregue = usuarioEhDono
+                    && !negociacaoCancelada
                     && interesse.getEntreguePeloDonoEm() == null
                     && interesse.getRecebimentoConfirmadoEm() == null
                     && anuncio.getStatus() == Anuncio.StatusAnuncio.ATIVO
                     && !chatFechado;
             boolean podeConfirmarRecebimento = usuarioEhInteressado
+                    && !negociacaoCancelada
                     && interesse.getEntreguePeloDonoEm() != null
                     && interesse.getRecebimentoConfirmadoEm() == null
                     && anuncio.getStatus() == Anuncio.StatusAnuncio.RESERVADO
@@ -185,16 +195,25 @@ public class ChatService {
             boolean podeAvaliar = (usuarioEhDono || usuarioEhInteressado)
                     && anuncio.getStatus() == Anuncio.StatusAnuncio.CONCLUIDO
                     && !usuarioJaAvaliou;
+            boolean podeCancelarNegociacao = (usuarioEhDono || usuarioEhInteressado)
+                    && !negociacaoCancelada
+                    && interesse.getStatus() == InteresseTroca.StatusInteresse.ACEITO
+                    && interesse.getRecebimentoConfirmadoEm() == null
+                    && anuncio.getStatus() != Anuncio.StatusAnuncio.CONCLUIDO
+                    && !chatFechado;
 
             return new FechamentoNegociacao(
                     interesse.getId().toString(),
                     anuncio.getStatus().name(),
                     interesse.getEntreguePeloDonoEm(),
                     interesse.getRecebimentoConfirmadoEm(),
+                    interesse.getCanceladoEm(),
                     podeMarcarEntregue,
                     podeConfirmarRecebimento,
+                    podeCancelarNegociacao,
                     podeAvaliar,
                     usuarioJaAvaliou,
+                    negociacaoCancelada,
                     chatFechado
             );
         } catch (IllegalArgumentException e) {
@@ -243,7 +262,9 @@ public class ChatService {
         }
 
         try {
-            return avaliacaoRepository.existsByAnuncioId(UUID.fromString(conversa.getAnuncioId()));
+            String usuarioReferencia = conversa.getRemetente();
+            return avaliacaoRepository.existsByAnuncioId(UUID.fromString(conversa.getAnuncioId()))
+                    || resolverFechamento(conversa, usuarioReferencia).negociacaoCancelada();
         } catch (IllegalArgumentException e) {
             return false;
         }
@@ -278,14 +299,20 @@ public class ChatService {
             String statusAnuncio,
             LocalDateTime entreguePeloDonoEm,
             LocalDateTime recebimentoConfirmadoEm,
+            LocalDateTime canceladoEm,
             boolean podeMarcarEntregue,
             boolean podeConfirmarRecebimento,
+            boolean podeCancelarNegociacao,
             boolean podeAvaliarOutroUsuario,
             boolean usuarioJaAvaliou,
+            boolean negociacaoCancelada,
             boolean chatFechado
     ) {
         static FechamentoNegociacao vazio() {
-            return new FechamentoNegociacao(null, null, null, null, false, false, false, false, false);
+            return new FechamentoNegociacao(
+                    null, null, null, null, null,
+                    false, false, false, false, false, false, false
+            );
         }
     }
 
@@ -382,10 +409,13 @@ public class ChatService {
                 fechamento.statusAnuncio(),
                 fechamento.entreguePeloDonoEm(),
                 fechamento.recebimentoConfirmadoEm(),
+                fechamento.canceladoEm(),
                 fechamento.podeMarcarEntregue(),
                 fechamento.podeConfirmarRecebimento(),
+                fechamento.podeCancelarNegociacao(),
                 fechamento.podeAvaliarOutroUsuario(),
                 fechamento.usuarioJaAvaliou(),
+                fechamento.negociacaoCancelada(),
                 fechamento.chatFechado(),
                 mensagens
         );
@@ -438,10 +468,13 @@ public class ChatService {
                 fechamento.statusAnuncio(),
                 fechamento.entreguePeloDonoEm(),
                 fechamento.recebimentoConfirmadoEm(),
+                fechamento.canceladoEm(),
                 fechamento.podeMarcarEntregue(),
                 fechamento.podeConfirmarRecebimento(),
+                fechamento.podeCancelarNegociacao(),
                 fechamento.podeAvaliarOutroUsuario(),
                 fechamento.usuarioJaAvaliou(),
+                fechamento.negociacaoCancelada(),
                 fechamento.chatFechado(),
                 mensagens
         );
@@ -482,10 +515,13 @@ public class ChatService {
                 fechamento.statusAnuncio(),
                 fechamento.entreguePeloDonoEm(),
                 fechamento.recebimentoConfirmadoEm(),
+                fechamento.canceladoEm(),
                 fechamento.podeMarcarEntregue(),
                 fechamento.podeConfirmarRecebimento(),
+                fechamento.podeCancelarNegociacao(),
                 fechamento.podeAvaliarOutroUsuario(),
                 fechamento.usuarioJaAvaliou(),
+                fechamento.negociacaoCancelada(),
                 fechamento.chatFechado(),
                 mensagens
         );
@@ -540,10 +576,13 @@ public class ChatService {
                             fechamento.statusAnuncio(),
                             fechamento.entreguePeloDonoEm(),
                             fechamento.recebimentoConfirmadoEm(),
+                            fechamento.canceladoEm(),
                             fechamento.podeMarcarEntregue(),
                             fechamento.podeConfirmarRecebimento(),
+                            fechamento.podeCancelarNegociacao(),
                             fechamento.podeAvaliarOutroUsuario(),
                             fechamento.usuarioJaAvaliou(),
+                            fechamento.negociacaoCancelada(),
                             fechamento.chatFechado(),
                             ultimaMensagem,
                             ultimaAtualizacao,

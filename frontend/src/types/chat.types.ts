@@ -27,10 +27,13 @@ export interface Conversa {
   statusAnuncio?: string | null;
   entreguePeloDonoEm?: string | null;
   recebimentoConfirmadoEm?: string | null;
+  canceladoEm?: string | null;
   podeMarcarEntregue?: boolean;
   podeConfirmarRecebimento?: boolean;
+  podeCancelarNegociacao?: boolean;
   podeAvaliarOutroUsuario?: boolean;
   usuarioJaAvaliou?: boolean;
+  negociacaoCancelada?: boolean;
   chatFechado?: boolean;
   ultimaMensagem?: string;
   dataUltimaAtualizacao?: string;
@@ -54,10 +57,13 @@ export interface ConversaDetalhe {
   statusAnuncio?: string | null;
   entreguePeloDonoEm?: string | null;
   recebimentoConfirmadoEm?: string | null;
+  canceladoEm?: string | null;
   podeMarcarEntregue?: boolean;
   podeConfirmarRecebimento?: boolean;
+  podeCancelarNegociacao?: boolean;
   podeAvaliarOutroUsuario?: boolean;
   usuarioJaAvaliou?: boolean;
+  negociacaoCancelada?: boolean;
   chatFechado?: boolean;
   mensagens: Mensagem[];
 }

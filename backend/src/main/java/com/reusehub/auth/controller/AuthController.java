@@ -39,6 +39,11 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/reativar-conta")
+    public ResponseEntity<AuthResponse> reativarConta(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.reativarConta(request));
+    }
+
     @GetMapping("/minha-conta")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UsuarioRespostaDTO> obterPerfil(Authentication authentication) {
@@ -82,6 +87,13 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deletarConta(Authentication authentication) {
         authService.deletarContaPorEmail(authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/minha-conta/desativar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> desativarConta(Authentication authentication) {
+        authService.desativarContaPorEmail(authentication.getName());
         return ResponseEntity.noContent().build();
     }
 

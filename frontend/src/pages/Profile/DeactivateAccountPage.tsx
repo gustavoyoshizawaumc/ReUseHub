@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, CirclePower, Info, ShieldAlert } from "lucide-react";
 import { Footer } from "../../components/Footer";
 import { Header } from "../../components/Header";
 import { authService } from "../../services/authService";
 
-const CONFIRMACAO = "DELETAR MINHA CONTA";
+const CONFIRMACAO = "DESATIVAR MINHA CONTA";
 
 const Spinner: React.FC = () => (
   <div className="flex items-center justify-center">
@@ -13,23 +13,23 @@ const Spinner: React.FC = () => (
   </div>
 );
 
-export const DeleteAccountPage: React.FC = () => {
+export const DeactivateAccountPage: React.FC = () => {
   const navigate = useNavigate();
   const [confirmacao, setConfirmacao] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleDeleteAccount = async () => {
+  const handleDeactivateAccount = async () => {
     if (confirmacao !== CONFIRMACAO) return;
 
     setLoading(true);
     setError("");
 
     try {
-      await authService.deleteAccount();
-      navigate("/");
+      await authService.deactivateAccount();
+      navigate("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao deletar conta");
+      setError(err instanceof Error ? err.message : "Erro ao desativar conta");
       setLoading(false);
     }
   };
@@ -50,24 +50,23 @@ export const DeleteAccountPage: React.FC = () => {
 
           <div className="mb-7 md:mb-10">
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-              Excluir conta
+              Desativar conta
             </h1>
             <p className="mt-2 text-slate-500">
-              Esta opcao e definitiva. Use a desativacao se pretende voltar depois.
+              Sua conta fica pausada e pode ser reativada depois com seu e-mail e senha.
             </p>
           </div>
 
-          <div className="mb-7 flex gap-4 rounded-lg border-2 border-red-100 bg-red-50 p-4 sm:mb-10 sm:p-6">
-            <div className="shrink-0 rounded-lg bg-red-100 p-3 text-red-600">
-              <AlertTriangle size={24} />
+          <div className="mb-7 flex gap-4 rounded-lg border border-orange-100 bg-orange-50 p-4 sm:mb-10 sm:p-6">
+            <div className="shrink-0 rounded-lg bg-orange-100 p-3 text-orange-700">
+              <Info size={22} />
             </div>
             <div>
-              <h2 className="mb-1 text-lg font-bold text-red-800">Acao irreversivel</h2>
-              <p className="text-sm leading-relaxed text-red-700/80">
-                Seus dados pessoais serao anonimizados e o acesso sera encerrado permanentemente.
-                Registros tecnicos necessarios para manter o historico de negociacoes e avaliacoes
-                permanecem sem identificar voce. Negociacoes em andamento precisam ser concluidas
-                ou canceladas antes.
+              <h2 className="mb-1 font-bold text-orange-900">O que acontece ao desativar</h2>
+              <p className="text-sm leading-relaxed text-orange-800/80">
+                Seus anuncios ativos e solicitacoes pendentes serao cancelados. Seu historico fica
+                preservado e voce pode voltar pelo login. Negociacoes em andamento precisam ser
+                concluidas ou canceladas antes.
               </p>
             </div>
           </div>
@@ -93,7 +92,7 @@ export const DeleteAccountPage: React.FC = () => {
                 value={confirmacao}
                 onChange={(event) => setConfirmacao(event.target.value)}
                 placeholder="Digite aqui..."
-                className="w-full rounded-lg border-2 border-slate-100 bg-slate-50/50 px-5 py-4 font-mono text-[16px] font-bold text-slate-800 outline-none transition-all placeholder:font-sans placeholder:font-medium focus:border-red-500 focus:ring-4 focus:ring-red-50"
+                className="w-full rounded-lg border-2 border-slate-100 bg-slate-50/50 px-5 py-4 font-mono text-[16px] font-bold text-slate-800 outline-none transition-all placeholder:font-sans placeholder:font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-50"
               />
             </div>
 
@@ -105,11 +104,11 @@ export const DeleteAccountPage: React.FC = () => {
                 Manter minha conta
               </button>
               <button
-                onClick={handleDeleteAccount}
+                onClick={handleDeactivateAccount}
                 disabled={loading || confirmacao !== CONFIRMACAO}
-                className="flex-[1.5] flex items-center justify-center gap-2 rounded-lg bg-red-600 py-4 font-bold text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex-[1.5] flex items-center justify-center gap-2 rounded-lg bg-orange-600 py-4 font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-30"
               >
-                {loading ? <Spinner /> : <><Trash2 size={20} /> Excluir permanentemente</>}
+                {loading ? <Spinner /> : <><CirclePower size={20} /> Desativar conta</>}
               </button>
             </div>
           </div>

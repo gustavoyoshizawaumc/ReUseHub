@@ -77,4 +77,13 @@ public class InteresseTrocaController {
         String email = authentication.getName();
         return ResponseEntity.ok(interesseTrocaService.confirmarRecebimento(id, email));
     }
+
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<InteresseRespostaDTO> cancelar(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(interesseTrocaService.cancelarNegociacao(id, email));
+    }
 }

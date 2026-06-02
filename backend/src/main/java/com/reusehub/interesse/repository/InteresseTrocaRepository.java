@@ -2,6 +2,7 @@ package com.reusehub.interesse.repository;
 
 import com.reusehub.interesse.model.InteresseTroca;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,6 +35,12 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             InteresseTroca.StatusInteresse status
     );
 
+    Optional<InteresseTroca> findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusInOrderByCriadoEmDesc(
+            UUID anuncioId,
+            UUID interessadoId,
+            List<InteresseTroca.StatusInteresse> statuses
+    );
+
     /**
      * Conta interesses enviados pelo usuario agrupados pela categoria do anuncio desejado.
      * Cada linha retornada e um par {@code [categoriaId (Integer), quantidade (Long)]}.
@@ -48,4 +55,34 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
     List<Object[]> contarInteressesPorCategoria(@Param("usuarioId") UUID usuarioId);
 
     long countByInteressadoId(UUID usuarioId);
+
+    @Query(value = """
+            select exists (
+                select 1
+                from interesses_troca interesse
+                join anuncios desejado on desejado.id = interesse.anuncio_id
+                left join anuncios oferecido on oferecido.id = interesse.anuncio_oferecido_id
+                where interesse.status = 'ACEITO'
+                  and interesse.recebimento_confirmado_em is null
+                  and (
+                    interesse.usuario_interessado_id = :usuarioId
+                    or desejado.usuario_id = :usuarioId
+                    or oferecido.usuario_id = :usuarioId
+                  )
+            )
+            """, nativeQuery = true)
+    boolean existsNegociacaoEmAndamento(@Param("usuarioId") UUID usuarioId);
+
+    @Modifying
+    @Query(value = """
+            update interesses_troca
+            set status = 'CANCELADO'
+            where status = 'PENDENTE'
+              and (
+                usuario_interessado_id = :usuarioId
+                or anuncio_id in (select id from anuncios where usuario_id = :usuarioId)
+                or anuncio_oferecido_id in (select id from anuncios where usuario_id = :usuarioId)
+              )
+            """, nativeQuery = true)
+    int cancelarPendentesRelacionadosAoUsuario(@Param("usuarioId") UUID usuarioId);
 }

@@ -51,6 +51,16 @@ public class Usuario extends BaseEntity {
     @Builder.Default
     private Boolean banido = false;
 
+    @Column(name = "conta_excluida", nullable = false)
+    @Builder.Default
+    private Boolean contaExcluida = false;
+
+    @Column(name = "desativado_em")
+    private LocalDateTime desativadoEm;
+
+    @Column(name = "excluido_em")
+    private LocalDateTime excluidoEm;
+
     @Column(name = "email_verificado")
     @Builder.Default
     private Boolean isVerified = false;

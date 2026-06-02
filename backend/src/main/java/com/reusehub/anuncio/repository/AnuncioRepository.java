@@ -4,11 +4,13 @@ import com.reusehub.anuncio.model.Anuncio;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -147,6 +149,20 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
     Page<Anuncio> findAnunciosAtivosOrdenadosPorRelevancia(Pageable pageable);
 
     long countByUsuarioIdAndStatus(UUID usuarioId, Anuncio.StatusAnuncio status);
+
+    boolean existsByUsuarioIdAndStatus(UUID usuarioId, Anuncio.StatusAnuncio status);
+
+    @Modifying
+    @Query("""
+            update Anuncio a
+            set a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.CANCELADO
+            where a.usuario.id = :usuarioId
+              and a.status in :statuses
+            """)
+    int cancelarPublicacoesDoUsuario(
+            @Param("usuarioId") UUID usuarioId,
+            @Param("statuses") Collection<Anuncio.StatusAnuncio> statuses
+    );
 
     List<Anuncio> findTop5ByOrderByTotalVisualizacoesDesc();
 
