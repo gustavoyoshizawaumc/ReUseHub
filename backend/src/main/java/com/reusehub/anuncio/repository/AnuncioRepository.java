@@ -97,12 +97,15 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             AND (
                 :lat IS NULL OR :lng IS NULL OR :raioKm IS NULL
                 OR (
-                    6371 * acos(
-                        cos(radians(:lat)) * cos(radians(e.latitude)) *
-                        cos(radians(e.longitude) - radians(:lng)) +
-                        sin(radians(:lat)) * sin(radians(e.latitude))
-                    )
-                ) <= :raioKm
+                    e.latitude IS NOT NULL AND e.longitude IS NOT NULL
+                    AND (
+                        6371 * acos(
+                            cos(radians(:lat)) * cos(radians(e.latitude)) *
+                            cos(radians(e.longitude) - radians(:lng)) +
+                            sin(radians(:lat)) * sin(radians(e.latitude))
+                        )
+                    ) <= :raioKm
+                )
             )
         ) as sub
 
