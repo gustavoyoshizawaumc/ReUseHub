@@ -7,6 +7,7 @@ import { Footer } from "../../components/Footer";
 import { AlertCircle, ArrowLeft, Edit3, Loader2, MapPin, Search } from "lucide-react";
 import { buscarEnderecoPorCEP } from "../../services/viaCepService";
 import { GerenciadorDeImagens, type SelecaoDeImagens } from "../../components/GerenciadorDeImagens";
+import { useCategorias } from "../../hooks/useCategorias";
 
 const QUANTIDADE_MINIMA_IMAGENS = 3;
 const QUANTIDADE_MAXIMA_IMAGENS = 5;
@@ -51,6 +52,12 @@ export const EditarAnuncioPage: React.FC = () => {
     novasImagens: [],
     totalFinal: 0,
   });
+
+  const {
+    categorias,
+    carregando: carregandoCategorias,
+    erro: erroCategorias,
+  } = useCategorias();
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -234,32 +241,20 @@ export const EditarAnuncioPage: React.FC = () => {
                   className={inputClass + " cursor-pointer"}
                   value={categoriaId}
                   onChange={(e) => setCategoriaId(e.target.value)}
+                  disabled={carregandoCategorias || categorias.length === 0}
                 >
-                  <option value="">Selecione...</option>
-                  <option value="1">Imóveis</option>
-                  <option value="2">Autos</option>
-                  <option value="3">Autopeças</option>
-                  <option value="4">Celulares e Telefonia</option>
-                  <option value="5">Casa, Decoração e Utensílios</option>
-                  <option value="6">Esportes e Fitness</option>
-                  <option value="7">Serviços</option>
-                  <option value="8">Moda e Beleza</option>
-                  <option value="9">Artigos Infantis</option>
-                  <option value="10">Animais de Estimação</option>
-                  <option value="11">Música e Hobbies</option>
-                  <option value="12">Agro e Indústria</option>
-                  <option value="13">Vagas de Emprego</option>
-                  <option value="14">Comércio</option>
-                  <option value="15">Câmeras e Drones</option>
-                  <option value="16">Games</option>
-                  <option value="17">TVs e Vídeo</option>
-                  <option value="18">Áudio</option>
-                  <option value="19">Informática</option>
-                  <option value="20">Eletro</option>
-                  <option value="21">Móveis</option>
-                  <option value="22">Materiais de Construção</option>
-                  <option value="23">Escritório e Home Office</option>
+                  <option value="">
+                    {carregandoCategorias ? "Carregando..." : "Selecione..."}
+                  </option>
+                  {categorias.map((categoria) => (
+                    <option key={categoria.id} value={categoria.id}>
+                      {categoria.nome}
+                    </option>
+                  ))}
                 </select>
+                {erroCategorias && (
+                  <p className="text-red-500 text-xs font-semibold ml-1">{erroCategorias}</p>
+                )}
               </div>
 
               <div className="md:col-span-2 space-y-2">
