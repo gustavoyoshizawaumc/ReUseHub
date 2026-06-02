@@ -44,6 +44,7 @@ import type { UsuarioRespostaDTO } from "../types/auth.types";
 import { OperationalHeader } from "./OperationalHeader";
 import { isUsuarioOperacional } from "../utils/perfil";
 import { API_BASE_URL } from "../config/api";
+import { registrarBusca } from "../utils/ultimasBuscas";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -209,7 +210,15 @@ export const Header: React.FC = () => {
     return `${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`;
   };
 
-  const navegarParaBusca = (params: URLSearchParams) => {
+  const navegarParaBusca = (params: URLSearchParams, rotuloBusca?: string) => {
+    const termoEfetivo = params.get("termo") ?? rotuloBusca ?? "";
+    const categoriaIdRaw = params.get("categoriaId");
+    const categoriaId = categoriaIdRaw ? Number(categoriaIdRaw) : null;
+
+    // Registra apenas buscas significativas (termo nao vazio).
+    // O proprio registrarBusca aplica TAMANHO_MINIMO_TERMO como guarda.
+    registrarBusca(termoEfetivo, categoriaId);
+
     const query = params.toString();
     navigate(query ? `/anuncios?${query}` : "/anuncios");
   };
@@ -349,7 +358,7 @@ export const Header: React.FC = () => {
                   key={cat.label}
                   onClick={() => {
                     setActiveCategory(cat.categoriaId);
-                    navegarParaBusca(criarParamsBusca(undefined, cat.categoriaId));
+                    navegarParaBusca(criarParamsBusca(undefined, cat.categoriaId), cat.label);
                   }}
                   className={`flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-b-2 px-1 pb-1 transition-colors sm:w-[78px] sm:px-2 ${
                     activeCategory === cat.categoriaId ? "border-reusehub-blue text-reusehub-blue font-bold" : "border-transparent text-slate-400 font-bold hover:text-reusehub-blue"

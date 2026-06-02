@@ -1,4 +1,5 @@
 import { tokenExpirado } from "./jwt";
+import { limparUltimasBuscas } from "./ultimasBuscas";
 
 /**
  * Side effect isolado de "encerrar sessao": limpa credenciais locais
@@ -26,6 +27,9 @@ export function encerrarSessao(): void {
 
   window.localStorage.removeItem(CHAVE_TOKEN);
   window.localStorage.removeItem(CHAVE_USUARIO);
+
+  // Evita vazamento de historico de buscas entre contas no mesmo browser.
+  limparUltimasBuscas();
 
   // Evita "loop" se o usuario ja estiver na tela de login.
   if (window.location.pathname !== ROTA_LOGIN) {
