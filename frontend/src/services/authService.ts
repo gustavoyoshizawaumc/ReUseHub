@@ -7,6 +7,7 @@
 } from "../types/auth.types";
 import { apiUrl } from "../config/api";
 import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
+import { limparUltimasBuscas } from "../utils/ultimasBuscas";
 
 const API_URL = apiUrl("/api/auth");
 
@@ -150,11 +151,13 @@ export const authService = {
 
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    limparUltimasBuscas();
   },
 
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    limparUltimasBuscas();
   },
 
   getToken: (): string | null => {
