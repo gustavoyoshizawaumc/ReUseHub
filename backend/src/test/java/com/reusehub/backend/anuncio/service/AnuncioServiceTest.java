@@ -26,8 +26,9 @@ import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.anuncio.dto.ResultadoGeocoding;
+import com.reusehub.anuncio.service.GeocodingHibridoService;
 import com.reusehub.anuncio.service.LocalizacaoService;
-import com.reusehub.anuncio.service.NominatimService;
 import com.reusehub.moderacao.service.ModeracaoService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,14 +60,14 @@ class AnuncioServiceTest {
     private static final String CEP_VALIDO = "01001-000";
     private static final int QUANTIDADE_MINIMA_IMAGENS = 3;
     private static final int QUANTIDADE_MAXIMA_IMAGENS = 5;
-    private static final double LATITUDE_SAO_PAULO = -23.55;
-    private static final double LONGITUDE_SAO_PAULO = -46.63;
+    private static final BigDecimal LATITUDE_SAO_PAULO = new BigDecimal("-23.55");
+    private static final BigDecimal LONGITUDE_SAO_PAULO = new BigDecimal("-46.63");
 
     private static final ViaCepService.DadosCEP DADOS_CEP_PADRAO = new ViaCepService.DadosCEP(
             CEP_VALIDO, "Rua A", "Bairro B", "Cidade C", "SP"
     );
-    private static final NominatimService.Coordenadas COORDENADAS_PADRAO =
-            new NominatimService.Coordenadas(LATITUDE_SAO_PAULO, LONGITUDE_SAO_PAULO);
+    private static final ResultadoGeocoding RESULTADO_GEOCODING_PADRAO =
+            ResultadoGeocoding.geocodificado(LATITUDE_SAO_PAULO, LONGITUDE_SAO_PAULO);
 
     @Mock
     private AnuncioRepository anuncioRepository;
@@ -86,7 +88,7 @@ class AnuncioServiceTest {
     @Mock
     private LocalizacaoService localizacaoService;
     @Mock
-    private NominatimService nominatimService;
+    private GeocodingHibridoService geocodingHibridoService;
     @Mock
     private ModeracaoService moderacaoService;
     @Mock
@@ -156,8 +158,8 @@ class AnuncioServiceTest {
     private void prepararResolucaoEnderecoComSucesso() {
         Mockito.when(viaCepService.buscarDadosCEP(Mockito.anyString()))
                 .thenReturn(DADOS_CEP_PADRAO);
-        Mockito.when(nominatimService.buscarCoordenadasPorEndereco(Mockito.anyString()))
-                .thenReturn(COORDENADAS_PADRAO);
+        Mockito.when(geocodingHibridoService.obterCoordenadasPorEndereco(Mockito.anyString()))
+                .thenReturn(RESULTADO_GEOCODING_PADRAO);
         Mockito.when(enderecoRepository.save(Mockito.any(Endereco.class)))
                 .thenAnswer(i -> i.getArgument(0));
     }
