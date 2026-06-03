@@ -292,18 +292,19 @@ class AnuncioServiceTest {
     class ObterAnuncioCenarios {
 
         @Test
-        @DisplayName("deve obter anúncio ATIVO publicamente com sucesso")
-        void obterAtivoComSucesso() {
+        @DisplayName("deve obter anúncio ATIVO sem incrementar contador")
+        void obterAtivoSemIncrementarContador() {
             anuncioPendente.setStatus(Anuncio.StatusAnuncio.ATIVO);
             UUID validId = anuncioPendente.getId();
             assertNotNull(validId);
-            
+
             Mockito.when(anuncioRepository.findById(validId)).thenReturn(Optional.of(anuncioPendente));
 
             AnuncioRespostaDTO resultado = anuncioService.obterAnuncioPorId(validId, null);
 
             assertNotNull(resultado);
-            assertEquals(1, anuncioPendente.getTotalVisualizacoes());
+            assertEquals(0, anuncioPendente.getTotalVisualizacoes(),
+                    "GET nao deve incrementar; tracking acontece via POST dedicado com dedupe");
         }
 
         @Test
