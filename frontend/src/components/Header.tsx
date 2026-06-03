@@ -71,7 +71,7 @@ const CATEGORIES_BAR = [
   { icon: Armchair, label: "Moveis", categoriaId: 21 },
   { icon: Hammer, label: "Construcao", categoriaId: 22 },
   { icon: Building2, label: "Escritorio", categoriaId: 23 },
-];
+].sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 
 const Logo: React.FC = () => (
   <span className="font-bold text-[18px] leading-none select-none tracking-tight font-plus-jakarta-sans sm:text-[20px]">
