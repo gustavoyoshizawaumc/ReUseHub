@@ -15,7 +15,7 @@ import {
   Power,
   Trash2,
 } from "lucide-react";
-import { API_BASE_URL } from "../../config/api";
+import { obterUrlImagem } from "../../utils/imagens";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -61,11 +61,7 @@ export const ProfilePage: React.FC = () => {
                   <div className="relative">
                     <div className="w-40 h-40 bg-white p-2 rounded-full shadow-lg overflow-hidden flex items-center justify-center">
                       <img
-                        src={
-                          usuario.avatarUrl
-                            ? `${API_BASE_URL}${usuario.avatarUrl}`
-                            : DEFAULT_AVATAR
-                        }
+                        src={obterUrlImagem(usuario.avatarUrl, DEFAULT_AVATAR) ?? DEFAULT_AVATAR}
                         alt={usuario.name}
                         className="w-full h-full rounded-full object-cover border-4 border-slate-50"
                         onError={(e) => {
