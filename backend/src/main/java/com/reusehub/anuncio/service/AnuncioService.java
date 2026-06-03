@@ -86,15 +86,16 @@ public class AnuncioService {
         }
     }
 
+    /**
+     * Apenas le o anuncio. Tracking de visualizacao acontece via
+     * {@code POST /api/anuncios/{id}/visualizacao} (RegistroVisualizacaoService).
+     */
     public AnuncioRespostaDTO obterAnuncioPorId(UUID id, String emailUsuario) {
         Anuncio anuncio = buscarAnuncioPorId(id);
 
         if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
             validarAcessoAnuncioInativo(anuncio, emailUsuario);
         }
-
-        anuncio.setTotalVisualizacoes(anuncio.getTotalVisualizacoes() + 1);
-        anuncioRepository.save(anuncio);
 
         return mapearParaRespostaDTO(anuncio);
     }
