@@ -28,31 +28,54 @@ public interface VisualizacaoAnuncioRepository extends JpaRepository<Visualizaca
     /**
      * Camada 1 (usuario logado): existe visualizacao deste usuario neste anuncio
      * a partir de {@code limiteInferior}?
+     *
+     * <p>Usa {@code @Query} JPQL explicita em vez de derived query porque
+     * o nome derivado {@code existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter}
+     * pode ser interpretado de forma ambigua (ex: {@code Em} no meio de
+     * {@code VisualizadoEm}). Manter SQL explicito elimina a ambiguidade.
      */
-    boolean existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(
-            UUID usuarioId,
-            UUID anuncioId,
-            LocalDateTime limiteInferior
+    @Query("""
+            select (count(v) > 0) from VisualizacaoAnuncio v
+            where v.usuario.id = :usuarioId
+              and v.anuncio.id = :anuncioId
+              and v.visualizadoEm > :limiteInferior
+            """)
+    boolean existeVisualizacaoRecenteDeUsuario(
+            @Param("usuarioId") UUID usuarioId,
+            @Param("anuncioId") UUID anuncioId,
+            @Param("limiteInferior") LocalDateTime limiteInferior
     );
 
     /**
      * Camada 2 (anonimo identificado): existe visualizacao deste anon_id neste
      * anuncio a partir de {@code limiteInferior}?
      */
-    boolean existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(
-            String anonId,
-            UUID anuncioId,
-            LocalDateTime limiteInferior
+    @Query("""
+            select (count(v) > 0) from VisualizacaoAnuncio v
+            where v.anonId = :anonId
+              and v.anuncio.id = :anuncioId
+              and v.visualizadoEm > :limiteInferior
+            """)
+    boolean existeVisualizacaoRecenteDeAnonimo(
+            @Param("anonId") String anonId,
+            @Param("anuncioId") UUID anuncioId,
+            @Param("limiteInferior") LocalDateTime limiteInferior
     );
 
     /**
      * Camada 3 (fallback por IP): existe visualizacao deste IP neste anuncio
      * a partir de {@code limiteInferior}?
      */
-    boolean existsByIpAddressAndAnuncioIdAndVisualizadoEmAfter(
-            String ipAddress,
-            UUID anuncioId,
-            LocalDateTime limiteInferior
+    @Query("""
+            select (count(v) > 0) from VisualizacaoAnuncio v
+            where v.ipAddress = :ipAddress
+              and v.anuncio.id = :anuncioId
+              and v.visualizadoEm > :limiteInferior
+            """)
+    boolean existeVisualizacaoRecenteDeIp(
+            @Param("ipAddress") String ipAddress,
+            @Param("anuncioId") UUID anuncioId,
+            @Param("limiteInferior") LocalDateTime limiteInferior
     );
 
     /**
