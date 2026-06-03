@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Anuncio } from "../../types/anuncio.types";
+import type { OrigemVisualizacao } from "../../services/visualizacaoService";
 import { authService } from "../../services/authService";
 import { DenunciaAnuncioModal } from "../denuncia/DenunciaAnuncioModal";
 
@@ -27,6 +28,12 @@ interface CardAnuncioProps {
   variant?: "list" | "grid";
   isFavorito?: boolean;
   onToggleFavorito?: (id: string) => void | Promise<void>;
+  /**
+   * Origem registrada quando o usuario clicar pra abrir o anuncio
+   * (tracking de visualizacao - PR D.2). Quando indefinida, a navegacao
+   * nao envia origem e o destino cai em LINK_DIRETO.
+   */
+  origem?: OrigemVisualizacao;
 }
 
 const getCondicaoColor = (condicao: string) => {
@@ -76,6 +83,7 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   variant = "list",
   isFavorito = false,
   onToggleFavorito,
+  origem,
 }) => {
   const navigate = useNavigate();
   const [modalDenunciaAberto, setModalDenunciaAberto] = React.useState(false);
@@ -89,7 +97,10 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
 
   const handlePrimaryAction = () => {
     if (anuncio.status === "ATIVO") {
-      navigate(`/anuncios/${anuncio.id}`);
+      navigate(
+        `/anuncios/${anuncio.id}`,
+        origem ? { state: { origem } } : undefined
+      );
       return;
     }
     navigate("/meus-anuncios");

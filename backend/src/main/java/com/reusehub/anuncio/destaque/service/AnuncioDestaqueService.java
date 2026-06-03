@@ -6,6 +6,7 @@ import com.reusehub.anuncio.dto.AnuncioRespostaDTO;
 import com.reusehub.anuncio.mapper.AnuncioRespostaMapper;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.anuncio.visualizacao.repository.VisualizacaoAnuncioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -14,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -48,6 +49,7 @@ public class AnuncioDestaqueService {
     private final AnuncioRepository anuncioRepository;
     private final AnuncioRespostaMapper anuncioRespostaMapper;
     private final CategoriaEmDestaqueService categoriaEmDestaqueService;
+    private final VisualizacaoAnuncioRepository visualizacaoAnuncioRepository;
 
     /**
      * Executa o contexto solicitado e devolve ate {@code size} anuncios ja
@@ -138,6 +140,7 @@ public class AnuncioDestaqueService {
             return List.of();
         }
         LocalDateTime agora = LocalDateTime.now();
+        Map<UUID, Integer> visualizacoesRecentesPorAnuncio = carregarVisualizacoesRecentes(candidatos, agora);
 
         record AnuncioComScore(Anuncio anuncio, BigDecimal score) {
         }
@@ -149,9 +152,10 @@ public class AnuncioDestaqueService {
                                 contexto,
                                 anuncio.getCriadoEm(),
                                 agora,
-                                Optional.ofNullable(anuncio.getTotalVisualizacoes()).orElse(0),
-                                Optional.ofNullable(anuncio.getUsuario().getReputationScore())
-                                        .orElse(BigDecimal.ZERO),
+                                visualizacoesRecentesPorAnuncio.getOrDefault(anuncio.getId(), 0),
+                                anuncio.getUsuario().getReputationScore() != null
+                                        ? anuncio.getUsuario().getReputationScore()
+                                        : BigDecimal.ZERO,
                                 afinidadePorCategoria.getOrDefault(
                                         anuncio.getCategoria().getId(),
                                         BigDecimal.ZERO
@@ -170,5 +174,25 @@ public class AnuncioDestaqueService {
                         item.score()
                 ))
                 .toList();
+    }
+
+    /**
+     * Agrega visualizacoes da janela recente para o conjunto de candidatos
+     * em uma unica query (evita N+1 no ranqueamento).
+     *
+     * <p>Anuncios sem visualizacoes na janela ficam ausentes do map; o caller
+     * usa {@code getOrDefault(0)} ao consultar.
+     */
+    private Map<UUID, Integer> carregarVisualizacoesRecentes(List<Anuncio> candidatos, LocalDateTime agora) {
+        List<UUID> ids = candidatos.stream().map(Anuncio::getId).toList();
+        LocalDateTime limiteInferior = agora.minusDays(ConfiguracaoDestaque.JANELA_VISUALIZACOES_DIAS);
+
+        Map<UUID, Integer> total = new HashMap<>();
+        for (Object[] linha : visualizacaoAnuncioRepository.contarPorAnuncioDesde(ids, limiteInferior)) {
+            UUID anuncioId = (UUID) linha[0];
+            long quantidade = ((Number) linha[1]).longValue();
+            total.put(anuncioId, Math.toIntExact(quantidade));
+        }
+        return total;
     }
 }

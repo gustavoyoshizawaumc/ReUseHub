@@ -167,6 +167,24 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             @Param("statuses") Collection<Anuncio.StatusAnuncio> statuses
     );
 
+    /**
+     * Incrementa atomicamente o contador rapido {@code totalVisualizacoes}.
+     * Usado pelo RegistroVisualizacaoService apos persistir um evento valido.
+     *
+     * <p>Operacao de uma unica UPDATE: evita race condition de "ler + somar + salvar"
+     * que apareceria caso usassemos {@code anuncio.setTotalVisualizacoes(n + 1)} em
+     * dois requests simultaneos.
+     *
+     * @return numero de linhas atualizadas (1 quando o anuncio existe, 0 caso contrario)
+     */
+    @Modifying
+    @Query("""
+            update Anuncio a
+            set a.totalVisualizacoes = coalesce(a.totalVisualizacoes, 0) + 1
+            where a.id = :anuncioId
+            """)
+    int incrementarTotalVisualizacoes(@Param("anuncioId") UUID anuncioId);
+
     List<Anuncio> findTop5ByOrderByTotalVisualizacoesDesc();
 
     @Query("SELECT a FROM Anuncio a WHERE a.status = 'ATIVO' " +

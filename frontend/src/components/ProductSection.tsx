@@ -2,17 +2,24 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Heart, ImageIcon, MapPin } from "lucide-react";
 import type { Anuncio, AnuncioDestaque } from "../types/anuncio.types";
+import type { OrigemVisualizacao } from "../services/visualizacaoService";
 
 interface ProductSectionProps {
   titulo: string;
   anuncios: AnuncioDestaque[];
   linkVerTodos: string | null;
+  /**
+   * Origem registrada quando o usuario clicar num card desta secao
+   * (tracking de visualizacao - PR D.2). Default: {@code CARD_HOME}.
+   */
+  origem?: OrigemVisualizacao;
 }
 
 export const ProductSection: React.FC<ProductSectionProps> = ({
   titulo,
   anuncios,
   linkVerTodos,
+  origem = "CARD_HOME",
 }) => {
   const navigate = useNavigate();
 
@@ -43,7 +50,11 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
           <CardDeAnuncio
             key={destaque.anuncio.id}
             anuncio={destaque.anuncio}
-            onClick={() => navigate(`/anuncios/${destaque.anuncio.id}`)}
+            onClick={() =>
+              navigate(`/anuncios/${destaque.anuncio.id}`, {
+                state: { origem },
+              })
+            }
           />
         ))}
       </div>

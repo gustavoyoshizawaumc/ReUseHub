@@ -1,8 +1,10 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import * as anuncioService from "../../services/anuncioService";
 import { iniciarConversa } from "../../services/chatService";
 import type { Anuncio } from "../../types/anuncio.types";
+import type { OrigemVisualizacao } from "../../services/visualizacaoService";
+import { useRegistrarVisualizacao } from "../../hooks/useRegistrarVisualizacao";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { InteresseModal } from "../../components/interesse/InteresseModal";
@@ -35,6 +37,16 @@ const BASE_URL = API_BASE_URL;
 export const DetalhesAnuncioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Quem chega via card preenche state.origem (CARD_HOME, BUSCA_RESULTADO,
+  // FAVORITO, etc). Sem state = entrada direta (URL, refresh, bookmark, link
+  // compartilhado): cai no LINK_DIRETO.
+  const origemVisualizacao: OrigemVisualizacao =
+    (location.state as { origem?: OrigemVisualizacao } | null)?.origem ?? "LINK_DIRETO";
+
+  useRegistrarVisualizacao(id, origemVisualizacao);
+
   const [anuncio, setAnuncio] = useState<Anuncio | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
