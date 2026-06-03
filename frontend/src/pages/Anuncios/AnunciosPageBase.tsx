@@ -555,6 +555,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                       variant={exibindoMeusAnuncios ? "list" : "grid"}
                       isFavorito={ehFavorito(anuncio.id)}
                       onToggleFavorito={handleToggleFavorito}
+                      origem={exibindoMeusAnuncios ? undefined : "BUSCA_RESULTADO"}
                     />
                   </div>
                 ))}
