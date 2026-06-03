@@ -93,7 +93,9 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   const statusConfig = getStatusConfig(anuncio.status);
   const StatusIcon = statusConfig.icon;
   const user = authService.getUser();
-  const podeDenunciar = anuncio.status === "ATIVO" && user?.id !== anuncio.usuarioId;
+  const ehDono = user?.id === anuncio.usuarioId;
+  const podeDenunciar = anuncio.status === "ATIVO" && !ehDono;
+  const podeFavoritar = !ehDono;
 
   const handlePrimaryAction = () => {
     if (anuncio.status === "ATIVO") {
@@ -139,17 +141,19 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
               {anuncio.tipo === "DOACAO" ? "Doacao" : "Troca"}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleToggleFavorito}
-            className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-lg shadow-sm backdrop-blur transition-all ${
-              isFavorito ? "bg-rose-50 text-rose-500" : "bg-white/95 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
-            }`}
-            title="Favoritar anuncio"
-            aria-pressed={isFavorito}
-          >
-            <Heart size={16} fill={isFavorito ? "currentColor" : "none"} />
-          </button>
+          {podeFavoritar && (
+            <button
+              type="button"
+              onClick={handleToggleFavorito}
+              className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-lg shadow-sm backdrop-blur transition-all ${
+                isFavorito ? "bg-rose-50 text-rose-500" : "bg-white/95 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+              }`}
+              title="Favoritar anuncio"
+              aria-pressed={isFavorito}
+            >
+              <Heart size={16} fill={isFavorito ? "currentColor" : "none"} />
+            </button>
+          )}
           {podeDenunciar && (
             <button
               type="button"
@@ -235,18 +239,20 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
         {imageBlock}
         {content}
         <div className="flex shrink-0 justify-end gap-2 md:flex-col md:border-l md:border-slate-100 md:pl-5">
-          <button
-            type="button"
-            onClick={handleToggleFavorito}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg p-3 transition-colors active:scale-[0.99] md:flex-none ${
-              isFavorito ? "bg-rose-50 text-rose-500 hover:bg-rose-100" : "bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
-            }`}
-            title="Favoritar anuncio"
-            aria-pressed={isFavorito}
-          >
-            <span className="text-xs font-bold md:hidden">{isFavorito ? "Favoritado" : "Favoritar"}</span>
-            <Heart size={18} fill={isFavorito ? "currentColor" : "none"} />
-          </button>
+          {podeFavoritar && (
+            <button
+              type="button"
+              onClick={handleToggleFavorito}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg p-3 transition-colors active:scale-[0.99] md:flex-none ${
+                isFavorito ? "bg-rose-50 text-rose-500 hover:bg-rose-100" : "bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-500"
+              }`}
+              title="Favoritar anuncio"
+              aria-pressed={isFavorito}
+            >
+              <span className="text-xs font-bold md:hidden">{isFavorito ? "Favoritado" : "Favoritar"}</span>
+              <Heart size={18} fill={isFavorito ? "currentColor" : "none"} />
+            </button>
+          )}
 
           <button
             type="button"
