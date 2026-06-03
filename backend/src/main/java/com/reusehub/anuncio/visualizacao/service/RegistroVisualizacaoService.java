@@ -105,17 +105,17 @@ public class RegistroVisualizacaoService {
 
         // Prioridade: usuario logado > anon_id > IP
         if (usuarioLogado.isPresent()) {
-            return visualizacaoRepository.existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(
+            return visualizacaoRepository.existeVisualizacaoRecenteDeUsuario(
                     usuarioLogado.get().getId(), comando.anuncioId(), limiteInferior
             );
         }
         if (comando.anonId() != null && !comando.anonId().isBlank()) {
-            return visualizacaoRepository.existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(
+            return visualizacaoRepository.existeVisualizacaoRecenteDeAnonimo(
                     comando.anonId(), comando.anuncioId(), limiteInferior
             );
         }
         if (comando.ipAddress() != null && !comando.ipAddress().isBlank()) {
-            return visualizacaoRepository.existsByIpAddressAndAnuncioIdAndVisualizadoEmAfter(
+            return visualizacaoRepository.existeVisualizacaoRecenteDeIp(
                     comando.ipAddress(), comando.anuncioId(), limiteInferior
             );
         }

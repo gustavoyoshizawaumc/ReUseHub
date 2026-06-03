@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Heart, ImageIcon, MapPin } from "lucide-react";
 import type { Anuncio, AnuncioDestaque } from "../types/anuncio.types";
 import type { OrigemVisualizacao } from "../services/visualizacaoService";
+import { useFavoritos } from "../hooks/useFavoritos";
 
 interface ProductSectionProps {
   titulo: string;
@@ -22,10 +23,25 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
   origem = "CARD_HOME",
 }) => {
   const navigate = useNavigate();
+  const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
 
   if (anuncios.length === 0) {
     return null;
   }
+
+  const handleToggleFavorito = async (anuncioId: string) => {
+    if (!possuiUsuarioAutenticado) {
+      navigate("/login");
+      return;
+    }
+    try {
+      await alternarFavorito(anuncioId);
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Erro ao atualizar favoritos."
+      );
+    }
+  };
 
   return (
     <section className="max-w-[1200px] mx-auto px-3 py-7 sm:px-4 sm:py-10">
@@ -50,6 +66,8 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
           <CardDeAnuncio
             key={destaque.anuncio.id}
             anuncio={destaque.anuncio}
+            ehFavorito={ehFavorito(destaque.anuncio.id)}
+            onToggleFavorito={() => handleToggleFavorito(destaque.anuncio.id)}
             onClick={() =>
               navigate(`/anuncios/${destaque.anuncio.id}`, {
                 state: { origem },
@@ -64,10 +82,17 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
 
 interface CardDeAnuncioProps {
   anuncio: Anuncio;
+  ehFavorito: boolean;
+  onToggleFavorito: () => void;
   onClick: () => void;
 }
 
-const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({ anuncio, onClick }) => {
+const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
+  anuncio,
+  ehFavorito,
+  onToggleFavorito,
+  onClick,
+}) => {
   const cidade = anuncio.cidade ?? anuncio.endereco?.cidade ?? "";
   const uf = anuncio.uf ?? anuncio.endereco?.uf ?? "";
   const localizacao = [cidade, uf].filter(Boolean).join(", ");
@@ -75,10 +100,17 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({ anuncio, onClick }) => {
   const ehDoacao = anuncio.tipo === "DOACAO";
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:border-blue-200 text-left"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      className="group flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:border-blue-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
     >
       <div className="relative aspect-square w-full">
         <div
@@ -109,12 +141,22 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({ anuncio, onClick }) => {
           {ehDoacao ? "Doação" : "Troca"}
         </span>
 
-        <span
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/70 bg-white/95 text-slate-300 backdrop-blur-sm sm:right-3 sm:top-3"
-          aria-hidden="true"
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorito();
+          }}
+          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/70 bg-white/95 backdrop-blur-sm transition-colors sm:right-3 sm:top-3 ${
+            ehFavorito
+              ? "text-rose-500 hover:bg-rose-50"
+              : "text-slate-300 hover:text-rose-500"
+          }`}
+          aria-label={ehFavorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          aria-pressed={ehFavorito}
         >
-          <Heart size={14} fill="currentColor" />
-        </span>
+          <Heart size={14} fill={ehFavorito ? "currentColor" : "none"} />
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col px-3 pb-4 sm:px-4 sm:pb-5">
@@ -140,7 +182,7 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({ anuncio, onClick }) => {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };
 

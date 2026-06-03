@@ -131,7 +131,7 @@ class RegistroVisualizacaoServiceTest {
         void dedupeBloqueia() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
             when(usuarioRepository.findByEmail(EMAIL_VISITANTE)).thenReturn(Optional.of(visitanteFake));
-            when(visualizacaoRepository.existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeUsuario(
                     eq(VISITANTE_ID), eq(ANUNCIO_ID), any(LocalDateTime.class)
             )).thenReturn(true);
 
@@ -146,7 +146,7 @@ class RegistroVisualizacaoServiceTest {
         void dedupeLiberaPrimeira() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
             when(usuarioRepository.findByEmail(EMAIL_VISITANTE)).thenReturn(Optional.of(visitanteFake));
-            when(visualizacaoRepository.existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeUsuario(
                     eq(VISITANTE_ID), eq(ANUNCIO_ID), any(LocalDateTime.class)
             )).thenReturn(false);
 
@@ -165,7 +165,7 @@ class RegistroVisualizacaoServiceTest {
         @DisplayName("usa anon_id quando nao ha usuario logado")
         void anonIdComoChave() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
-            when(visualizacaoRepository.existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeAnonimo(
                     eq(ANON_ID), eq(ANUNCIO_ID), any(LocalDateTime.class)
             )).thenReturn(false);
 
@@ -173,7 +173,7 @@ class RegistroVisualizacaoServiceTest {
 
             // confirma que NAO consultou camada 1 (sem usuario)
             verify(visualizacaoRepository, never())
-                    .existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(any(), any(), any());
+                    .existeVisualizacaoRecenteDeUsuario(any(), any(), any());
             verify(visualizacaoRepository, times(1)).save(any());
             verify(anuncioRepository, times(1)).incrementarTotalVisualizacoes(ANUNCIO_ID);
         }
@@ -182,7 +182,7 @@ class RegistroVisualizacaoServiceTest {
         @DisplayName("bloqueia quando ja existe visualizacao do mesmo anon_id em menos de 1h")
         void dedupeAnonimoBloqueia() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
-            when(visualizacaoRepository.existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeAnonimo(
                     eq(ANON_ID), eq(ANUNCIO_ID), any(LocalDateTime.class)
             )).thenReturn(true);
 
@@ -201,16 +201,16 @@ class RegistroVisualizacaoServiceTest {
         @DisplayName("usa IP quando nao ha JWT nem anon_id")
         void ipComoChave() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
-            when(visualizacaoRepository.existsByIpAddressAndAnuncioIdAndVisualizadoEmAfter(
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeIp(
                     eq(IP), eq(ANUNCIO_ID), any(LocalDateTime.class)
             )).thenReturn(false);
 
             service.registrarSeValido(comando(null, null, IP));
 
             verify(visualizacaoRepository, never())
-                    .existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(any(), any(), any());
+                    .existeVisualizacaoRecenteDeUsuario(any(), any(), any());
             verify(visualizacaoRepository, never())
-                    .existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(anyString(), any(), any());
+                    .existeVisualizacaoRecenteDeAnonimo(anyString(), any(), any());
             verify(visualizacaoRepository, times(1)).save(any());
         }
 
@@ -218,7 +218,7 @@ class RegistroVisualizacaoServiceTest {
         @DisplayName("bloqueia quando ja existe visualizacao do mesmo IP em menos de 1h")
         void dedupeIpBloqueia() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
-            when(visualizacaoRepository.existsByIpAddressAndAnuncioIdAndVisualizadoEmAfter(
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeIp(
                     eq(IP), eq(ANUNCIO_ID), any(LocalDateTime.class)
             )).thenReturn(true);
 
@@ -237,7 +237,7 @@ class RegistroVisualizacaoServiceTest {
         @DisplayName("persiste a origem exatamente como recebida no comando")
         void origemPersistida() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
-            when(visualizacaoRepository.existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(any(), any(), any()))
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeAnonimo(any(), any(), any()))
                     .thenReturn(false);
 
             service.registrarSeValido(new RegistroVisualizacaoComando(
@@ -259,7 +259,7 @@ class RegistroVisualizacaoServiceTest {
         void anonIdIgnoradoQuandoLogado() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
             when(usuarioRepository.findByEmail(EMAIL_VISITANTE)).thenReturn(Optional.of(visitanteFake));
-            when(visualizacaoRepository.existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(any(), any(), any()))
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeUsuario(any(), any(), any()))
                     .thenReturn(false);
 
             service.registrarSeValido(comando(EMAIL_VISITANTE, ANON_ID, IP));
@@ -276,7 +276,7 @@ class RegistroVisualizacaoServiceTest {
         @DisplayName("incrementa Anuncio.totalVisualizacoes exatamente uma vez por visualizacao valida")
         void contadorIncrementadoUmaVez() {
             when(anuncioRepository.findById(ANUNCIO_ID)).thenReturn(Optional.of(anuncioFake));
-            when(visualizacaoRepository.existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(any(), any(), any()))
+            when(visualizacaoRepository.existeVisualizacaoRecenteDeAnonimo(any(), any(), any()))
                     .thenReturn(false);
 
             service.registrarSeValido(comando(null, ANON_ID, IP));
