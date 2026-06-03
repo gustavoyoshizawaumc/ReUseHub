@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @ComponentScan(basePackages = "com.reusehub")
 @EnableJpaRepositories(basePackages = {
     "com.reusehub.anuncio.repository",
+    "com.reusehub.anuncio.visualizacao.repository",
     "com.reusehub.auth.repository",
     "com.reusehub.interesse.repository",
     "com.reusehub.avaliacao.repository",
@@ -20,6 +21,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 })
 @EntityScan(basePackages = {
     "com.reusehub.anuncio.model",
+    "com.reusehub.anuncio.visualizacao.model",
     "com.reusehub.auth.model",
     "com.reusehub.interesse.model",
     "com.reusehub.avaliacao.model",
