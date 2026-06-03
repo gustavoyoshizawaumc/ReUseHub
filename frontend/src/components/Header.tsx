@@ -300,7 +300,7 @@ export const Header: React.FC = () => {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-2 shadow-lg shadow-slate-200/60 animate-in fade-in zoom-in duration-150 origin-top-right">
+                <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-2 shadow-xl shadow-black/40 animate-in fade-in zoom-in duration-150 origin-top-right">
                   <div className="px-4 py-3 border-b border-slate-50 mb-1">
                     <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest text-left">Sua Conta</p>
                     <p className="text-sm font-bold text-slate-900 truncate text-left">{user.name}</p>
