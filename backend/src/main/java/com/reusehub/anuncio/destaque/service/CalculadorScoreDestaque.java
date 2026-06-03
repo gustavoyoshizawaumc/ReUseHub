@@ -13,11 +13,13 @@ import java.util.Map;
  * de um anuncio. Recebe um snapshot ja resolvido (sem lazy loading);
  * portanto e 100% testavel via {@code assertEquals}, sem mocks.
  *
- * <p><strong>Nota tecnica:</strong> {@code totalVisualizacoes} e uma metrica
- * global e simples, incrementada a cada abertura de detalhes de anuncio.
- * Nao representa "visualizacao qualificada" por usuario unico. Adequada
- * para a fase atual; evoluir quando houver instrumentacao de eventos
- * (futura entidade {@code VisualizacaoAnuncio}).
+ * <p><strong>Nota tecnica (PR D.2):</strong> o parametro nomeado
+ * {@code totalVisualizacoes} semanticamente representa visualizacoes em
+ * janela temporal ({@link ConfiguracaoDestaque#JANELA_VISUALIZACOES_DIAS} dias),
+ * nao o total historico. Mantemos o nome do parametro por compatibilidade
+ * com os testes existentes, mas o caller (AnuncioDestaqueService) agora passa
+ * a agregacao da tabela {@code visualizacoes_anuncio} via
+ * {@link com.reusehub.anuncio.visualizacao.repository.VisualizacaoAnuncioRepository}.
  */
 public final class CalculadorScoreDestaque {
 

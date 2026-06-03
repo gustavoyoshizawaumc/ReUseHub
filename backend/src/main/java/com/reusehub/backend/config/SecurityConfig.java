@@ -72,6 +72,11 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, ROTAS_LEITURA_PUBLICA).permitAll()
                         .requestMatchers(HttpMethod.HEAD, ROTAS_LEITURA_PUBLICA).permitAll()
+
+                        // Tracking de visualizacao aceita anonimos (PR D.2).
+                        // O service aplica regras anti-fraude (dono, dedupe) internamente.
+                        .requestMatchers(HttpMethod.POST, "/api/anuncios/*/visualizacao").permitAll()
+
                         .requestMatchers("/static/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/uploads/**").permitAll()

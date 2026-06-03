@@ -46,8 +46,20 @@ public final class ConfiguracaoDestaque {
     /** Meia-vida do decaimento exponencial da recencia (em dias). */
     public static final int HALFLIFE_DIAS = 14;
 
-    /** Teto considerado "popularidade maxima" para a normalizacao logaritmica. */
+    /**
+     * Teto considerado "popularidade maxima" para a normalizacao logaritmica.
+     * Aplicado sobre {@link #JANELA_VISUALIZACOES_DIAS} dias (nao mais sobre
+     * visualizacoes acumuladas historicas, que ficavam infladas em anuncios
+     * antigos sem refletir interesse atual).
+     */
     public static final int TETO_VISUALIZACOES = 1000;
+
+    /**
+     * Janela temporal usada para medir popularidade no score. Visualizacoes
+     * fora dessa janela nao contam: anuncio em alta esta semana sobe, anuncio
+     * com views acumuladas em meses cai naturalmente.
+     */
+    public static final int JANELA_VISUALIZACOES_DIAS = 7;
 
     /** Nota maxima da reputacao do anunciante (range historico 0..5). */
     public static final BigDecimal NOTA_MAXIMA = new BigDecimal("5.0");
