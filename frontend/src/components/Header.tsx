@@ -49,29 +49,29 @@ import { registrarBusca } from "../utils/ultimasBuscas";
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 const CATEGORIES_BAR = [
-  { icon: Building2, label: "Imoveis", categoriaId: 1 },
+  { icon: Building2, label: "Imóveis", categoriaId: 1 },
   { icon: Car, label: "Autos", categoriaId: 2 },
-  { icon: Cog, label: "Autopecas", categoriaId: 3 },
+  { icon: Cog, label: "Autopeças", categoriaId: 3 },
   { icon: Smartphone, label: "Celulares", categoriaId: 4 },
   { icon: CookingPot, label: "Casa", categoriaId: 5 },
   { icon: Dumbbell, label: "Esportes", categoriaId: 6 },
-  { icon: Briefcase, label: "Servicos", categoriaId: 7 },
+  { icon: Briefcase, label: "Serviços", categoriaId: 7 },
   { icon: Shirt, label: "Moda", categoriaId: 8 },
   { icon: Baby, label: "Infantil", categoriaId: 9 },
   { icon: PawPrint, label: "Pets", categoriaId: 10 },
   { icon: Music, label: "Hobbies", categoriaId: 11 },
   { icon: Bike, label: "Agro", categoriaId: 12 },
-  { icon: Store, label: "Comercio", categoriaId: 14 },
-  { icon: Camera, label: "Cameras", categoriaId: 15 },
+  { icon: Store, label: "Comércio", categoriaId: 14 },
+  { icon: Camera, label: "Câmeras", categoriaId: 15 },
   { icon: Gamepad2, label: "Games", categoriaId: 16 },
   { icon: Tv, label: "TVs", categoriaId: 17 },
-  { icon: Headphones, label: "Audio", categoriaId: 18 },
-  { icon: Laptop, label: "Informatica", categoriaId: 19 },
+  { icon: Headphones, label: "Áudio", categoriaId: 18 },
+  { icon: Laptop, label: "Informática", categoriaId: 19 },
   { icon: Zap, label: "Eletro", categoriaId: 20 },
-  { icon: Armchair, label: "Moveis", categoriaId: 21 },
-  { icon: Hammer, label: "Construcao", categoriaId: 22 },
-  { icon: Building2, label: "Escritorio", categoriaId: 23 },
-];
+  { icon: Armchair, label: "Móveis", categoriaId: 21 },
+  { icon: Hammer, label: "Construção", categoriaId: 22 },
+  { icon: Building2, label: "Escritório", categoriaId: 23 },
+].sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 
 const Logo: React.FC = () => (
   <span className="font-bold text-[18px] leading-none select-none tracking-tight font-plus-jakarta-sans sm:text-[20px]">
