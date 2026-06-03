@@ -1,0 +1,140 @@
+package com.reusehub.anuncio.visualizacao.service;
+
+import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
+import com.reusehub.anuncio.model.Anuncio;
+import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.anuncio.visualizacao.dto.RegistroVisualizacaoComando;
+import com.reusehub.anuncio.visualizacao.model.VisualizacaoAnuncio;
+import com.reusehub.anuncio.visualizacao.repository.VisualizacaoAnuncioRepository;
+import com.reusehub.auth.model.Usuario;
+import com.reusehub.auth.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Persiste eventos de visualizacao de anuncio com regras anti-fraude.
+ *
+ * <p>Pipeline (em ordem):
+ * <ol>
+ *   <li>Carrega o anuncio (404 se nao existe).</li>
+ *   <li>Resolve o {@link Usuario} a partir do email autenticado, se houver.</li>
+ *   <li>Se o solicitante e o dono do anuncio, descarta silenciosamente.</li>
+ *   <li>Aplica dedupe de 1h usando a chave mais especifica disponivel
+ *       (usuario_id &gt; anon_id &gt; ip_address).</li>
+ *   <li>Persiste o evento e incrementa atomicamente
+ *       {@code Anuncio.totalVisualizacoes} na mesma transacao.</li>
+ * </ol>
+ *
+ * <p>O service nunca lanca exceção a partir do passo 3: descartar (dono ou dedupe)
+ * e {@code return} silencioso. Quem chama (controller) sempre responde 204,
+ * para nao revelar a logica anti-fraude ao cliente.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RegistroVisualizacaoService {
+
+    /**
+     * Janela de tempo dentro da qual visualizacoes repetidas do mesmo
+     * usuario/anon/IP no mesmo anuncio contam como uma so.
+     */
+    static final Duration JANELA_DEDUPE = Duration.ofHours(1);
+
+    private static final String RECURSO_ANUNCIO = "anuncio";
+
+    private final VisualizacaoAnuncioRepository visualizacaoRepository;
+    private final AnuncioRepository anuncioRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    @Transactional
+    public void registrarSeValido(RegistroVisualizacaoComando comando) {
+        Anuncio anuncio = carregarAnuncio(comando.anuncioId());
+        Optional<Usuario> usuarioLogado = resolverUsuarioLogado(comando.emailUsuario());
+
+        if (eDono(anuncio, usuarioLogado)) {
+            log.debug("Visualizacao descartada (dono) anuncio={}", anuncio.getId());
+            return;
+        }
+
+        if (existeVisualizacaoRecente(comando, usuarioLogado)) {
+            log.debug("Visualizacao descartada (dedupe 1h) anuncio={}", anuncio.getId());
+            return;
+        }
+
+        VisualizacaoAnuncio visualizacao = montarRegistro(comando, anuncio, usuarioLogado);
+        visualizacaoRepository.save(visualizacao);
+        anuncioRepository.incrementarTotalVisualizacoes(anuncio.getId());
+    }
+
+    // ------------------------------------------------------------------------
+    // Etapas internas (cada metodo com uma responsabilidade)
+    // ------------------------------------------------------------------------
+
+    private Anuncio carregarAnuncio(UUID anuncioId) {
+        return anuncioRepository.findById(anuncioId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        RECURSO_ANUNCIO, anuncioId.toString()
+                ));
+    }
+
+    private Optional<Usuario> resolverUsuarioLogado(String emailUsuario) {
+        if (emailUsuario == null || emailUsuario.isBlank()) {
+            return Optional.empty();
+        }
+        return usuarioRepository.findByEmail(emailUsuario);
+    }
+
+    private boolean eDono(Anuncio anuncio, Optional<Usuario> usuarioLogado) {
+        return usuarioLogado
+                .map(u -> u.getId().equals(anuncio.getUsuario().getId()))
+                .orElse(false);
+    }
+
+    private boolean existeVisualizacaoRecente(
+            RegistroVisualizacaoComando comando,
+            Optional<Usuario> usuarioLogado
+    ) {
+        LocalDateTime limiteInferior = LocalDateTime.now().minus(JANELA_DEDUPE);
+
+        // Prioridade: usuario logado > anon_id > IP
+        if (usuarioLogado.isPresent()) {
+            return visualizacaoRepository.existsByUsuarioIdAndAnuncioIdAndVisualizadoEmAfter(
+                    usuarioLogado.get().getId(), comando.anuncioId(), limiteInferior
+            );
+        }
+        if (comando.anonId() != null && !comando.anonId().isBlank()) {
+            return visualizacaoRepository.existsByAnonIdAndAnuncioIdAndVisualizadoEmAfter(
+                    comando.anonId(), comando.anuncioId(), limiteInferior
+            );
+        }
+        if (comando.ipAddress() != null && !comando.ipAddress().isBlank()) {
+            return visualizacaoRepository.existsByIpAddressAndAnuncioIdAndVisualizadoEmAfter(
+                    comando.ipAddress(), comando.anuncioId(), limiteInferior
+            );
+        }
+        // Nenhum identificador valido: a constraint da V15 vai barrar o insert.
+        // Nao deveria acontecer porque o controller sempre extrai pelo menos o IP.
+        return false;
+    }
+
+    private VisualizacaoAnuncio montarRegistro(
+            RegistroVisualizacaoComando comando,
+            Anuncio anuncio,
+            Optional<Usuario> usuarioLogado
+    ) {
+        return VisualizacaoAnuncio.builder()
+                .anuncio(anuncio)
+                .usuario(usuarioLogado.orElse(null))
+                .anonId(usuarioLogado.isEmpty() ? comando.anonId() : null)
+                .ipAddress(comando.ipAddress())
+                .origem(comando.origem())
+                .build();
+    }
+}

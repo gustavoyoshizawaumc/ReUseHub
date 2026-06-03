@@ -38,6 +38,26 @@ export function encerrarSessao(): void {
 }
 
 /**
+ * Obtem o token de autenticacao se ele estiver presente e valido,
+ * sem efeito colateral. Devolve {@code null} quando ausente, expirado
+ * ou corrompido.
+ *
+ * Use este helper em fluxos secundarios (tracking, analytics, etc) que
+ * NAO devem derrubar a sessao caso o token esteja expirado - o pior
+ * cenario aceitavel e a request seguir como anonima.
+ */
+export function obterTokenValidoOuNull(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const token = window.localStorage.getItem(CHAVE_TOKEN);
+  if (token === null || tokenExpirado(token)) {
+    return null;
+  }
+  return token;
+}
+
+/**
  * Obtem o token de autenticacao se ele estiver presente e valido.
  * Se estiver expirado/corrompido, encerra a sessao automaticamente
  * antes de devolver null (evita enviar requests fadadas a 401/403).
@@ -46,16 +66,13 @@ export function encerrarSessao(): void {
  * no lugar de ler localStorage.getItem diretamente.
  */
 export function obterTokenAtivoOuEncerrarSessao(): string | null {
-  if (typeof window === "undefined") {
-    return null;
+  const token = obterTokenValidoOuNull();
+  if (token !== null) {
+    return token;
   }
-  const token = window.localStorage.getItem(CHAVE_TOKEN);
-  if (token === null) {
-    return null;
-  }
-  if (tokenExpirado(token)) {
+  if (typeof window !== "undefined" && window.localStorage.getItem(CHAVE_TOKEN) !== null) {
+    // Token presente mas invalido (expirado/corrompido): encerra sessao.
     encerrarSessao();
-    return null;
   }
-  return token;
+  return null;
 }
