@@ -19,6 +19,12 @@ export MONGO_URI="mongodb+srv://USUARIO:SENHA@cluster.mongodb.net/reusehub?retry
 # Autenticação (JWT)
 export JWT_SECRET="gere_um_segredo_jwt_longo_e_seguro"
 
+# Criptografia dos dados sensiveis em repouso (email, CPF, telefone, nome)
+# OBRIGATORIA em producao: defina uma chave longa e FIXA e nunca a altere
+# depois - mudar a chave torna os dados ja cifrados ilegiveis. Se omitida, o
+# backend usa JWT_SECRET como fallback. Gere com: openssl rand -base64 48
+export DATA_ENCRYPTION_KEY="gere_uma_chave_longa_para_dados_sensiveis"
+
 # Front-End
 export FRONTEND_URL="https://www.reusehub.me"
 
