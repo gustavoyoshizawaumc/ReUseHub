@@ -1,5 +1,7 @@
 package com.reusehub.auth.model;
 
+import com.reusehub.auth.crypto.SensitiveDataCrypto;
+import com.reusehub.auth.crypto.SensitiveStringConverter;
 import com.reusehub.shared.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,19 +20,29 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Usuario extends BaseEntity {
 
-    @Column(name = "nome", nullable = false, length = 100)
+    @Convert(converter = SensitiveStringConverter.class)
+    @Column(name = "nome", nullable = false, columnDefinition = "TEXT")
     private String name;
 
-    @Column(name = "email", nullable = false, length = 150, unique = true)
+    @Convert(converter = SensitiveStringConverter.class)
+    @Column(name = "email", nullable = false, columnDefinition = "TEXT")
     private String email;
 
-    @Column(name = "cpf", nullable = false, length = 11, unique = true)
+    @Column(name = "email_hash", length = 64)
+    private String emailHash;
+
+    @Convert(converter = SensitiveStringConverter.class)
+    @Column(name = "cpf", nullable = false, columnDefinition = "TEXT")
     private String cpf;
+
+    @Column(name = "cpf_hash", length = 64)
+    private String cpfHash;
 
     @Column(name = "senha_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(name = "telefone", length = 20)
+    @Convert(converter = SensitiveStringConverter.class)
+    @Column(name = "telefone", columnDefinition = "TEXT")
     private String phone;
 
     @Column(name = "url_avatar", columnDefinition = "TEXT")
@@ -75,4 +87,11 @@ public class Usuario extends BaseEntity {
     @Column(name = "perfil", nullable = false, length = 50)
     @Builder.Default
     private Perfil perfil = Perfil.USUARIO;
+
+    @PrePersist
+    @PreUpdate
+    private void atualizarIndicesSensiveis() {
+        this.emailHash = SensitiveDataCrypto.emailHash(email);
+        this.cpfHash = SensitiveDataCrypto.cpfHash(cpf);
+    }
 }

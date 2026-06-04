@@ -50,6 +50,12 @@ spring:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
+admin:
+  bootstrap:
+    name: ${ADMIN_BOOTSTRAP_NAME:Administrador}
+    email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+
 aws:
   access-key-id: ${AWS_ACCESS_KEY_ID}
   secret-access-key: ${AWS_SECRET_ACCESS_KEY}
