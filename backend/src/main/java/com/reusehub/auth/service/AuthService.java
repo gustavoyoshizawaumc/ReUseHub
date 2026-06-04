@@ -8,6 +8,7 @@ import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.anuncio.service.StorageService;
+import com.reusehub.auth.crypto.SensitiveDataCrypto;
 import com.reusehub.auth.dto.*;
 import com.reusehub.auth.model.*;
 import com.reusehub.auth.repository.TokenUsuarioRepository;
@@ -45,12 +46,14 @@ public class AuthService {
 
     @Transactional
     public AuthResponse registrar(RegisterRequest request) {
-        validarDuplicidadeCadastro(request.getEmail(), request.getCpf());
+        String emailNormalizado = SensitiveDataCrypto.normalizarEmail(request.getEmail());
+        String cpfNormalizado = SensitiveDataCrypto.normalizarCpf(request.getCpf());
+        validarDuplicidadeCadastro(emailNormalizado, cpfNormalizado);
 
         var usuario = Usuario.builder()
                 .name(request.getName())
-                .cpf(request.getCpf().replaceAll("[^0-9]", ""))
-                .email(request.getEmail())
+                .cpf(cpfNormalizado)
+                .email(emailNormalizado)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .lgpdConsent(request.getLgpdConsent())
@@ -65,11 +68,12 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        var usuario = buscarUsuarioPorEmail(request.getEmail());
+        String emailNormalizado = SensitiveDataCrypto.normalizarEmail(request.getEmail());
+        var usuario = buscarUsuarioPorEmail(emailNormalizado);
         validarUsuarioAtivo(usuario);
 
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(emailNormalizado, request.getPassword())
         );
 
         String token = jwtService.gerarToken(buildUserDetails(usuario));
@@ -78,7 +82,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse reativarConta(LoginRequest request) {
-        Usuario usuario = buscarUsuarioPorEmail(request.getEmail());
+        Usuario usuario = buscarUsuarioPorEmail(SensitiveDataCrypto.normalizarEmail(request.getEmail()));
 
         if (Boolean.TRUE.equals(usuario.getBanido()) || Boolean.TRUE.equals(usuario.getContaExcluida())) {
             throw new RegraNegocioException("Esta conta nao pode ser reativada.");

@@ -1,5 +1,6 @@
 package com.reusehub.auth.repository;
 
+import com.reusehub.auth.crypto.SensitiveDataCrypto;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.model.Perfil;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,14 +13,30 @@ import java.util.UUID;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
-    
-    boolean existsByEmail(String email);
-    
-    boolean existsByCpf(String cpf);
-    
-    Optional<Usuario> findByEmail(String email);
-    
-    Optional<Usuario> findByCpf(String cpf);
+
+    boolean existsByEmailHash(String emailHash);
+
+    boolean existsByCpfHash(String cpfHash);
+
+    Optional<Usuario> findByEmailHash(String emailHash);
+
+    Optional<Usuario> findByCpfHash(String cpfHash);
+
+    default boolean existsByEmail(String email) {
+        return existsByEmailHash(SensitiveDataCrypto.emailHash(email));
+    }
+
+    default boolean existsByCpf(String cpf) {
+        return existsByCpfHash(SensitiveDataCrypto.cpfHash(cpf));
+    }
+
+    default Optional<Usuario> findByEmail(String email) {
+        return findByEmailHash(SensitiveDataCrypto.emailHash(email));
+    }
+
+    default Optional<Usuario> findByCpf(String cpf) {
+        return findByCpfHash(SensitiveDataCrypto.cpfHash(cpf));
+    }
 
     List<Usuario> findTop5ByOrderByReputationScoreDesc();
 
