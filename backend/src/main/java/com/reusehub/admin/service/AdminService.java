@@ -7,6 +7,7 @@ import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
 import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.auth.crypto.SensitiveDataCrypto;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
@@ -48,7 +49,8 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
 
     public AdminUsuarioDTO criarContaInterna(AdminCriarModeradorDTO dto, Perfil perfilPadrao) {
-        if (usuarioRepository.existsByEmail(dto.email())) {
+        String emailNormalizado = SensitiveDataCrypto.normalizarEmail(dto.email());
+        if (usuarioRepository.existsByEmail(emailNormalizado)) {
             throw new IllegalArgumentException("E-mail ja cadastrado.");
         }
 
@@ -60,7 +62,7 @@ public class AdminService {
         Usuario usuario = Usuario.builder()
                 .name(dto.name())
                 .cpf(gerarCpfTecnico())
-                .email(dto.email())
+                .email(emailNormalizado)
                 .passwordHash(passwordEncoder.encode(dto.password()))
                 .lgpdConsent(true)
                 .perfil(perfil)
