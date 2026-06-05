@@ -4,7 +4,7 @@ import { ArrowRight, Heart, ImageIcon, MapPin, Star } from "lucide-react";
 import type { Anuncio, AnuncioDestaque } from "../types/anuncio.types";
 import type { OrigemVisualizacao } from "../services/visualizacaoService";
 import { useFavoritos } from "../hooks/useFavoritos";
-import { useFeedback } from "./feedback/FeedbackProvider";
+import { useFeedback } from "./feedback/feedbackContext";
 
 interface ProductSectionProps {
   titulo: string;

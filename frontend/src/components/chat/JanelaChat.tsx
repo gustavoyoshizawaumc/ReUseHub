@@ -14,7 +14,7 @@ import {
   marcarInteresseComoEntregue,
 } from '../../services/interesseService';
 import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
-import { useFeedback } from '../feedback/FeedbackProvider';
+import { useFeedback } from '../feedback/feedbackContext';
 
 import { API_BASE_URL } from '../../config/api';
 

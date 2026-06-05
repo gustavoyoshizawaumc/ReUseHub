@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Star } from "lucide-react";
 import { criarAvaliacao } from "../../services/avaliacaoService";
-import { useFeedback } from "../feedback/FeedbackProvider";
+import { useFeedback } from "../feedback/feedbackContext";
 
 type AvaliacaoModalProps = {
   open: boolean;

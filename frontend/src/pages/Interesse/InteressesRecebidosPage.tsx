@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   aceitarInteresse,
@@ -8,7 +8,7 @@ import {
 import type { InteresseResposta } from "../../types/interesse.types";
 import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
 import { Header } from "../../components/Header";
-import { useFeedback } from "../../components/feedback/FeedbackProvider";
+import { useFeedback } from "../../components/feedback/feedbackContext";
 import { ImageOff, Star } from "lucide-react";
 
 import { API_BASE_URL } from "../../config/api";
@@ -57,7 +57,7 @@ export const InteressesRecebidosPage: React.FC = () => {
   const [avaliacao, setAvaliacao] = useState<InteresseResposta | null>(null);
   const { notify } = useFeedback();
 
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     try {
       setLoading(true);
       const dados = await listarInteressesRecebidos();
@@ -71,14 +71,14 @@ export const InteressesRecebidosPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [notify]);
 
   useEffect(() => {
     // Fetch inicial da lista de interesses recebidos.
     // setState dentro do effect e aceitavel: sincronizacao com a API.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
-  }, []);
+  }, [carregar]);
 
   const handleAceitar = async (id: string) => {
     try {

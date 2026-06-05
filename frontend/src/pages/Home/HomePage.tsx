@@ -26,9 +26,8 @@ export const HomePage: React.FC = () => {
   const { dados, carregando, erro } = useBootstrapHome();
   const ultimasBuscas = useUltimasBuscasComAnuncios();
   const filtroCep = useMemo(() => extrairFiltroCepDaUrl(searchParams), [searchParams]);
-  const [anunciosPorCep, setAnunciosPorCep] = useState<AnuncioDestaque[]>([]);
-  const [carregandoCep, setCarregandoCep] = useState(false);
-  const [erroCep, setErroCep] = useState<string | null>(null);
+  const chaveFiltroCep = filtroCep ? `${filtroCep.cep}-${filtroCep.raioKm}` : null;
+  const [resultadoCep, setResultadoCep] = useState<ResultadoCepHome | null>(null);
 
   const secoesParaRenderizar = useMemo(
     () => mesclarSecoes(dados, ultimasBuscas.dados),
@@ -37,15 +36,10 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     if (!filtroCep) {
-      setAnunciosPorCep([]);
-      setCarregandoCep(false);
-      setErroCep(null);
       return;
     }
 
     let cancelado = false;
-    setCarregandoCep(true);
-    setErroCep(null);
 
     buscarComFiltros(
       {
@@ -58,21 +52,28 @@ export const HomePage: React.FC = () => {
     )
       .then((resposta) => {
         if (cancelado) return;
-        setAnunciosPorCep(resposta.content.map(transformarEmDestaque));
+        setResultadoCep({
+          chave: chaveFiltroCep,
+          anuncios: resposta.content.map(transformarEmDestaque),
+          erro: null,
+        });
       })
       .catch((err) => {
         if (cancelado) return;
-        setAnunciosPorCep([]);
-        setErroCep(obterMensagemErro(err));
-      })
-      .finally(() => {
-        if (!cancelado) setCarregandoCep(false);
+        setResultadoCep({
+          chave: chaveFiltroCep,
+          anuncios: [],
+          erro: obterMensagemErro(err),
+        });
       });
 
     return () => {
       cancelado = true;
     };
-  }, [filtroCep]);
+  }, [chaveFiltroCep, filtroCep]);
+
+  const resultadoCepAtual = resultadoCep?.chave === chaveFiltroCep ? resultadoCep : null;
+  const carregandoCep = Boolean(chaveFiltroCep && !resultadoCepAtual);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -85,9 +86,9 @@ export const HomePage: React.FC = () => {
           erro={erro}
           secoes={secoesParaRenderizar}
           filtroCep={filtroCep}
-          anunciosPorCep={anunciosPorCep}
+          anunciosPorCep={resultadoCepAtual?.anuncios ?? []}
           carregandoCep={carregandoCep}
-          erroCep={erroCep}
+          erroCep={resultadoCepAtual?.erro ?? null}
         />
       </main>
       <Footer />
@@ -243,6 +244,12 @@ interface FiltroCepHome {
   raioKm: number;
 }
 
+interface ResultadoCepHome {
+  chave: string | null;
+  anuncios: AnuncioDestaque[];
+  erro: string | null;
+}
+
 function extrairFiltroCepDaUrl(searchParams: URLSearchParams): FiltroCepHome | null {
   const cep = searchParams.get("cep")?.replace(/\D/g, "") ?? "";
   if (cep.length !== 8) return null;
@@ -258,10 +265,6 @@ function transformarEmDestaque(anuncio: Anuncio): AnuncioDestaque {
     anuncio,
     scoreDestaque: null,
   };
-}
-
-function formatarCep(cep: string): string {
-  return cep.replace(/^(\d{5})(\d{3})$/, "$1-$2");
 }
 
 function obterMensagemErro(err: unknown): string {

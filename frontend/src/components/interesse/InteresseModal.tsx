@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as anuncioService from "../../services/anuncioService";
 import * as interesseService from "../../services/interesseService";
 import type { Anuncio } from "../../types/anuncio.types";
-import { useFeedback } from "../feedback/FeedbackProvider";
+import { useFeedback } from "../feedback/feedbackContext";
 
 type InteresseModalProps = {
   open: boolean;
