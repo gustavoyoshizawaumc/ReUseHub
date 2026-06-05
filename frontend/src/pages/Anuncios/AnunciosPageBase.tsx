@@ -21,7 +21,7 @@ import { CardAnuncio } from "../../components/anuncios/CardAnuncio";
 import { FiltrosAnuncios } from "../../components/anuncios/FiltrosAnuncios";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
-import { useFeedback } from "../../components/feedback/FeedbackProvider";
+import { useFeedback } from "../../components/feedback/feedbackContext";
 import { useAnuncios } from "../../hooks/useAnuncios";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";

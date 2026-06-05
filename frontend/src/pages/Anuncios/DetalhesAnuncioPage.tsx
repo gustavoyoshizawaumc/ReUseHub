@@ -10,7 +10,7 @@ import { Footer } from "../../components/Footer";
 import { InteresseModal } from "../../components/interesse/InteresseModal";
 import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
 import { DenunciaAnuncioModal } from "../../components/denuncia/DenunciaAnuncioModal";
-import { useFeedback } from "../../components/feedback/FeedbackProvider";
+import { useFeedback } from "../../components/feedback/feedbackContext";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import {
   ArrowLeft,
