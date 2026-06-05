@@ -46,6 +46,7 @@ public class AnuncioRespostaMapper {
                 .atualizadoEm(anuncio.getAtualizadoEm())
                 .usuarioId(anuncio.getUsuario().getId())
                 .nomeUsuario(anuncio.getUsuario().getName())
+                .notaReputacaoUsuario(anuncio.getUsuario().getReputationScore() != null ? anuncio.getUsuario().getReputationScore() : BigDecimal.ZERO)
                 .categoriaId(anuncio.getCategoria().getId())
                 .nomeCategoria(anuncio.getCategoria().getNome())
                 .enderecoId(anuncio.getEndereco().getId())

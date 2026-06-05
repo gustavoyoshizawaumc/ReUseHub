@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as anuncioService from "../../services/anuncioService";
 import * as interesseService from "../../services/interesseService";
 import type { Anuncio } from "../../types/anuncio.types";
+import { useFeedback } from "../feedback/FeedbackProvider";
 
 type InteresseModalProps = {
   open: boolean;
@@ -21,6 +22,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
   const [meusAnuncios, setMeusAnuncios] = useState<Anuncio[]>([]);
   const [loadingAnuncios, setLoadingAnuncios] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { notify } = useFeedback();
 
   const isTroca = anuncio.tipo === "TROCA";
 
@@ -57,12 +59,20 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
 
   const handleSubmit = async () => {
     if (!mensagem.trim()) {
-      alert("Escreva uma mensagem para enviar sua proposta.");
+      notify({
+        variant: "warning",
+        title: "Mensagem obrigatoria",
+        message: "Escreva uma mensagem para enviar sua proposta.",
+      });
       return;
     }
 
     if (isTroca && !anuncioOferecidoId) {
-      alert("Selecione qual anúncio você quer oferecer na troca.");
+      notify({
+        variant: "warning",
+        title: "Escolha um anuncio",
+        message: "Selecione qual anuncio voce quer oferecer na troca.",
+      });
       return;
     }
 
@@ -75,11 +85,19 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
         mensagem: mensagem.trim(),
       });
 
-      alert("Interesse enviado com sucesso!");
+      notify({
+        variant: "success",
+        title: "Interesse enviado",
+        message: "Sua proposta foi enviada ao anunciante.",
+      });
       onClose();
       onSuccess?.();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao enviar interesse");
+      notify({
+        variant: "error",
+        title: "Erro ao enviar interesse",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     } finally {
       setSubmitting(false);
     }

@@ -14,6 +14,7 @@ import {
   marcarInteresseComoEntregue,
 } from '../../services/interesseService';
 import { AvaliacaoModal } from '../avaliacao/AvaliacaoModal';
+import { useFeedback } from '../feedback/FeedbackProvider';
 
 import { API_BASE_URL } from '../../config/api';
 
@@ -39,6 +40,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   const [enviandoMensagem, setEnviandoMensagem] = useState(false);
   const [processandoFechamento, setProcessandoFechamento] = useState(false);
   const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = useState(false);
+  const { notify, confirm } = useFeedback();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const conversaAtivaId = conversaAtiva?.id;
 
@@ -135,7 +137,11 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
       await marcarInteresseComoEntregue(conversaInfo.interesseId);
       await carregarMensagens(true);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erro ao marcar como entregue');
+      notify({
+        variant: 'error',
+        title: 'Erro ao marcar como entregue',
+        message: error instanceof Error ? error.message : 'Tente novamente em alguns instantes.',
+      });
     } finally {
       setProcessandoFechamento(false);
     }
@@ -149,7 +155,11 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
       await confirmarRecebimentoInteresse(conversaInfo.interesseId);
       await carregarMensagens(true);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erro ao confirmar recebimento');
+      notify({
+        variant: 'error',
+        title: 'Erro ao confirmar recebimento',
+        message: error instanceof Error ? error.message : 'Tente novamente em alguns instantes.',
+      });
     } finally {
       setProcessandoFechamento(false);
     }
@@ -157,14 +167,26 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
 
   const handleCancelarNegociacao = async () => {
     if (!conversaInfo.interesseId) return;
-    if (!window.confirm('Deseja cancelar esta negociacao? O historico continuara visivel.')) return;
+    const confirmado = await confirm({
+      variant: 'warning',
+      title: 'Cancelar negociacao?',
+      message: 'O historico continuara visivel para os dois participantes.',
+      confirmLabel: 'Cancelar negociacao',
+      cancelLabel: 'Voltar',
+    });
+
+    if (!confirmado) return;
 
     try {
       setProcessandoFechamento(true);
       await cancelarNegociacaoInteresse(conversaInfo.interesseId);
       await carregarMensagens(true);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erro ao cancelar negociacao');
+      notify({
+        variant: 'error',
+        title: 'Erro ao cancelar negociacao',
+        message: error instanceof Error ? error.message : 'Tente novamente em alguns instantes.',
+      });
     } finally {
       setProcessandoFechamento(false);
     }

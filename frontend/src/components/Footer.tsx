@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export const Footer: React.FC = () => {
   return (
     <footer className="border-t border-slate-800/50 bg-[#0f172a] py-8 text-slate-400">
-      <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 px-4 text-left md:grid-cols-10 md:gap-12">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-6 gap-y-8 px-4 text-left md:grid-cols-10 md:gap-12">
         <div className="col-span-2 flex flex-col items-start md:col-span-4">
           <div className="mb-1">
             <h2 className="text-2xl font-bold">
@@ -140,7 +140,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1200px] px-4">
+      <div className="mx-auto max-w-[1400px] px-4">
         <div className="mt-10 border-t border-slate-800/50 pt-6 text-center text-xs text-slate-500 md:mt-16 md:pt-8">
           &copy; {new Date().getFullYear()} ReUseHub. Todos os direitos
           reservados.

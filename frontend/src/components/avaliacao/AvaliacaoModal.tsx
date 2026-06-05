@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Star } from "lucide-react";
 import { criarAvaliacao } from "../../services/avaliacaoService";
+import { useFeedback } from "../feedback/FeedbackProvider";
 
 type AvaliacaoModalProps = {
   open: boolean;
@@ -22,6 +23,7 @@ export const AvaliacaoModal: React.FC<AvaliacaoModalProps> = ({
   const [nota, setNota] = useState(5);
   const [comentario, setComentario] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { notify } = useFeedback();
 
   const handleSubmit = async () => {
     try {
@@ -32,11 +34,19 @@ export const AvaliacaoModal: React.FC<AvaliacaoModalProps> = ({
         nota,
         comentario: comentario.trim() || undefined,
       });
-      alert("Avaliação enviada com sucesso!");
+      notify({
+        variant: "success",
+        title: "Avaliacao enviada",
+        message: "Obrigado pelo feedback. A reputacao do usuario foi atualizada.",
+      });
       onSuccess?.();
       onClose();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao enviar avaliação");
+      notify({
+        variant: "error",
+        title: "Erro ao enviar avaliacao",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     } finally {
       setSubmitting(false);
     }
