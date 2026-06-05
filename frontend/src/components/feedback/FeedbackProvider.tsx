@@ -23,6 +23,7 @@ interface FeedbackState extends ConfirmOptions {
   mode: "notify" | "confirm";
 }
 
+// 1. Removemos o export daqui, deixando o contexto estritamente interno
 const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
 const variantStyles: Record<FeedbackVariant, {
@@ -149,10 +150,11 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
-export const useFeedback = () => {
+// 2. Criamos e exportamos uma função auxiliar que o Fast Refresh aceita sem reclamar do hook
+export function useFeedback() {
   const context = useContext(FeedbackContext);
   if (!context) {
     throw new Error("useFeedback deve ser usado dentro de FeedbackProvider");
   }
   return context;
-};
+}
