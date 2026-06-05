@@ -216,11 +216,14 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     });
   };
 
-  // Chama o motor de busca com todos os filtros selecionados
+  // Chama o motor de busca com todos os filtros selecionados.
+  // Mescla a busca ativa da URL (termo/categoria) com os filtros da sidebar,
+  // para que aplicar uma ordenacao nao descarte o termo pesquisado.
   const handleFiltrar = async (filtro: BuscaFiltro) => {
     if (exibindoMeusAnuncios) return;
     preservarScroll();
-    await buscarComFiltros(filtro);
+    const filtroBusca = extrairFiltrosDaUrl(searchParams);
+    await buscarComFiltros({ ...filtroBusca, ...filtro });
     restaurarScrollPreservado();
   };
 
