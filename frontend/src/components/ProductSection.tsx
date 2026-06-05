@@ -61,7 +61,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
         {anuncios.map((destaque) => (
           <CardDeAnuncio
             key={destaque.anuncio.id}
@@ -110,11 +110,11 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
           onClick();
         }
       }}
-      className="group flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:border-blue-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-300"
+      className="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition-colors hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
     >
-      <div className="relative aspect-square w-full">
+      <div className="relative h-44 w-full shrink-0 sm:h-48 md:h-44 lg:h-36 xl:h-40">
         <div
-          className={`relative w-full h-full flex items-center justify-center overflow-hidden transition-colors ${
+          className={`relative flex h-full w-full items-center justify-center overflow-hidden transition-colors ${
             ehDoacao ? "bg-green-50" : "bg-blue-50"
           }`}
         >
@@ -125,7 +125,7 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
             <img
               src={urlCapa}
               alt=""
-              className="relative w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="relative h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               onError={(event) => {
                 event.currentTarget.style.display = "none";
               }}
@@ -159,17 +159,19 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col px-3 pb-4 sm:px-4 sm:pb-5">
-        <h3 className="min-h-[2.4rem] break-words pt-2 text-[12px] font-semibold leading-snug text-slate-800 line-clamp-2 sm:text-[13px]">
+      <div className="flex min-h-[128px] flex-1 flex-col px-3 pb-4 sm:min-h-[138px] sm:px-4 sm:pb-5">
+        <h3 className="line-clamp-2 min-h-[2.4rem] break-words pt-2 text-[12px] font-semibold leading-snug text-slate-800 sm:text-[13px]">
           {anuncio.titulo}
         </h3>
 
-        {localizacao && (
-          <p className="mt-1 flex min-w-0 items-center gap-1 truncate text-[10px] text-slate-400">
+        <div className="mt-1 min-h-[1rem]">
+          {localizacao && (
+          <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-slate-400">
             <MapPin size={10} className="text-slate-300" />
             <span className="truncate">{localizacao}</span>
           </p>
-        )}
+          )}
+        </div>
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
           <div className="flex min-w-0 items-center gap-1.5">
