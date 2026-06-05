@@ -13,7 +13,7 @@ export const HomeSkeleton: React.FC = () => (
     {Array.from({ length: QUANTIDADE_SECOES_SKELETON }).map((_, indiceSecao) => (
       <section
         key={indiceSecao}
-        className="max-w-[1200px] mx-auto px-3 py-7 sm:px-4 sm:py-10"
+        className="max-w-[1400px] mx-auto px-3 py-7 sm:px-4 sm:py-10"
       >
         <div className="mb-4 h-5 w-56 rounded bg-slate-200 animate-pulse sm:mb-6" />
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">

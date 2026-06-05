@@ -45,6 +45,7 @@ export interface Anuncio {
   atualizadoEm: string;
   usuarioId: string;
   nomeUsuario: string;
+  notaReputacaoUsuario?: number;
   categoriaId: number;
   nomeCategoria: string;
   enderecoId: string;

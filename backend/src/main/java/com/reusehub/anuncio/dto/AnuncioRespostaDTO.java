@@ -30,6 +30,7 @@ public class AnuncioRespostaDTO {
 
     private UUID usuarioId;
     private String nomeUsuario;
+    private BigDecimal notaReputacaoUsuario;
     private Integer categoriaId;
     private String nomeCategoria;
     private UUID enderecoId;

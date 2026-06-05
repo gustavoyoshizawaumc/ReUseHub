@@ -36,7 +36,7 @@ export const HeroBanner: React.FC = () => {
   }, [slides.length]);
 
   return (
-    <section className="max-w-[1200px] mx-auto px-3 py-4 sm:px-4 sm:py-6">
+    <section className="max-w-[1400px] mx-auto px-3 py-4 sm:px-4 sm:py-6">
       <div className="group relative w-full h-[52vw] min-h-[170px] max-h-[220px] sm:h-[380px] sm:max-h-none rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
         {slides.map((slide, index) => (
           <div

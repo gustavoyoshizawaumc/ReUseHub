@@ -21,11 +21,13 @@ import { ModeracaoPage } from './pages/Moderacao/ModeracaoPage';
 import { ModeratorRoute } from './components/ModeratorRoute';
 import { UserOnlyRoute } from "./components/UserOnlyRoute";
 import { MarketplaceOnlyRoute } from "./components/MarketplaceOnlyRoute";
+import { FeedbackProvider } from "./components/feedback/FeedbackProvider";
 
 function App() {
   return (
     <Router>
-      <Routes>
+      <FeedbackProvider>
+        <Routes>
         <Route
           path="/"
           element={
@@ -204,7 +206,8 @@ function App() {
             </div>
           }
         />
-      </Routes>
+        </Routes>
+      </FeedbackProvider>
     </Router>
   );
 }

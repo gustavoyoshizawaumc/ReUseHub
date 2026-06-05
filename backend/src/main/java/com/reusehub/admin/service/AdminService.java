@@ -8,8 +8,10 @@ import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.auth.crypto.SensitiveDataCrypto;
+import com.reusehub.auth.model.CredencialBloqueada;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
+import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
@@ -43,6 +45,7 @@ public class AdminService {
     private static final UUID UUID_SENTINELA = new UUID(0, 0);
 
     private final UsuarioRepository usuarioRepository;
+    private final CredencialBloqueadaRepository credencialBloqueadaRepository;
     private final AnuncioRepository anuncioRepository;
     private final DenunciaAnuncioRepository denunciaRepository;
     private final HistoricoModeracaoRepository historicoRepository;
@@ -127,6 +130,7 @@ public class AdminService {
         usuario.setIsActive(false);
         usuario.setBanido(true);
         usuario.setDesativadoEm(LocalDateTime.now());
+        registrarBloqueioPermanenteBanimento(usuario);
         return mapearUsuario(usuarioRepository.save(usuario));
     }
 
@@ -322,6 +326,21 @@ public class AdminService {
                 && usuarioRepository.countAtivosNaoBanidosPorPerfil(Perfil.ADMIN) <= 1) {
             throw new RegraNegocioException("Nao e possivel " + acao + " o ultimo administrador ativo.");
         }
+    }
+
+    private void registrarBloqueioPermanenteBanimento(Usuario usuario) {
+        credencialBloqueadaRepository.save(CredencialBloqueada.builder()
+                .emailHash(usuario.getEmailHash() != null
+                        ? usuario.getEmailHash()
+                        : SensitiveDataCrypto.emailHash(usuario.getEmail()))
+                .cpfHash(usuario.getCpfHash() != null
+                        ? usuario.getCpfHash()
+                        : SensitiveDataCrypto.cpfHash(usuario.getCpf()))
+                .motivo(CredencialBloqueada.Motivo.BANIMENTO)
+                .usuarioOrigemId(usuario.getId())
+                .expiraEm(null)
+                .detalhes("Usuario banido por administrador.")
+                .build());
     }
 
     private String gerarCpfTecnico() {

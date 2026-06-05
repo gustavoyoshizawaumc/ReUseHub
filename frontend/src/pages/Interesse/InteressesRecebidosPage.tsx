@@ -8,6 +8,7 @@ import {
 import type { InteresseResposta } from "../../types/interesse.types";
 import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
 import { Header } from "../../components/Header";
+import { useFeedback } from "../../components/feedback/FeedbackProvider";
 import { ImageOff, Star } from "lucide-react";
 
 import { API_BASE_URL } from "../../config/api";
@@ -54,6 +55,7 @@ export const InteressesRecebidosPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [avaliacao, setAvaliacao] = useState<InteresseResposta | null>(null);
+  const { notify } = useFeedback();
 
   const carregar = async () => {
     try {
@@ -61,7 +63,11 @@ export const InteressesRecebidosPage: React.FC = () => {
       const dados = await listarInteressesRecebidos();
       setInteresses(dados);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao carregar interesses");
+      notify({
+        variant: "error",
+        title: "Erro ao carregar solicitacoes",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     } finally {
       setLoading(false);
     }
@@ -88,7 +94,11 @@ export const InteressesRecebidosPage: React.FC = () => {
         });
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao aceitar interesse");
+      notify({
+        variant: "error",
+        title: "Erro ao aceitar interesse",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     } finally {
       setProcessingId(null);
     }
@@ -100,7 +110,11 @@ export const InteressesRecebidosPage: React.FC = () => {
       await recusarInteresse(id);
       await carregar();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao recusar interesse");
+      notify({
+        variant: "error",
+        title: "Erro ao recusar interesse",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     } finally {
       setProcessingId(null);
     }

@@ -66,7 +66,8 @@ export const DeleteAccountPage: React.FC = () => {
               <p className="text-sm leading-relaxed text-red-700/80">
                 Seus dados pessoais serao anonimizados e o acesso sera encerrado permanentemente.
                 Registros tecnicos necessarios para manter o historico de negociacoes e avaliacoes
-                permanecem sem identificar voce. Negociacoes em andamento precisam ser concluidas
+                permanecem sem identificar voce. O recadastro imediato com os mesmos dados fica bloqueado
+                por seguranca. Negociacoes em andamento precisam ser concluidas
                 ou canceladas antes.
               </p>
             </div>

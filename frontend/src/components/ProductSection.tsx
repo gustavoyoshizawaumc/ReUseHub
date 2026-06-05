@@ -1,9 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Heart, ImageIcon, MapPin } from "lucide-react";
+import { ArrowRight, Heart, ImageIcon, MapPin, Star } from "lucide-react";
 import type { Anuncio, AnuncioDestaque } from "../types/anuncio.types";
 import type { OrigemVisualizacao } from "../services/visualizacaoService";
 import { useFavoritos } from "../hooks/useFavoritos";
+import { useFeedback } from "./feedback/FeedbackProvider";
 
 interface ProductSectionProps {
   titulo: string;
@@ -24,6 +25,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
 }) => {
   const navigate = useNavigate();
   const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
+  const { notify } = useFeedback();
 
   if (anuncios.length === 0) {
     return null;
@@ -37,14 +39,16 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
     try {
       await alternarFavorito(anuncioId);
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "Erro ao atualizar favoritos."
-      );
+      notify({
+        variant: "error",
+        title: "Nao foi possivel atualizar os favoritos",
+        message: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
+      });
     }
   };
 
   return (
-    <section className="max-w-[1200px] mx-auto px-3 py-7 sm:px-4 sm:py-10">
+    <section className="max-w-[1400px] mx-auto px-3 py-7 sm:px-4 sm:py-10">
       <div className="mb-4 flex items-start justify-between gap-3 sm:mb-6 sm:items-center">
         <h2 className="m-0 min-w-0 text-[17px] font-extrabold tracking-tight text-reusehub-navy font-plus-jakarta-sans sm:text-[18px]">
           {titulo}
@@ -110,7 +114,7 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
           onClick();
         }
       }}
-      className="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition-colors hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+      className="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left shadow-sm transition-colors hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
     >
       <div className="relative h-44 w-full shrink-0 sm:h-48 md:h-44 lg:h-36 xl:h-40">
         <div
@@ -133,21 +137,13 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
           )}
         </div>
 
-        <span
-          className={`absolute left-2 top-2 rounded-md px-2 py-1 text-[8px] font-extrabold uppercase tracking-wide text-white sm:left-3 sm:top-3 sm:text-[9px] ${
-            ehDoacao ? "bg-emerald-600" : "bg-blue-600"
-          }`}
-        >
-          {ehDoacao ? "Doação" : "Troca"}
-        </span>
-
         <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             onToggleFavorito();
           }}
-          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/70 bg-white/95 backdrop-blur-sm transition-colors sm:right-3 sm:top-3 ${
+          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-md border border-white/70 bg-white/95 backdrop-blur-sm transition-colors sm:right-3 sm:top-3 ${
             ehFavorito
               ? "text-rose-500 hover:bg-rose-50"
               : "text-slate-300 hover:text-rose-500"
@@ -160,6 +156,21 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
       </div>
 
       <div className="flex min-h-[128px] flex-1 flex-col px-3 pb-4 sm:min-h-[138px] sm:px-4 sm:pb-5">
+        <div className="flex flex-wrap gap-1.5 pt-3">
+          <span
+            className={`rounded border px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide ${
+              ehDoacao
+                ? "border-blue-100 bg-blue-50 text-blue-700"
+                : "border-orange-100 bg-orange-50 text-orange-700"
+            }`}
+          >
+            {ehDoacao ? "Doação" : "Troca"}
+          </span>
+          <span className="rounded border border-blue-100 bg-white px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-blue-700">
+            {anuncio.condicao}
+          </span>
+        </div>
+
         <h3 className="line-clamp-2 min-h-[2.4rem] break-words pt-2 text-[12px] font-semibold leading-snug text-slate-800 sm:text-[13px]">
           {anuncio.titulo}
         </h3>
@@ -175,13 +186,17 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
           <div className="flex min-w-0 items-center gap-1.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-[10px] font-bold text-blue-600">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-[10px] font-bold text-blue-600">
               {(anuncio.nomeUsuario ?? "?").charAt(0).toUpperCase()}
             </div>
             <span className="truncate text-[10px] font-bold text-slate-600">
               {(anuncio.nomeUsuario ?? "").split(" ")[0]}
             </span>
           </div>
+          <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] font-black text-orange-500">
+            <Star size={11} fill="currentColor" />
+            {Number(anuncio.notaReputacaoUsuario ?? 0).toFixed(1)}
+          </span>
         </div>
       </div>
     </div>

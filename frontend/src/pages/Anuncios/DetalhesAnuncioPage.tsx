@@ -10,6 +10,7 @@ import { Footer } from "../../components/Footer";
 import { InteresseModal } from "../../components/interesse/InteresseModal";
 import { AvaliacaoModal } from "../../components/avaliacao/AvaliacaoModal";
 import { DenunciaAnuncioModal } from "../../components/denuncia/DenunciaAnuncioModal";
+import { useFeedback } from "../../components/feedback/FeedbackProvider";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import {
   Info,
   ShieldAlert,
   FileText,
+  MapPin,
 } from "lucide-react";
 
 import { API_BASE_URL } from "../../config/api";
@@ -56,6 +58,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [modalDenunciaAberto, setModalDenunciaAberto] = useState(false);
   const [iniciandoChat, setIniciandoChat] = useState(false);
   const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
+  const { notify } = useFeedback();
 
 
 
@@ -145,7 +148,11 @@ export const DetalhesAnuncioPage: React.FC = () => {
         },
       });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao iniciar conversa");
+      notify({
+        variant: "error",
+        title: "Erro ao abrir conversa",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     } finally {
       setIniciandoChat(false);
     }
@@ -158,11 +165,11 @@ export const DetalhesAnuncioPage: React.FC = () => {
     try {
       await alternarFavorito(anuncio.id);
     } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Erro ao atualizar favoritos."
-      );
+      notify({
+        variant: "error",
+        title: "Nao foi possivel atualizar os favoritos",
+        message: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
+      });
     }
   };
 
@@ -197,6 +204,20 @@ export const DetalhesAnuncioPage: React.FC = () => {
     );
 
     const imagens = anuncio.imagensUrls ?? [];
+    const limiteFotosLaterais = imagens.length >= 4 ? 3 : 2;
+    const imagensLaterais = imagens
+      .map((url, index) => ({ url, index }))
+      .filter((imagem) => imagem.index !== imagemAtual)
+      .slice(0, limiteFotosLaterais);
+    const fotosOcultas = Math.max(0, imagens.length - 1 - imagensLaterais.length);
+    const linhasMosaico =
+      imagensLaterais.length >= 3
+        ? "grid-rows-3"
+        : imagensLaterais.length === 2
+          ? "grid-rows-2"
+          : "grid-rows-1";
+    const localizacao = [anuncio.cidade, anuncio.uf].filter(Boolean).join(", ");
+    const reputacaoAnunciante = Number(anuncio.notaReputacaoUsuario ?? 0).toFixed(1);
 
     const anuncioEstaAtivo = anuncio.status === "ATIVO";
     const anuncioConcluido = anuncio.status === "CONCLUIDO";
@@ -213,7 +234,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
       <Header />
 
       <main className="flex-grow bg-slate-50 px-3 py-6 sm:px-4 sm:py-12">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-[1280px] mx-auto">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm mb-6 transition-colors group"
@@ -224,70 +245,85 @@ export const DetalhesAnuncioPage: React.FC = () => {
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8">
             <div className="lg:col-span-8 space-y-6">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
 
                 {/* CARROSSEL */}
                 {imagens.length > 0 ? (
                   <div className="relative">
-                    <div className="aspect-[16/10] w-full overflow-hidden bg-slate-100">
-                      <img
-                        src={imagemUrl(imagens[imagemAtual])}
-                        alt={`Foto ${imagemAtual + 1}`}
-                        className="w-full h-full object-cover transition-all duration-300"
-                      />
-                    </div>
+                    <div className={`grid gap-2 bg-white ${imagensLaterais.length > 0 ? "md:grid-cols-[minmax(0,2fr)_minmax(220px,0.85fr)]" : ""}`}>
+                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 md:aspect-auto md:h-[560px]">
+                        <img
+                          src={imagemUrl(imagens[imagemAtual])}
+                          alt={`Foto ${imagemAtual + 1}`}
+                          className="h-full w-full object-cover transition-all duration-300"
+                        />
 
-                    {imagens.length > 1 && (
-                      <>
-                        <button
-                          onClick={irParaAnterior}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-slate-800 rounded-lg p-2 border border-slate-200 transition-colors"
-                        >
-                          <ChevronLeft size={20} />
-                        </button>
-                        <button
-                          onClick={irParaProxima}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-slate-800 rounded-lg p-2 border border-slate-200 transition-colors"
-                        >
-                          <ChevronRight size={20} />
-                        </button>
-
-                        {/* MINIATURAS */}
-                        <div className="flex gap-2 overflow-x-auto p-3 sm:p-4">
-                          {imagens.map((url: string, index: number) => (
+                        {imagens.length > 1 && (
+                          <>
                             <button
-                              key={index}
-                              onClick={() => setImagemAtual(index)}
-                              className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all sm:h-16 sm:w-16 ${
-                                imagemAtual === index
-                                  ? "border-blue-600 ring-2 ring-blue-100"
-                                  : "border-transparent opacity-60 hover:opacity-100"
-                              }`}
+                              onClick={irParaAnterior}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-white/90 p-2 text-slate-800 shadow-sm transition-colors hover:bg-white"
+                              aria-label="Foto anterior"
+                            >
+                              <ChevronLeft size={20} />
+                            </button>
+                            <button
+                              onClick={irParaProxima}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-white/90 p-2 text-slate-800 shadow-sm transition-colors hover:bg-white"
+                              aria-label="Próxima foto"
+                            >
+                              <ChevronRight size={20} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      {imagensLaterais.length > 0 && (
+                        <div className={`hidden h-[560px] gap-2 md:grid ${linhasMosaico}`}>
+                          {imagensLaterais.map((imagem, index) => (
+                            <button
+                              key={imagem.index}
+                              type="button"
+                              onClick={() => setImagemAtual(imagem.index)}
+                              className="group/side relative overflow-hidden bg-slate-100 text-left transition-opacity hover:opacity-90"
                             >
                               <img
-                                src={imagemUrl(url)}
-                                alt={`Miniatura ${index + 1}`}
-                                className="w-full h-full object-cover"
+                                src={imagemUrl(imagem.url)}
+                                alt={`Foto ${imagem.index + 1}`}
+                                className="h-full w-full object-cover"
                               />
+                              {index === imagensLaterais.length - 1 && fotosOcultas > 0 && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 text-sm font-black text-white transition-colors group-hover/side:bg-slate-950/45">
+                                  +{fotosOcultas} fotos
+                                </div>
+                              )}
                             </button>
                           ))}
                         </div>
+                      )}
+                    </div>
 
-                        {/* INDICADOR */}
-                        <div className="flex justify-center gap-1.5 pb-4">
-                          {imagens.map((_: string, index: number) => (
-                            <button
-                              key={index}
-                              onClick={() => setImagemAtual(index)}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                imagemAtual === index
-                                  ? "bg-blue-600 w-4"
-                                  : "bg-slate-300"
-                              }`}
+                    {imagens.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto p-3 sm:p-4 md:hidden">
+                        {imagens.map((url: string, index: number) => (
+                          <button
+                            key={index}
+                            onClick={() => setImagemAtual(index)}
+                            className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all sm:h-16 sm:w-16 ${
+                              imagemAtual === index
+                                ? "border-blue-600 ring-2 ring-blue-100"
+                                : "border-transparent opacity-60 hover:opacity-100"
+                            }`}
+                            aria-label={`Abrir foto ${index + 1}`}
+                          >
+                            <img
+                              src={imagemUrl(url)}
+                              alt={`Miniatura ${index + 1}`}
+                              className="h-full w-full object-cover"
                             />
-                          ))}
-                        </div>
-                      </>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -299,18 +335,15 @@ export const DetalhesAnuncioPage: React.FC = () => {
 
                 <div className="p-5 sm:p-8">
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                    <span className={`rounded border px-3 py-1 text-xs font-bold uppercase tracking-wider ${
                       anuncio.tipo === "DOACAO"
                         ? "bg-teal-50 text-teal-700 border-teal-100"
                         : "bg-orange-50 text-orange-700 border-orange-100"
                     }`}>
                       {anuncio.tipo === "DOACAO" ? "Doação" : "Troca"}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${getCondicaoColor(anuncio.condicao)}`}>
+                    <span className={`rounded border px-3 py-1 text-xs font-bold uppercase tracking-wider ${getCondicaoColor(anuncio.condicao)}`}>
                       {anuncio.condicao}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-slate-100 text-slate-600">
-                      {anuncio.status}
                     </span>
                   </div>
 
@@ -320,11 +353,21 @@ export const DetalhesAnuncioPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => navigate(`/perfil/${anuncio.usuarioId}`)}
-                      className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+                      className="flex items-center gap-1.5 transition-colors hover:text-blue-600"
                     >
                       <User size={16} className="text-blue-600" />
                       <span className="font-semibold">{anuncio.nomeUsuario}</span>
+                      <span className="inline-flex items-center gap-0.5 font-black text-orange-500">
+                        <Star size={14} fill="currentColor" />
+                        {reputacaoAnunciante}
+                      </span>
                     </button>
+                    {localizacao && (
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <MapPin size={16} />
+                        <span className="truncate">{localizacao}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5">
                       <Calendar size={16} />
                       <span>{new Date(anuncio.criadoEm).toLocaleDateString("pt-BR")}</span>
@@ -344,25 +387,32 @@ export const DetalhesAnuncioPage: React.FC = () => {
             </div>
 
             <div className="lg:col-span-4 space-y-6">
-              <div className="space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:space-y-6 sm:p-6">
+              <div className="space-y-5 rounded-md border border-slate-200 bg-white p-5 shadow-sm sm:space-y-6 sm:p-6">
                 <h3 className="font-bold text-slate-900">Detalhes Técnicos</h3>
 
                   <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-slate-50 p-3">
                     <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Tag size={16} /> <span>Categoria</span>
                     </div>
                     <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">{anuncio.nomeCategoria}</span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-slate-50 p-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
+                      <MapPin size={16} /> <span>Localização</span>
+                    </div>
+                    <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">{localizacao || "Não informada"}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-slate-50 p-3">
                     <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Eye size={16} /> <span>Vistas</span>
                     </div>
                     <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">{anuncio.totalVisualizacoes}</span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-3 rounded-md bg-slate-50 p-3">
                     <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
                       <Star size={16} /> <span>Relevância</span>
                     </div>
@@ -377,7 +427,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                   <div className="space-y-3">
                     <button
                       onClick={() => navigate(`/anuncios/${anuncio.id}/editar`)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                      className="flex w-full items-center justify-center gap-2 rounded-md bg-orange-600 py-4 font-bold text-white transition-colors hover:bg-orange-700 active:scale-[0.99]"
                     >
                       <Edit3 size={18} />
                       Editar Anúncio
@@ -391,7 +441,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                           <button
                             onClick={handleFalarComAnunciante}
                             disabled={iniciandoChat}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                            className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-4 font-bold text-white transition-colors hover:bg-blue-700 active:scale-[0.99]"
                           >
                             <MessageCircle size={18} />
                             {iniciandoChat ? "Abrindo conversa..." : "Falar com o anunciante"}
@@ -401,7 +451,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                         {podeEnviarInteresse && (
                           <button
                             onClick={handleAbrirInteresse}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                            className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-600 py-4 font-bold text-white transition-colors hover:bg-emerald-700 active:scale-[0.99]"
                           >
                             <Heart size={18} />
                             Quero trocar
@@ -412,7 +462,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleToggleFavorito}
-                            className={`w-full py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] ${
+                            className={`flex w-full items-center justify-center gap-2 rounded-md py-4 font-bold transition-colors active:scale-[0.99] ${
                               anuncioFavoritado
                                 ? "bg-rose-50 hover:bg-rose-100 text-rose-600"
                                 : "bg-slate-100 hover:bg-slate-200 text-slate-900"
@@ -432,7 +482,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleAbrirDenuncia}
-                            className="w-full py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-200"
+                            className="flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white py-4 font-bold text-slate-700 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 active:scale-[0.99]"
                           >
                             <ShieldAlert size={18} />
                             Denunciar anuncio
@@ -440,7 +490,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                         )}
                       </>
                     ) : (
-                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                      <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
                         Este anúncio não está disponível para contato no momento.
                       </div>
                     )}
@@ -451,7 +501,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                           if (!exigirLogin()) return;
                           setModalAvaliacaoAberto(true);
                         }}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99]"
+                        className="flex w-full items-center justify-center gap-2 rounded-md bg-orange-500 py-4 font-bold text-white transition-colors hover:bg-orange-600 active:scale-[0.99]"
                       >
                         <Star size={18} />
                         Avaliar anunciante
@@ -462,7 +512,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleAbrirDenuncia}
-                        className="w-full py-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-200"
+                        className="flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white py-4 font-bold text-slate-700 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 active:scale-[0.99]"
                       >
                         <ShieldAlert size={18} />
                         Denunciar anuncio
@@ -472,7 +522,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 sm:p-6">
+              <div className="rounded-md border border-blue-100 bg-blue-50 p-5 sm:p-6">
                 <h4 className="text-blue-800 font-bold text-sm mb-2 flex items-center gap-2">
                   <Info size={16} />
                   Dica ReUseHub

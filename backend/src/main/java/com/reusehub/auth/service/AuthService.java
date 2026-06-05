@@ -11,6 +11,7 @@ import com.reusehub.anuncio.service.StorageService;
 import com.reusehub.auth.crypto.SensitiveDataCrypto;
 import com.reusehub.auth.dto.*;
 import com.reusehub.auth.model.*;
+import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.TokenUsuarioRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
@@ -32,7 +33,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int DIAS_COOLDOWN_REATIVACAO = 3;
+    private static final int DIAS_BLOQUEIO_RECADASTRO_EXCLUSAO = 90;
+
     private final UsuarioRepository usuarioRepository;
+    private final CredencialBloqueadaRepository credencialBloqueadaRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -48,6 +53,7 @@ public class AuthService {
     public AuthResponse registrar(RegisterRequest request) {
         String emailNormalizado = SensitiveDataCrypto.normalizarEmail(request.getEmail());
         String cpfNormalizado = SensitiveDataCrypto.normalizarCpf(request.getCpf());
+        validarBloqueioCredenciais(emailNormalizado, cpfNormalizado);
         validarDuplicidadeCadastro(emailNormalizado, cpfNormalizado);
 
         var usuario = Usuario.builder()
@@ -90,6 +96,7 @@ public class AuthService {
         if (Boolean.TRUE.equals(usuario.getIsActive())) {
             throw new RegraNegocioException("Esta conta ja esta ativa. Faca login normalmente.");
         }
+        validarCooldownReativacao(usuario);
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPasswordHash())) {
             throw new RegraNegocioException("Credenciais invalidas.");
         }
@@ -153,6 +160,12 @@ public class AuthService {
         anuncioFavoritoRepository.deleteByUsuarioId(usuario.getId());
         notificacaoRepository.deleteByUsuarioId(usuario.getId());
         anonimizarEnderecos(usuario.getId());
+        registrarBloqueioCredenciais(
+                usuario,
+                CredencialBloqueada.Motivo.CONTA_EXCLUIDA,
+                LocalDateTime.now().plusDays(DIAS_BLOQUEIO_RECADASTRO_EXCLUSAO),
+                "Conta excluida pelo usuario. Recadastro bloqueado temporariamente."
+        );
         anonimizarUsuario(usuario);
 
         usuarioRepository.save(usuario);
@@ -249,6 +262,67 @@ public class AuthService {
         if (usuarioRepository.existsByCpf(cpf)) {
             throw new RegraNegocioException("CPF ja cadastrado no sistema.");
         }
+    }
+
+    private void validarBloqueioCredenciais(String email, String cpf) {
+        String emailHash = SensitiveDataCrypto.emailHash(email);
+        String cpfHash = SensitiveDataCrypto.cpfHash(cpf);
+        LocalDateTime agora = LocalDateTime.now();
+
+        if (credencialBloqueadaRepository.existsBanimentoAtivoPorEmailOuCpf(
+                emailHash,
+                cpfHash,
+                CredencialBloqueada.Motivo.BANIMENTO,
+                agora
+        )) {
+            throw new RegraNegocioException("Nao e possivel criar uma nova conta com dados vinculados a uma conta banida.");
+        }
+
+        if (credencialBloqueadaRepository.existsBloqueioAtivoPorEmailOuCpf(emailHash, cpfHash, agora)) {
+            throw new RegraNegocioException("Nao e possivel criar uma nova conta com esses dados no momento.");
+        }
+    }
+
+    private void validarCooldownReativacao(Usuario usuario) {
+        LocalDateTime desativadoEm = usuario.getDesativadoEm();
+        if (desativadoEm == null) {
+            return;
+        }
+
+        LocalDateTime liberadoEm = desativadoEm.plusDays(DIAS_COOLDOWN_REATIVACAO);
+        if (LocalDateTime.now().isBefore(liberadoEm)) {
+            throw new RegraNegocioException(
+                    "Sua conta so podera ser reativada 3 dias apos a desativacao."
+            );
+        }
+    }
+
+    private void registrarBloqueioCredenciais(
+            Usuario usuario,
+            CredencialBloqueada.Motivo motivo,
+            LocalDateTime expiraEm,
+            String detalhes
+    ) {
+        credencialBloqueadaRepository.save(CredencialBloqueada.builder()
+                .emailHash(hashEmailUsuario(usuario))
+                .cpfHash(hashCpfUsuario(usuario))
+                .motivo(motivo)
+                .usuarioOrigemId(usuario.getId())
+                .expiraEm(expiraEm)
+                .detalhes(detalhes)
+                .build());
+    }
+
+    private String hashEmailUsuario(Usuario usuario) {
+        return usuario.getEmailHash() != null
+                ? usuario.getEmailHash()
+                : SensitiveDataCrypto.emailHash(usuario.getEmail());
+    }
+
+    private String hashCpfUsuario(Usuario usuario) {
+        return usuario.getCpfHash() != null
+                ? usuario.getCpfHash()
+                : SensitiveDataCrypto.cpfHash(usuario.getCpf());
     }
 
     private void validarUsuarioAtivo(Usuario usuario) {

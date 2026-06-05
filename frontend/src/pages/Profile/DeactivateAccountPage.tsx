@@ -53,7 +53,7 @@ export const DeactivateAccountPage: React.FC = () => {
               Desativar conta
             </h1>
             <p className="mt-2 text-slate-500">
-              Sua conta fica pausada e pode ser reativada depois com seu e-mail e senha.
+              Sua conta fica pausada e pode ser reativada apos 3 dias com seu e-mail e senha.
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export const DeactivateAccountPage: React.FC = () => {
               <h2 className="mb-1 font-bold text-orange-900">O que acontece ao desativar</h2>
               <p className="text-sm leading-relaxed text-orange-800/80">
                 Seus anuncios ativos e solicitacoes pendentes serao cancelados. Seu historico fica
-                preservado e voce pode voltar pelo login. Negociacoes em andamento precisam ser
+                preservado e voce pode voltar pelo login apos o periodo de seguranca de 3 dias. Negociacoes em andamento precisam ser
                 concluidas ou canceladas antes.
               </p>
             </div>

@@ -22,6 +22,7 @@ import {
   Laptop,
   LogIn,
   LogOut,
+  MapPin,
   MessageCircle,
   Music,
   PawPrint,
@@ -108,6 +109,8 @@ const criarParamsBusca = (termo?: string, categoriaId?: number) => {
   return params;
 };
 
+const RAIOS_BUSCA_CEP = [5, 10, 25, 50, 100];
+
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,6 +118,8 @@ export const Header: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cepBusca, setCepBusca] = useState("");
+  const [raioBuscaKm, setRaioBuscaKm] = useState(10);
   const [temChatPendente, setTemChatPendente] = useState(false);
   const [temTrocaPendente, setTemTrocaPendente] = useState(false);
   const [podeRolarCategoriasEsquerda, setPodeRolarCategoriasEsquerda] = useState(false);
@@ -130,6 +135,9 @@ export const Header: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchTerm(params.get("termo") ?? "");
     setActiveCategory(params.get("categoriaId") ? Number(params.get("categoriaId")) : null);
+    setCepBusca(params.get("cep") ?? "");
+    const raioUrl = Number(params.get("raioKm"));
+    setRaioBuscaKm(RAIOS_BUSCA_CEP.includes(raioUrl) ? raioUrl : 10);
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -223,6 +231,18 @@ export const Header: React.FC = () => {
     navigate(query ? `/anuncios?${query}` : "/anuncios");
   };
 
+  const aplicarFiltroCepNaHome = () => {
+    const params = new URLSearchParams();
+    if (cepBusca.length === 8) {
+      params.set("cep", cepBusca);
+      params.set("raioKm", String(raioBuscaKm));
+      params.set("ordenacao", "DISTANCIA");
+    }
+
+    const query = params.toString();
+    navigate(query ? `/?${query}` : "/");
+  };
+
   const rolarCategorias = (direcao: "esquerda" | "direita") => {
     const lista = categoriasRef.current;
     if (!lista) return;
@@ -239,7 +259,7 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 font-plus-jakarta-sans backdrop-blur">
-      <div className="max-w-[1200px] mx-auto h-14 px-3 sm:px-4 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-[1400px] mx-auto h-14 px-3 sm:px-4 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         <Link to="/" className="flex-shrink-0">
           <Logo />
         </Link>
@@ -247,7 +267,7 @@ export const Header: React.FC = () => {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            navegarParaBusca(criarParamsBusca(searchTerm));
+            navegarParaBusca(criarParamsBusca(searchTerm, activeCategory ?? undefined));
           }}
           className="hidden md:flex flex-1 max-w-[400px] items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden h-10 focus-within:border-reusehub-blue focus-within:bg-white transition-all"
         >
@@ -260,6 +280,50 @@ export const Header: React.FC = () => {
           />
           <button type="submit" className="bg-reusehub-blue hover:bg-blue-700 text-white px-5 h-full transition-colors">
             <Search size={16} />
+          </button>
+        </form>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            aplicarFiltroCepNaHome();
+          }}
+          className="hidden h-10 w-[245px] items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition-all focus-within:border-reusehub-blue focus-within:bg-white lg:flex xl:w-[270px]"
+        >
+          <MapPin size={16} className="ml-3 shrink-0 text-slate-400" />
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Filtrar por CEP"
+            value={cepBusca}
+            maxLength={8}
+            onChange={(event) => setCepBusca(event.target.value.replace(/\D/g, ""))}
+            className="min-w-0 flex-1 bg-transparent px-2 text-[13px] font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+            aria-label="CEP para filtrar anuncios por proximidade"
+          />
+          <select
+            value={raioBuscaKm}
+            onChange={(event) => setRaioBuscaKm(Number(event.target.value))}
+            className="h-full w-[70px] border-l border-slate-200 bg-transparent px-1 text-[12px] font-bold text-slate-600 outline-none"
+            aria-label="Raio de busca por CEP"
+          >
+            {RAIOS_BUSCA_CEP.map((raio) => (
+              <option key={raio} value={raio}>
+                {raio}km
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className={`flex h-full w-10 shrink-0 items-center justify-center transition-colors ${
+              cepBusca.length === 8
+                ? "bg-reusehub-blue text-white hover:bg-blue-700"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            }`}
+            aria-label="Aplicar filtro por CEP"
+            title="Aplicar filtro por CEP"
+          >
+            <Search size={14} />
           </button>
         </form>
 
@@ -336,7 +400,7 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="border-t border-slate-50 bg-white">
-        <div className="relative mx-auto max-w-[1200px] px-3 sm:px-4">
+        <div className="relative mx-auto max-w-[1400px] px-3 sm:px-4">
           <button
             type="button"
             onClick={() => rolarCategorias("esquerda")}

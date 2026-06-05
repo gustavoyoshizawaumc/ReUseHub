@@ -21,6 +21,7 @@ import { CardAnuncio } from "../../components/anuncios/CardAnuncio";
 import { FiltrosAnuncios } from "../../components/anuncios/FiltrosAnuncios";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
+import { useFeedback } from "../../components/feedback/FeedbackProvider";
 import { useAnuncios } from "../../hooks/useAnuncios";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";
@@ -47,11 +48,22 @@ const extrairFiltrosDaUrl = (searchParams: URLSearchParams): BuscaFiltro => {
   const categoriaId = Number(searchParams.get("categoriaId"));
   if (categoriaId && !Number.isNaN(categoriaId)) filtro.categoriaId = categoriaId;
 
+  const cep = searchParams.get("cep")?.replace(/\D/g, "");
+  if (cep && cep.length === 8) filtro.cep = cep;
+
+  const raioKm = Number(searchParams.get("raioKm"));
+  if (raioKm && !Number.isNaN(raioKm)) filtro.raioKm = raioKm;
+
+  const ordenacao = searchParams.get("ordenacao");
+  if (ordenacao === "RELEVANCIA" || ordenacao === "DISTANCIA" || ordenacao === "RECENTES" || ordenacao === "POPULARES") {
+    filtro.ordenacao = ordenacao;
+  }
+
   return filtro;
 };
 
 const possuiBuscaAtiva = (filtro: BuscaFiltro) =>
-  Boolean(filtro.termo || filtro.categoriaId);
+  Boolean(filtro.termo || filtro.categoriaId || filtro.cep || filtro.latitude || filtro.longitude || filtro.ordenacao);
 
 export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const navigate = useNavigate();
@@ -62,6 +74,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const termoMeusAnuncios = searchParams.get("termo")?.trim().toLowerCase() ?? "";
   const statusSelecionado = searchParams.get("statusFiltro") ?? "TODOS";
   const { ehFavorito, possuiUsuarioAutenticado, alternarFavorito } = useFavoritos();
+  const { notify, confirm } = useFeedback();
 
   const {
     anuncios,
@@ -188,7 +201,15 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   }, [anuncios, exibindoMeusAnuncios, statusSelecionado, termoMeusAnuncios]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Tem certeza que deseja deletar este anúncio?")) return;
+    const confirmado = await confirm({
+      variant: "warning",
+      title: "Excluir anuncio?",
+      message: "Esta acao remove o anuncio da sua conta.",
+      confirmLabel: "Excluir",
+      cancelLabel: "Cancelar",
+    });
+
+    if (!confirmado) return;
 
     try {
       await anuncioService.deletarAnuncio(id);
@@ -198,7 +219,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
         listar(paginacao.currentPage);
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao deletar");
+      notify({
+        variant: "error",
+        title: "Erro ao excluir anuncio",
+        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+      });
     }
   };
 
@@ -275,11 +300,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     try {
       await alternarFavorito(anuncioId);
     } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Nao foi possivel atualizar os favoritos."
-      );
+      notify({
+        variant: "error",
+        title: "Nao foi possivel atualizar os favoritos",
+        message: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
+      });
     }
   };
 
