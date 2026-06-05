@@ -17,7 +17,6 @@ import {
   Tag,
   Eye,
   Star,
-  Clock,
   User,
   Edit3,
   MessageCircle,
@@ -372,14 +371,6 @@ export const DetalhesAnuncioPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
-                    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
-                      <Clock size={16} /> <span>Expira</span>
-                    </div>
-                    <span className="max-w-[55%] break-words text-right text-sm font-bold text-slate-900">
-                      {new Date(anuncio.expiraEm).toLocaleDateString("pt-BR")}
-                    </span>
-                  </div>
                 </div>
 
                 {isEDono ? (

@@ -21,10 +21,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
   const [tipo, setTipo] = useState<"DOACAO" | "TROCA">("DOACAO");
   const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">("BOM");
   const [categoriaId, setCategoriaId] = useState("");
-  const [expiraEm, setExpiraEm] = useState("");
   const [cep, setCep] = useState("");
-  const [numero, setNumero] = useState("");
-  const [complemento, setComplemento] = useState("");
   const [enderecoDisplay, setEnderecoDisplay] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erroCep, setErroCep] = useState<string | null>(null);
@@ -92,10 +89,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
       tipo,
       condicao,
       categoriaId: Number(categoriaId),
-      expiraEm: expiraEm ? `${expiraEm}T00:00:00` : "",
       cep: cep.replace(/\D/g, ""),
-      numero,
-      complemento: complemento || undefined,
     };
 
     await onSubmit(dados, imagens);
@@ -182,17 +176,6 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
           </select>
         </div>
 
-        <div className="space-y-2">
-          <label className={labelClass}>Data Limite</label>
-          <input
-            required
-            type="date"
-            className={inputClass}
-            value={expiraEm}
-            min={new Date().toISOString().split("T")[0]}
-            onChange={(e) => setExpiraEm(e.target.value)}
-          />
-        </div>
       </div>
 
       {/* ENDEREÇO */}
@@ -202,7 +185,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
           Onde o item está?
         </label>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div className="space-y-2">
             <label className={labelClass}>CEP</label>
             <div className="relative flex min-w-0 gap-2">
@@ -235,29 +218,6 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className={labelClass}>Número</label>
-            <input
-              required
-              className={inputClass}
-              placeholder="Ex: 42"
-              value={numero}
-              onChange={(e) => setNumero(e.target.value)}
-            />
-          </div>
-
-          <div className="md:col-span-2 space-y-2">
-            <label className={labelClass}>
-              Complemento{" "}
-              <span className="normal-case font-normal text-slate-400">(opcional)</span>
-            </label>
-            <input
-              className={inputClass}
-              placeholder="Ex: Apto 12, Bloco B"
-              value={complemento}
-              onChange={(e) => setComplemento(e.target.value)}
-            />
-          </div>
         </div>
       </div>
 

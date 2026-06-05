@@ -12,8 +12,6 @@ export interface Endereco {
   id: string;
   cep: string;
   rua: string;
-  numero: string;
-  complemento?: string;
   bairro: string;
   cidade: string;
   uf: string;
@@ -43,7 +41,6 @@ export interface Anuncio {
   status: "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO";
   totalVisualizacoes: number;
   notaRelevancia: number | null;
-  expiraEm: string;
   criadoEm: string;
   atualizadoEm: string;
   usuarioId: string;
@@ -55,8 +52,6 @@ export interface Anuncio {
   imagensUrls?: string[];
   imagens?: ImagemAnuncio[];
   cep?: string;
-  numero?: string;
-  complemento?: string;
   rua?: string;
   bairro?: string;
   cidade?: string;
@@ -69,10 +64,7 @@ export interface AnuncioCriacao {
   tipo: "DOACAO" | "TROCA";
   condicao: "NOVO" | "BOM" | "REGULAR" | "RUIM";
   categoriaId: number;
-  expiraEm: string;
   cep: string;
-  numero: string;
-  complemento?: string;
 }
 
 export interface AnuncioAtualizacao {
@@ -80,10 +72,7 @@ export interface AnuncioAtualizacao {
   descricao: string;
   condicao: "NOVO" | "BOM" | "REGULAR" | "RUIM";
   categoriaId: number;
-  expiraEm: string;
   cep: string;
-  numero: string;
-  complemento?: string;
   enderecoId: string;
 }
 

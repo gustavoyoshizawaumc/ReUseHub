@@ -17,6 +17,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Eye,
   FileText,
   Search,
   ShieldOff,
@@ -24,6 +25,7 @@ import {
   Trash2,
   UserCog,
   Users,
+  X,
   XCircle,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -240,6 +242,171 @@ const Thumb = ({ urls, title }: { urls?: string[]; title: string }) => {
   );
 };
 
+const obterFotosAnuncio = (anuncio?: Anuncio | null) => {
+  const urls = anuncio?.imagens?.length
+    ? [...anuncio.imagens]
+        .sort((a, b) => (a.ordemExibicao ?? 0) - (b.ordemExibicao ?? 0))
+        .map((imagem) => imagem.urlImagem)
+    : anuncio?.imagensUrls ?? [];
+
+  return urls.map(imageUrl).filter((url): url is string => Boolean(url));
+};
+
+const AnuncioDetalheModal = ({
+  anuncio,
+  fotoAtual,
+  onFotoAtualChange,
+  onClose,
+  onApprove,
+  onReject,
+  processando,
+}: {
+  anuncio: Anuncio;
+  fotoAtual: number;
+  onFotoAtualChange: (index: number) => void;
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  processando: boolean;
+}) => {
+  const fotos = obterFotosAnuncio(anuncio);
+  const fotoSelecionada = fotos[fotoAtual] ?? fotos[0];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <article className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Analise do anuncio</p>
+            <h3 className="mt-1 truncate text-xl font-black text-slate-950">{anuncio.titulo}</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500">ID {anuncio.id}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            aria-label="Fechar detalhes do anuncio"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[1.15fr_0.85fr]">
+          <section className="border-b border-slate-200 bg-slate-50 p-4 lg:border-b-0 lg:border-r">
+            <div className="aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {fotoSelecionada ? (
+                <img src={fotoSelecionada} alt={anuncio.titulo} className="h-full w-full object-contain" />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-300">
+                  <FileText size={44} />
+                  <p className="text-sm font-bold">Sem imagem disponivel</p>
+                </div>
+              )}
+            </div>
+            {fotos.length > 0 && (
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {fotos.map((foto, index) => (
+                  <button
+                    key={`${foto}-${index}`}
+                    type="button"
+                    onClick={() => onFotoAtualChange(index)}
+                    className={`aspect-square overflow-hidden rounded-md border bg-white transition-colors ${
+                      index === fotoAtual ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200 hover:border-blue-200'
+                    }`}
+                    aria-label={`Ver foto ${index + 1}`}
+                  >
+                    <img src={foto} alt={`Foto ${index + 1} de ${anuncio.titulo}`} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-5 p-5">
+            <div className="flex flex-wrap gap-2">
+              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${statusClass[anuncio.status] ?? statusClass.PENDENTE}`}>
+                {anuncio.status}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase text-slate-600">
+                {anuncio.tipo}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase text-slate-600">
+                {anuncio.condicao}
+              </span>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Descricao</h4>
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{anuncio.descricao}</p>
+            </div>
+
+            <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-md bg-slate-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Anunciante</dt>
+                <dd className="mt-1 font-bold text-slate-800">{anuncio.nomeUsuario}</dd>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categoria</dt>
+                <dd className="mt-1 font-bold text-slate-800">{anuncio.nomeCategoria}</dd>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Localizacao</dt>
+                <dd className="mt-1 font-bold text-slate-800">
+                  {[anuncio.cidade, anuncio.uf].filter(Boolean).join(' - ') || '-'}
+                </dd>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Criado em</dt>
+                <dd className="mt-1 font-bold text-slate-800">
+                  {anuncio.criadoEm ? new Date(anuncio.criadoEm).toLocaleString('pt-BR') : '-'}
+                </dd>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">CEP</dt>
+                <dd className="mt-1 font-bold text-slate-800">{anuncio.cep || '-'}</dd>
+              </div>
+              <div className="rounded-md bg-slate-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Visualizacoes</dt>
+                <dd className="mt-1 font-bold text-slate-800">{anuncio.totalVisualizacoes ?? 0}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-semibold text-slate-400">
+            Revise as imagens e a descricao antes de liberar o anuncio.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {anuncio.status === 'PENDENTE' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onReject}
+                  disabled={processando}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
+                >
+                  <XCircle size={16} /> Reprovar
+                </button>
+                <button
+                  type="button"
+                  onClick={onApprove}
+                  disabled={processando}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <CheckCircle2 size={16} /> Aprovar
+                </button>
+              </>
+            ) : (
+              <span className="rounded-md bg-slate-50 px-4 py-2 text-sm font-bold text-slate-500">Sem acao pendente</span>
+            )}
+          </div>
+        </footer>
+      </article>
+    </div>
+  );
+};
+
 export const ModeracaoPage: React.FC = () => {
   const location = useLocation();
   const { categorias } = useCategorias();
@@ -263,6 +430,8 @@ export const ModeracaoPage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [erroDashboard, setErroDashboard] = useState<string | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
+  const [anuncioDetalhado, setAnuncioDetalhado] = useState<Anuncio | null>(null);
+  const [fotoDetalheAtual, setFotoDetalheAtual] = useState(0);
   const filtrosUsuariosInicializadosRef = useRef(false);
   const filtrosDashboardInicializadosRef = useRef(false);
   const filtrosOperacionaisInicializadosRef = useRef(false);
@@ -481,6 +650,23 @@ export const ModeracaoPage: React.FC = () => {
     );
   };
 
+  const abrirDetalhesAnuncio = (anuncio: Anuncio) => {
+    setAnuncioDetalhado(anuncio);
+    setFotoDetalheAtual(0);
+  };
+
+  const fecharDetalhesAnuncio = () => {
+    setAnuncioDetalhado(null);
+    setFotoDetalheAtual(0);
+  };
+
+  const executarAcaoDoDetalhe = (acao: () => Promise<unknown>) => {
+    if (!anuncioDetalhado) return;
+    const anuncioId = anuncioDetalhado.id;
+    fecharDetalhesAnuncio();
+    void executar(anuncioId, acao);
+  };
+
   const alterarFiltroUsuario = <K extends keyof UsuarioAdminFiltros>(campo: K, valor: UsuarioAdminFiltros[K]) => {
     setUsuarioFiltros((prev) => ({ ...prev, [campo]: valor }));
   };
@@ -582,6 +768,18 @@ export const ModeracaoPage: React.FC = () => {
       description={paginaAtual.description}
       counts={counts}
     >
+      {anuncioDetalhado && (
+        <AnuncioDetalheModal
+          anuncio={anuncioDetalhado}
+          fotoAtual={fotoDetalheAtual}
+          onFotoAtualChange={setFotoDetalheAtual}
+          onClose={fecharDetalhesAnuncio}
+          onApprove={() => executarAcaoDoDetalhe(() => aprovarAnuncio(anuncioDetalhado.id))}
+          onReject={() => executarAcaoDoDetalhe(() => reprovarAnuncio(anuncioDetalhado.id))}
+          processando={processando === anuncioDetalhado.id}
+        />
+      )}
+
       {erro && (
         <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
           {erro}
@@ -840,7 +1038,13 @@ export const ModeracaoPage: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                   <Thumb urls={anuncio.imagensUrls} title={anuncio.titulo} />
                                   <div className="min-w-0">
-                                    <p className="font-extrabold text-slate-900">{anuncio.titulo}</p>
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirDetalhesAnuncio(anuncio)}
+                                      className="block max-w-xl truncate text-left font-extrabold text-slate-900 transition-colors hover:text-blue-700"
+                                    >
+                                      {anuncio.titulo}
+                                    </button>
                                     <p className="mt-0.5 max-w-xl truncate text-xs text-slate-500">{anuncio.descricao}</p>
                                   </div>
                                 </div>
@@ -862,6 +1066,9 @@ export const ModeracaoPage: React.FC = () => {
                               <td className="px-4 py-3">
                                 {anuncio.status === 'PENDENTE' ? (
                                   <div className="flex justify-end gap-2">
+                                    <button onClick={() => abrirDetalhesAnuncio(anuncio)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700">
+                                      <Eye size={15} /> Ver detalhes
+                                    </button>
                                     <button onClick={() => executar(anuncio.id, () => reprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
                                       <XCircle size={15} /> Reprovar
                                     </button>
@@ -869,7 +1076,13 @@ export const ModeracaoPage: React.FC = () => {
                                       <CheckCircle2 size={15} /> Aprovar
                                     </button>
                                   </div>
-                                ) : <p className="text-right text-xs font-bold text-slate-400">Sem acao pendente</p>}
+                                ) : (
+                                  <div className="flex justify-end">
+                                    <button onClick={() => abrirDetalhesAnuncio(anuncio)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700">
+                                      <Eye size={15} /> Ver detalhes
+                                    </button>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           ))}

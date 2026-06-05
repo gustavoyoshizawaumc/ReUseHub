@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ public class AnuncioService {
 
     private static final int MINIMO_IMAGENS_POR_ANUNCIO = 3;
     private static final int MAXIMO_IMAGENS_POR_ANUNCIO = 5;
+    private static final int TEMPO_VIDA_ANUNCIO_DIAS = 30;
 
     private final AnuncioRepository anuncioRepository;
     private final AnuncioFavoritoRepository anuncioFavoritoRepository;
@@ -157,9 +159,7 @@ public class AnuncioService {
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarPropriedadeDoAnuncio(anuncio, emailUsuario);
 
-        Endereco endereco = enderecoRepository.findByIdAndUsuarioId(dto.getEnderecoId(), anuncio.getUsuario().getId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Endereço", dto.getEnderecoId()));
-
+        Endereco endereco = resolverEnderecoParaAtualizacao(anuncio, dto);
         Categoria categoria = buscarCategoriaPorId(dto.getCategoriaId());
 
         anuncio.setTitulo(dto.getTitulo());
@@ -167,7 +167,6 @@ public class AnuncioService {
         anuncio.setCondicao(dto.getCondicao());
         anuncio.setCategoria(categoria);
         anuncio.setEndereco(endereco);
-        anuncio.setExpiraEm(dto.getExpiraEm());
         anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
 
         Anuncio atualizado = anuncioRepository.save(anuncio);
@@ -383,7 +382,7 @@ public class AnuncioService {
                 .condicao(dto.getCondicao())
                 .status(Anuncio.StatusAnuncio.PENDENTE)
                 .totalVisualizacoes(0)
-                .expiraEm(dto.getExpiraEm())
+                .expiraEm(LocalDateTime.now().plusDays(TEMPO_VIDA_ANUNCIO_DIAS))
                 .build();
     }
 
@@ -428,10 +427,35 @@ public class AnuncioService {
 
     private Endereco cadastrarEnderecoEnriquecido(Usuario usuario, AnuncioCriacaoComEnderecoDTO dto) {
         ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(dto.getCep());
-        ResultadoGeocoding geocoding = obterCoordenadasDoEndereco(dadosCEP, dto);
+        ResultadoGeocoding geocoding = obterCoordenadasDoEndereco(dadosCEP);
 
         Endereco endereco = construirEndereco(usuario, dto, dadosCEP, geocoding);
         return enderecoRepository.save(endereco);
+    }
+
+    private Endereco resolverEnderecoParaAtualizacao(Anuncio anuncio, AnuncioAtualizacaoDTO dto) {
+        Endereco enderecoAtual = enderecoRepository.findByIdAndUsuarioId(dto.getEnderecoId(), anuncio.getUsuario().getId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Endereço", dto.getEnderecoId()));
+
+        if (dto.getCep() == null || dto.getCep().isBlank() || dto.getCep().equals(enderecoAtual.getCep())) {
+            return enderecoAtual;
+        }
+
+        ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(dto.getCep());
+        ResultadoGeocoding geocoding = obterCoordenadasDoEndereco(dadosCEP);
+
+        enderecoAtual.setCep(dto.getCep());
+        enderecoAtual.setRua(dadosCEP.rua());
+        enderecoAtual.setNumero(null);
+        enderecoAtual.setComplemento(null);
+        enderecoAtual.setBairro(dadosCEP.bairro());
+        enderecoAtual.setCidade(dadosCEP.cidade());
+        enderecoAtual.setUf(dadosCEP.uf());
+        enderecoAtual.setLatitude(geocoding.latitude());
+        enderecoAtual.setLongitude(geocoding.longitude());
+        enderecoAtual.setPrecisaoLocalizacao(geocoding.precisao());
+
+        return enderecoRepository.save(enderecoAtual);
     }
 
     private Endereco construirEndereco(
@@ -444,8 +468,6 @@ public class AnuncioService {
                 .usuario(usuario)
                 .cep(dto.getCep())
                 .rua(dadosCEP.rua())
-                .numero(dto.getNumero())
-                .complemento(dto.getComplemento())
                 .bairro(dadosCEP.bairro())
                 .cidade(dadosCEP.cidade())
                 .uf(dadosCEP.uf())
@@ -456,18 +478,14 @@ public class AnuncioService {
                 .build();
     }
 
-    private ResultadoGeocoding obterCoordenadasDoEndereco(
-            ViaCepService.DadosCEP dadosCEP,
-            AnuncioCriacaoComEnderecoDTO dto
-    ) {
-        String enderecoCompleto = montarEnderecoCompleto(dadosCEP, dto.getNumero());
+    private ResultadoGeocoding obterCoordenadasDoEndereco(ViaCepService.DadosCEP dadosCEP) {
+        String enderecoCompleto = montarEnderecoCompleto(dadosCEP);
         return geocodingHibridoService.obterCoordenadasPorEndereco(enderecoCompleto);
     }
 
-    private String montarEnderecoCompleto(ViaCepService.DadosCEP dadosCEP, String numero) {
-        return String.format("%s, %s, %s, %s, %s, Brasil",
+    private String montarEnderecoCompleto(ViaCepService.DadosCEP dadosCEP) {
+        return String.format("%s, %s, %s, %s, Brasil",
                 dadosCEP.rua(),
-                numero,
                 dadosCEP.bairro(),
                 dadosCEP.cidade(),
                 dadosCEP.uf()

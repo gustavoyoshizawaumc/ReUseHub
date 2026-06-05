@@ -64,7 +64,6 @@ class AnuncioControllerTest {
         dto.setCondicao(Anuncio.CondicaoItem.NOVO);
         dto.setCategoriaId(1);
         dto.setCep("01001-000");
-        dto.setNumero("123");
         return dto;
     }
 
@@ -290,6 +289,7 @@ class AnuncioControllerTest {
             dto.setTitulo("Novo Titulo");
                 dto.setDescricao("Nova descrição de item tetse.");
                 dto.setCondicao(Anuncio.CondicaoItem.RUIM);
+                dto.setCategoriaId(1);
                 dto.setEnderecoId(UUID.randomUUID());
 
             mockMvc.perform(put("/api/anuncios/{id}", id)

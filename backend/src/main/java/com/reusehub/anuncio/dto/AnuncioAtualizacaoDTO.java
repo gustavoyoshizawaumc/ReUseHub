@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;              
 import lombok.NoArgsConstructor; 
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -31,6 +30,7 @@ public class AnuncioAtualizacaoDTO {
     @NotNull(message = "Endereço é obrigatório")
     private UUID enderecoId;
 
-    @Future(message = "Data de expiração deve ser futura")
-    private LocalDateTime expiraEm;
+    @Pattern(regexp = "\\d{5}-?\\d{3}", message = "CEP deve estar no formato XXXXX-XXX ou XXXXXXXX")
+    private String cep;
+
 }

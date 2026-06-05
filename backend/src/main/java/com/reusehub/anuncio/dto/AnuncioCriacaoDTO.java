@@ -3,7 +3,6 @@ package com.reusehub.anuncio.dto;
 import com.reusehub.anuncio.model.Anuncio;
 import jakarta.validation.constraints.*;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -35,6 +34,4 @@ public class AnuncioCriacaoDTO {
     @NotNull(message = "Endereço é obrigatório")
     private UUID enderecoId;
 
-    @Future(message = "Data de expiração deve ser futura")
-    private LocalDateTime expiraEm;
 }

@@ -36,6 +36,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -44,6 +45,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -208,6 +210,7 @@ class AnuncioServiceTest {
         @DisplayName("deve criar anúncio com sucesso")
         void criarComSucesso() {
             AnuncioCriacaoComEnderecoDTO dto = novoDtoCriacao(CATEGORIA_EXISTENTE_ID);
+            LocalDateTime antesDaCriacao = LocalDateTime.now().plusDays(29);
 
             Mockito.when(usuarioRepository.findByEmail(EMAIL_DONO))
                     .thenReturn(Optional.of(usuarioDono));
@@ -223,6 +226,12 @@ class AnuncioServiceTest {
 
             assertNotNull(resultado);
             assertEquals(Anuncio.StatusAnuncio.PENDENTE, resultado.getStatus());
+            ArgumentCaptor<Anuncio> anuncioCaptor = ArgumentCaptor.forClass(Anuncio.class);
+            Mockito.verify(anuncioRepository).save(anuncioCaptor.capture());
+            LocalDateTime expiraEm = anuncioCaptor.getValue().getExpiraEm();
+            assertNotNull(expiraEm);
+            assertTrue(expiraEm.isAfter(antesDaCriacao));
+            assertTrue(expiraEm.isBefore(LocalDateTime.now().plusDays(31)));
         }
 
         @Test

@@ -25,7 +25,6 @@ public class AnuncioRespostaDTO {
     private Anuncio.StatusAnuncio status;
     private Integer totalVisualizacoes;
     private BigDecimal notaRelevancia;
-    private LocalDateTime expiraEm;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 
@@ -38,8 +37,6 @@ public class AnuncioRespostaDTO {
     private List<ImagemAnuncioRespostaDTO> imagens;
 
     private String cep;
-    private String numero;
-    private String complemento;
     private String rua;
     private String bairro;
     private String cidade;

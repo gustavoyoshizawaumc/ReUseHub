@@ -40,10 +40,7 @@ export const EditarAnuncioPage: React.FC = () => {
   const [descricao, setDescricao] = useState("");
   const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM">("BOM");
   const [categoriaId, setCategoriaId] = useState("");
-  const [expiraEm, setExpiraEm] = useState("");
   const [cep, setCep] = useState("");
-  const [numero, setNumero] = useState("");
-  const [complemento, setComplemento] = useState("");
   const [enderecoDisplay, setEnderecoDisplay] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erroCep, setErroCep] = useState<string | null>(null);
@@ -70,11 +67,8 @@ export const EditarAnuncioPage: React.FC = () => {
           setDescricao(dados.descricao);
           setCondicao(dados.condicao);
           setCategoriaId(String(dados.categoriaId));
-          setExpiraEm(dados.expiraEm ? dados.expiraEm.split("T")[0] : "");
 
           setCep(dados.cep ?? "");
-          setNumero(dados.numero ?? "");
-          setComplemento(dados.complemento ?? "");
           if (dados.cep && dados.rua) {
             setEnderecoDisplay(
               `${dados.rua}, ${dados.bairro} — ${dados.cidade}/${dados.uf}`
@@ -136,10 +130,7 @@ export const EditarAnuncioPage: React.FC = () => {
         descricao,
         condicao,
         categoriaId: Number(categoriaId),
-        expiraEm: expiraEm ? `${expiraEm}T00:00:00` : "",
         cep: cep.replace(/\D/g, ""),
-        numero,
-        complemento: complemento || undefined,
         enderecoId: anuncio.enderecoId,
       };
 
@@ -289,17 +280,6 @@ export const EditarAnuncioPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className={labelClass}>Data Limite</label>
-                <input
-                  required
-                  type="date"
-                  className={inputClass}
-                  value={expiraEm}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setExpiraEm(e.target.value)}
-                />
-              </div>
             </div>
 
             {/* ENDEREÇO */}
@@ -308,7 +288,7 @@ export const EditarAnuncioPage: React.FC = () => {
                 <MapPin size={18} className="text-blue-600" />
                 Onde o item está?
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <label className={labelClass}>CEP</label>
                   <div className="flex min-w-0 gap-2">
@@ -339,27 +319,6 @@ export const EditarAnuncioPage: React.FC = () => {
                   {enderecoDisplay && (
                     <p className="text-emerald-600 text-xs font-semibold ml-1">✓ {enderecoDisplay}</p>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Número</label>
-                  <input
-                    required
-                    className={inputClass}
-                    value={numero}
-                    onChange={(e) => setNumero(e.target.value)}
-                  />
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className={labelClass}>
-                    Complemento <span className="normal-case font-normal text-slate-400">(opcional)</span>
-                  </label>
-                  <input
-                    className={inputClass}
-                    value={complemento}
-                    onChange={(e) => setComplemento(e.target.value)}
-                  />
                 </div>
               </div>
             </div>
