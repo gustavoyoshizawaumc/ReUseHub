@@ -5,7 +5,6 @@ import {
   Baby,
   Bike,
   Building2,
-  Camera,
   Car,
   ChevronDown,
   ChevronLeft,
@@ -22,6 +21,7 @@ import {
   LogOut,
   MapPin,
   MessageCircle,
+  MonitorSmartphone,
   Music,
   PawPrint,
   PlusCircle,
@@ -32,7 +32,7 @@ import {
   Smartphone,
   User,
   UserPlus,
-  Zap,
+  WashingMachine,
 } from "lucide-react";
 import { authService } from "../services/authService";
 import { listarConversas } from "../services/chatService";
@@ -56,10 +56,10 @@ const CATEGORIES_BAR = [
   { icon: PawPrint, label: "Pets", categoriaId: 10 },
   { icon: Music, label: "Hobbies", categoriaId: 11 },
   { icon: Bike, label: "Agro", categoriaId: 12 },
-  { icon: Camera, label: "Eletrônicos", categoriaId: 15 },
+  { icon: MonitorSmartphone, label: "Eletrônicos", categoriaId: 15 },
   { icon: Gamepad2, label: "Games", categoriaId: 16 },
   { icon: Laptop, label: "Informática", categoriaId: 19 },
-  { icon: Zap, label: "Eletrodoméstico", categoriaId: 20 },
+  { icon: WashingMachine, label: "Eletrodoméstico", categoriaId: 20 },
   { icon: Armchair, label: "Móveis", categoriaId: 21 },
   { icon: Hammer, label: "Construção", categoriaId: 22 },
   { icon: Building2, label: "Escritório", categoriaId: 23 },
@@ -415,14 +415,14 @@ export const Header: React.FC = () => {
                     setActiveCategory(cat.categoriaId);
                     navegarParaBusca(criarParamsBusca(undefined, cat.categoriaId), cat.label);
                   }}
-                  className={`flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-b-2 px-1 pb-1 transition-colors sm:w-[78px] sm:px-2 ${
+                  className={`flex w-[80px] flex-shrink-0 flex-col items-center gap-1 border-b-2 px-1 pb-1 transition-colors sm:w-[92px] sm:px-2 ${
                     activeCategory === cat.categoriaId ? "border-reusehub-blue text-reusehub-blue font-bold" : "border-transparent text-slate-400 font-bold hover:text-reusehub-blue"
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${activeCategory === cat.categoriaId ? "bg-blue-50" : "bg-slate-50"}`}>
                     <Icon size={16} strokeWidth={2} />
                   </div>
-                  <span className="text-[10px] tracking-wide">{cat.label}</span>
+                  <span className="whitespace-nowrap text-[10px] tracking-wide">{cat.label}</span>
                 </button>
               );
             })}
