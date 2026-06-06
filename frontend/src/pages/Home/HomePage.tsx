@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "../../components/Header";
 import { HeroBanner } from "../../components/HeroBanner";
@@ -18,7 +18,7 @@ import type {
   SecaoHome,
 } from "../../types/anuncio.types";
 
-const TITULO_SECAO_ULTIMAS_BUSCAS = "Baseado em suas Ãºltimas buscas";
+const TITULO_SECAO_ULTIMAS_BUSCAS = "Baseado em suas últimas buscas";
 const CONTEXTO_RECOMENDADOS: ContextoDestaque = "RECOMENDADOS_PARA_VOCE";
 
 export const HomePage: React.FC = () => {
@@ -176,8 +176,8 @@ const ConteudoHome: React.FC<ConteudoHomeProps> = ({
  * Combina secoes server-driven (bootstrap-home) com a secao client-driven
  * de ultimas buscas. A ordem desejada e:
  *
- *  1. Baseado nos seus favoritos (RECOMENDADOS_PARA_VOCE) â€” quando existir
- *  2. Baseado em suas ultimas buscas â€” quando o usuario tiver historico local
+ *  1. Baseado nos seus favoritos (RECOMENDADOS_PARA_VOCE) — quando existir
+ *  2. Baseado em suas ultimas buscas — quando o usuario tiver historico local
  *  3. Demais secoes do backend (MAIS_PROCURADOS, POPULARES, RECENTES)
  *
  * Quando RECOMENDADOS_PARA_VOCE nao estiver presente (anonimo / sem historico
@@ -270,9 +270,9 @@ function transformarEmDestaque(anuncio: Anuncio): AnuncioDestaque {
 function obterMensagemErro(err: unknown): string {
   if (typeof err === "object" && err && "response" in err) {
     const response = (err as { response?: { data?: { mensagem?: string; message?: string } } }).response;
-    return response?.data?.mensagem ?? response?.data?.message ?? "NÃ£o foi possÃ­vel filtrar anÃºncios por localizaÃ§Ã£o.";
+    return response?.data?.mensagem ?? response?.data?.message ?? "Não foi possível filtrar anúncios por localização.";
   }
 
-  return err instanceof Error ? err.message : "NÃ£o foi possÃ­vel filtrar anÃºncios por localizaÃ§Ã£o.";
+  return err instanceof Error ? err.message : "Não foi possível filtrar anúncios por localização.";
 }
 
