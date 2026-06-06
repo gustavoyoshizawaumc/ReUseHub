@@ -1,0 +1,78 @@
+{
+  "descricao": "Pool de enderecos reais para o seed de anuncios (fase 2). 60 tuplas CEP+numero, 6 por cidade, 10 cidades com foco no Alto Tiete. Todos os CEPs foram verificados contra o ViaCEP (mesma API que o backend usa em ViaCepService), portanto resolvem garantido no fluxo de criacao de anuncio. O backend deriva rua/bairro/cidade/uf a partir do CEP em tempo de execucao; os campos logradouro/bairro/cidade/uf aqui sao apenas documentacao/legibilidade. O que o script da fase 2 envia no DTO e: cep + numero (+ complemento opcional).",
+  "fonte": "ViaCEP (verificado em 2026-06)",
+  "totalTuplas": 60,
+  "cidades": 10,
+  "tuplasPorCidade": 6,
+  "enderecos": [
+    { "cidade": "Mogi das Cruzes", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Doutor Correa", "cep": "08710-040", "numero": "75", "complemento": "" },
+    { "cidade": "Mogi das Cruzes", "uf": "SP", "bairro": "Mogi Moderno", "logradouro": "Rua Quinze de Novembro", "cep": "08717-780", "numero": "128", "complemento": "" },
+    { "cidade": "Mogi das Cruzes", "uf": "SP", "bairro": "Vila Oliveira", "logradouro": "Praca Sete de Setembro", "cep": "08790-100", "numero": "240", "complemento": "" },
+    { "cidade": "Mogi das Cruzes", "uf": "SP", "bairro": "Vila Santana", "logradouro": "Rua Doutor Nelson Cruz", "cep": "08730-730", "numero": "355", "complemento": "" },
+    { "cidade": "Mogi das Cruzes", "uf": "SP", "bairro": "Vila Sao Sebastiao", "logradouro": "Rua Doutor Milton Cruz", "cep": "08738-030", "numero": "467", "complemento": "" },
+    { "cidade": "Mogi das Cruzes", "uf": "SP", "bairro": "Vila Sao Paulo", "logradouro": "Rua Quinze de Novembro", "cep": "08840-110", "numero": "590", "complemento": "" },
+
+    { "cidade": "Suzano", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Quinze de Novembro", "cep": "08674-210", "numero": "60", "complemento": "" },
+    { "cidade": "Suzano", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Sete de Setembro", "cep": "08674-205", "numero": "145", "complemento": "" },
+    { "cidade": "Suzano", "uf": "SP", "bairro": "Parque Suzano", "logradouro": "Rua Sete de Setembro", "cep": "08673-020", "numero": "232", "complemento": "" },
+    { "cidade": "Suzano", "uf": "SP", "bairro": "Rio Abaixo", "logradouro": "Rua Doutor Libonati", "cep": "08694-095", "numero": "318", "complemento": "" },
+    { "cidade": "Suzano", "uf": "SP", "bairro": "Vila Maluf", "logradouro": "Rua Doutor Aniz Fadul", "cep": "08685-020", "numero": "489", "complemento": "" },
+    { "cidade": "Suzano", "uf": "SP", "bairro": "Rio Abaixo", "logradouro": "Estrada Doutor Ayrosa", "cep": "08694-100", "numero": "660", "complemento": "" },
+
+    { "cidade": "Itaquaquecetuba", "uf": "SP", "bairro": "Estacao", "logradouro": "Rua Quinze de Novembro", "cep": "08571-060", "numero": "88", "complemento": "" },
+    { "cidade": "Itaquaquecetuba", "uf": "SP", "bairro": "Jardim Europa", "logradouro": "Rua Quinze de Novembro", "cep": "08572-200", "numero": "164", "complemento": "" },
+    { "cidade": "Itaquaquecetuba", "uf": "SP", "bairro": "Pedreira", "logradouro": "Rua Sete de Setembro", "cep": "08572-040", "numero": "275", "complemento": "" },
+    { "cidade": "Itaquaquecetuba", "uf": "SP", "bairro": "Jardim Itapua", "logradouro": "Rua Doutor Emilio Ribas", "cep": "08579-080", "numero": "390", "complemento": "" },
+    { "cidade": "Itaquaquecetuba", "uf": "SP", "bairro": "Residencial Jasmim", "logradouro": "Rua Doutor Wilson Tadashi Nakashima", "cep": "08593-560", "numero": "510", "complemento": "" },
+    { "cidade": "Itaquaquecetuba", "uf": "SP", "bairro": "Parque Residencial Scaffid II", "logradouro": "Rua Coronel Pacheco", "cep": "08587-765", "numero": "623", "complemento": "" },
+
+    { "cidade": "Poa", "uf": "SP", "bairro": "Calmon Viana", "logradouro": "Rua Quinze de Novembro", "cep": "08560-020", "numero": "52", "complemento": "" },
+    { "cidade": "Poa", "uf": "SP", "bairro": "Vila Julia", "logradouro": "Praca Quinze de Novembro", "cep": "08551-240", "numero": "137", "complemento": "" },
+    { "cidade": "Poa", "uf": "SP", "bairro": "Calmon Viana", "logradouro": "Rua Sete de Setembro", "cep": "08560-060", "numero": "248", "complemento": "" },
+    { "cidade": "Poa", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Doutor Miguel Couto", "cep": "08562-040", "numero": "364", "complemento": "" },
+    { "cidade": "Poa", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Doutor Oswaldo Cruz", "cep": "08562-130", "numero": "478", "complemento": "" },
+    { "cidade": "Poa", "uf": "SP", "bairro": "Vila Sopreter", "logradouro": "Rua Doutor Emilio Ribas", "cep": "08562-060", "numero": "595", "complemento": "" },
+
+    { "cidade": "Ferraz de Vasconcelos", "uf": "SP", "bairro": "Jardim Yone", "logradouro": "Avenida Quinze de Novembro", "cep": "08504-210", "numero": "66", "complemento": "" },
+    { "cidade": "Ferraz de Vasconcelos", "uf": "SP", "bairro": "Vila Romanopolis", "logradouro": "Avenida Quinze de Novembro", "cep": "08500-405", "numero": "151", "complemento": "" },
+    { "cidade": "Ferraz de Vasconcelos", "uf": "SP", "bairro": "Vila Romanopolis", "logradouro": "Rua Sete de Setembro", "cep": "08529-300", "numero": "262", "complemento": "" },
+    { "cidade": "Ferraz de Vasconcelos", "uf": "SP", "bairro": "Jardim Julio de Carvalho", "logradouro": "Rua Doutor Eduardo Vaz", "cep": "08534-430", "numero": "377", "complemento": "" },
+    { "cidade": "Ferraz de Vasconcelos", "uf": "SP", "bairro": "Jardim Ferrazense", "logradouro": "Rua Doutor Rodrigues Alves", "cep": "08502-050", "numero": "488", "complemento": "" },
+    { "cidade": "Ferraz de Vasconcelos", "uf": "SP", "bairro": "Jardim Lourdes", "logradouro": "Rua Doutor Miguel Vieira Ferreira", "cep": "08537-150", "numero": "604", "complemento": "" },
+
+    { "cidade": "Aruja", "uf": "SP", "bairro": "Jardim Albino Neves", "logradouro": "Rua Doutor Astelio de Toledo Fernandes", "cep": "07400-245", "numero": "70", "complemento": "" },
+    { "cidade": "Aruja", "uf": "SP", "bairro": "Parque Rodrigo Barreto", "logradouro": "Rua Doutor Mario Napolitano", "cep": "07417-120", "numero": "158", "complemento": "" },
+    { "cidade": "Aruja", "uf": "SP", "bairro": "Chacara Bananal", "logradouro": "Ladeira Coronel Jose Lourenco de Souza", "cep": "07418-000", "numero": "269", "complemento": "" },
+    { "cidade": "Aruja", "uf": "SP", "bairro": "Pirituba", "logradouro": "Rua Aires dos Santos Pires", "cep": "07420-150", "numero": "381", "complemento": "" },
+    { "cidade": "Aruja", "uf": "SP", "bairro": "Barbosas", "logradouro": "Rua Julio Antonio dos Santos", "cep": "07402-065", "numero": "492", "complemento": "" },
+    { "cidade": "Aruja", "uf": "SP", "bairro": "CDHU Fazenda Albor", "logradouro": "Rua Juraci Gomes dos Santos", "cep": "07432-123", "numero": "607", "complemento": "" },
+
+    { "cidade": "Guarulhos", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Quinze de Novembro", "cep": "07011-030", "numero": "82", "complemento": "" },
+    { "cidade": "Guarulhos", "uf": "SP", "bairro": "Vila Operaria", "logradouro": "Rua Quinze de Novembro", "cep": "07087-090", "numero": "169", "complemento": "" },
+    { "cidade": "Guarulhos", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Sete de Setembro", "cep": "07011-020", "numero": "274", "complemento": "" },
+    { "cidade": "Guarulhos", "uf": "SP", "bairro": "Parque Jandaia II", "logradouro": "Rua Sete de Setembro", "cep": "07261-620", "numero": "388", "complemento": "" },
+    { "cidade": "Guarulhos", "uf": "SP", "bairro": "Vila Galvao", "logradouro": "Avenida Sete de Setembro", "cep": "07064-002", "numero": "499", "complemento": "" },
+    { "cidade": "Guarulhos", "uf": "SP", "bairro": "Vila Sao Rafael", "logradouro": "Rua Doutor Passos", "cep": "07053-070", "numero": "615", "complemento": "" },
+
+    { "cidade": "Sao Paulo", "uf": "SP", "bairro": "Consolacao", "logradouro": "Rua Augusta", "cep": "01304-000", "numero": "95", "complemento": "" },
+    { "cidade": "Sao Paulo", "uf": "SP", "bairro": "Cerqueira Cesar", "logradouro": "Rua Augusta", "cep": "01412-971", "numero": "183", "complemento": "" },
+    { "cidade": "Sao Paulo", "uf": "SP", "bairro": "Vila Medeiros", "logradouro": "Rua Maria Augusta", "cep": "02214-100", "numero": "291", "complemento": "" },
+    { "cidade": "Sao Paulo", "uf": "SP", "bairro": "Jardim Celeste", "logradouro": "Rua Augusta Santel", "cep": "04195-120", "numero": "402", "complemento": "" },
+    { "cidade": "Sao Paulo", "uf": "SP", "bairro": "Parque Casper", "logradouro": "Rua Fragata Augusta", "cep": "03823-040", "numero": "514", "complemento": "" },
+    { "cidade": "Sao Paulo", "uf": "SP", "bairro": "Vila Clarice", "logradouro": "Rua Quinze de Novembro", "cep": "05176-110", "numero": "628", "complemento": "" },
+
+    { "cidade": "Osasco", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Antonio Agu", "cep": "06013-000", "numero": "108", "complemento": "" },
+    { "cidade": "Osasco", "uf": "SP", "bairro": "Conceicao", "logradouro": "Rua Antonio Aguiar Monteiro", "cep": "06140-230", "numero": "196", "complemento": "" },
+    { "cidade": "Osasco", "uf": "SP", "bairro": "Rochdale", "logradouro": "Praca Presidente Kennedy", "cep": "06220-020", "numero": "304", "complemento": "" },
+    { "cidade": "Osasco", "uf": "SP", "bairro": "Alianca", "logradouro": "Avenida Presidente Medici", "cep": "06268-000", "numero": "417", "complemento": "" },
+    { "cidade": "Osasco", "uf": "SP", "bairro": "Remedios", "logradouro": "Avenida Presidente Kennedy", "cep": "06298-190", "numero": "529", "complemento": "" },
+    { "cidade": "Osasco", "uf": "SP", "bairro": "Helena Maria", "logradouro": "Rua Presidente Costa e Silva", "cep": "06253-000", "numero": "641", "complemento": "" },
+
+    { "cidade": "Barueri", "uf": "SP", "bairro": "Vila Nova", "logradouro": "Rua Quinze de Novembro", "cep": "06420-000", "numero": "120", "complemento": "" },
+    { "cidade": "Barueri", "uf": "SP", "bairro": "Vila Engenho Novo", "logradouro": "Rua Doutor Adonai", "cep": "06415-090", "numero": "207", "complemento": "" },
+    { "cidade": "Barueri", "uf": "SP", "bairro": "Vila Ceres", "logradouro": "Rua Doutor Parize", "cep": "06406-170", "numero": "315", "complemento": "" },
+    { "cidade": "Barueri", "uf": "SP", "bairro": "Jardim Belval", "logradouro": "Rua Doutor Osvaldo Cruz", "cep": "06420-330", "numero": "428", "complemento": "" },
+    { "cidade": "Barueri", "uf": "SP", "bairro": "Centro", "logradouro": "Rua Doutor Joao Mendes", "cep": "06401-080", "numero": "536", "complemento": "" },
+    { "cidade": "Barueri", "uf": "SP", "bairro": "Jardim Iracema/Aldeia", "logradouro": "Rua Doutor Danton Vampre", "cep": "06440-210", "numero": "649", "complemento": "" }
+  ]
+}
