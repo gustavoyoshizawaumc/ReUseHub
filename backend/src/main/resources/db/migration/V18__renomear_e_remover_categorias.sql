@@ -1,7 +1,8 @@
 -- Renomeia categorias para os nomes curtos definidos pelo time (slugs mantidos
--- para nao quebrar URLs/filtros existentes) e desativa as categorias
--- descontinuadas. Elas nao devem aparecer no header, mas podem continuar
--- referenciadas por anuncios antigos sem violar a FK anuncios.categoria_id.
+-- para nao quebrar URLs/filtros existentes) e remove as 6 categorias descontinuadas.
+-- A FK anuncios.categoria_id e NOT NULL com RESTRICT: se alguma das categorias
+-- removidas ainda tiver anuncio vinculado, o DELETE falha e a migration aborta
+-- sem destruir dados (decisao: falhar em vez de reatribuir/excluir anuncios).
 
 -- Renomeacoes (apenas as que de fato mudam de nome)
 UPDATE categorias SET nome = 'Celulares'      WHERE slug = 'celulares-e-telefonia';
@@ -17,8 +18,8 @@ UPDATE categorias SET nome = 'Eletrodoméstico' WHERE slug = 'eletro';
 UPDATE categorias SET nome = 'Construção'      WHERE slug = 'materiais-de-construcao';
 UPDATE categorias SET nome = 'Escritório'      WHERE slug = 'escritorio-e-home-office';
 
--- Desativacao das categorias descontinuadas
-UPDATE categorias SET ativa = false WHERE slug IN (
+-- Remocao das categorias descontinuadas
+DELETE FROM categorias WHERE slug IN (
     'imoveis',
     'servicos',
     'vagas-de-emprego',
