@@ -33,7 +33,6 @@ import { ModeracaoLayout } from '../../components/moderacao/ModeracaoLayout';
 import { authService } from '../../services/authService';
 import {
   alterarUsuarioAdmin,
-  analisarDenuncia,
   aprovarAnuncio,
   criarAdministrador,
   criarModerador,
@@ -52,6 +51,7 @@ import {
   reprovarSuspeito,
   removerAvaliacaoModeracao,
   suspenderAnuncio,
+  suspenderAnuncioPorDenuncia,
   type AdminDashboard,
   type AdminUsuario,
   type AnuncioModeracaoFiltros,
@@ -226,6 +226,63 @@ const ListToolbar = ({
 );
 
 const filterControlClass = 'h-10 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500';
+const PAGE_SIZE_LISTAGENS = 10;
+type ListaPaginada = 'anuncios' | 'denuncias' | 'suspeitos' | 'avaliacoes' | 'historico' | 'usuarios';
+
+const totalPaginas = (total: number) => Math.max(1, Math.ceil(total / PAGE_SIZE_LISTAGENS));
+
+const paginarItens = <T,>(itens: T[], pagina: number) => {
+  const inicio = pagina * PAGE_SIZE_LISTAGENS;
+  return itens.slice(inicio, inicio + PAGE_SIZE_LISTAGENS);
+};
+
+const Pagination = ({
+  page,
+  total,
+  onChange,
+}: {
+  page: number;
+  total: number;
+  onChange: (page: number) => void;
+}) => {
+  const pages = totalPaginas(total);
+  if (pages <= 1) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+      <button
+        type="button"
+        disabled={page === 0}
+        onClick={() => onChange(Math.max(0, page - 1))}
+        className="h-9 rounded-md border border-slate-200 px-3 text-xs font-bold text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Anterior
+      </button>
+      {Array.from({ length: pages }).map((_, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => onChange(index)}
+          className={`h-9 min-w-9 rounded-md border px-3 text-xs font-black transition-colors ${
+            page === index
+              ? 'border-blue-600 bg-blue-600 text-white'
+              : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
+          }`}
+        >
+          {index + 1}
+        </button>
+      ))}
+      <button
+        type="button"
+        disabled={page >= pages - 1}
+        onClick={() => onChange(Math.min(pages - 1, page + 1))}
+        className="h-9 rounded-md border border-slate-200 px-3 text-xs font-bold text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Proxima
+      </button>
+    </div>
+  );
+};
 
 const Thumb = ({ urls, title }: { urls?: string[]; title: string }) => {
   const src = imageUrl(urls?.[0]);
@@ -407,6 +464,147 @@ const AnuncioDetalheModal = ({
   );
 };
 
+const DenunciaAnaliseModal = ({
+  denuncia,
+  onClose,
+  onDismiss,
+  onSuspend,
+  processando,
+}: {
+  denuncia: DenunciaModeracao;
+  onClose: () => void;
+  onDismiss: () => void;
+  onSuspend: (mensagem: string) => void;
+  processando: boolean;
+}) => {
+  const [mensagemSuspensao, setMensagemSuspensao] = useState('');
+  const [erroMensagem, setErroMensagem] = useState<string | null>(null);
+  const foto = imageUrl(denuncia.imagensUrls?.[0]);
+
+  const suspender = () => {
+    const mensagem = mensagemSuspensao.trim();
+    if (!mensagem) {
+      setErroMensagem('Informe a mensagem que sera exibida ao anunciante.');
+      return;
+    }
+    onSuspend(mensagem);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <article className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Analise da denuncia</p>
+            <h3 className="mt-1 truncate text-xl font-black text-slate-950">{denuncia.tituloAnuncio}</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Denuncia {denuncia.id}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            aria-label="Fechar analise da denuncia"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[0.95fr_1.05fr]">
+          <section className="border-b border-slate-200 bg-slate-50 p-5 lg:border-b-0 lg:border-r">
+            <div className="aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {foto ? (
+                <img src={foto} alt={denuncia.tituloAnuncio} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-300">
+                  <FileText size={42} />
+                  <p className="text-sm font-bold">Sem imagem disponivel</p>
+                </div>
+              )}
+            </div>
+
+            <dl className="mt-4 grid grid-cols-1 gap-3 text-sm">
+              <div className="rounded-md bg-white p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Anunciante</dt>
+                <dd className="mt-1 font-bold text-slate-800">{denuncia.nomeAnunciante || '-'}</dd>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md bg-white p-3">
+                  <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</dt>
+                  <dd className="mt-1 font-bold text-slate-800">{denuncia.statusAnuncio || '-'}</dd>
+                </div>
+                <div className="rounded-md bg-white p-3">
+                  <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipo</dt>
+                  <dd className="mt-1 font-bold text-slate-800">{denuncia.tipoAnuncio || '-'}</dd>
+                </div>
+              </div>
+              <div className="rounded-md bg-white p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categoria</dt>
+                <dd className="mt-1 font-bold text-slate-800">{denuncia.categoriaAnuncio || '-'}</dd>
+              </div>
+              <div className="rounded-md border border-orange-100 bg-orange-50 p-3">
+                <dt className="text-[10px] font-black uppercase tracking-widest text-orange-500">Recorrencia</dt>
+                <dd className="mt-1 font-black text-orange-700">{denuncia.denunciasAbertasDoAnuncio} denuncia(s) aberta(s)</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="space-y-5 p-5">
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Relato recebido</h4>
+              <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-black text-slate-900">{denuncia.motivo}</p>
+                <p className="mt-1 text-xs font-bold text-slate-500">Enviado por {denuncia.nomeDenunciante}</p>
+                <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-700">
+                  {denuncia.descricao || 'O denunciante nao adicionou detalhes.'}
+                </p>
+              </div>
+            </div>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Mensagem ao anunciante em caso de suspensao</span>
+              <textarea
+                value={mensagemSuspensao}
+                onChange={(event) => {
+                  setMensagemSuspensao(event.target.value);
+                  setErroMensagem(null);
+                }}
+                rows={5}
+                placeholder="Explique objetivamente por que o anuncio foi suspenso e o que precisa ser corrigido."
+                className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
+              />
+              {erroMensagem && <span className="mt-1 block text-xs font-bold text-rose-600">{erroMensagem}</span>}
+            </label>
+          </section>
+        </div>
+
+        <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-semibold text-slate-400">
+            Descarte apenas quando a denuncia for improcedente. Suspensoes notificam o anunciante.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={onDismiss}
+              disabled={processando}
+              className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              Descartar denuncia
+            </button>
+            <button
+              type="button"
+              onClick={suspender}
+              disabled={processando}
+              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-orange-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+            >
+              <ShieldOff size={16} /> Suspender anuncio
+            </button>
+          </div>
+        </footer>
+      </article>
+    </div>
+  );
+};
+
 export const ModeracaoPage: React.FC = () => {
   const location = useLocation();
   const { categorias } = useCategorias();
@@ -431,6 +629,7 @@ export const ModeracaoPage: React.FC = () => {
   const [erroDashboard, setErroDashboard] = useState<string | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
   const [anuncioDetalhado, setAnuncioDetalhado] = useState<Anuncio | null>(null);
+  const [denunciaEmAnalise, setDenunciaEmAnalise] = useState<DenunciaModeracao | null>(null);
   const [fotoDetalheAtual, setFotoDetalheAtual] = useState(0);
   const filtrosUsuariosInicializadosRef = useRef(false);
   const filtrosDashboardInicializadosRef = useRef(false);
@@ -443,6 +642,14 @@ export const ModeracaoPage: React.FC = () => {
   const filtrosOperacionaisAtuaisRef = useRef(filtrosOperacionais);
   filtrosDashboardAtuaisRef.current = dashboardFiltros;
   filtrosOperacionaisAtuaisRef.current = filtrosOperacionais;
+  const [paginasListas, setPaginasListas] = useState<Record<ListaPaginada, number>>({
+    anuncios: 0,
+    denuncias: 0,
+    suspeitos: 0,
+    avaliacoes: 0,
+    historico: 0,
+    usuarios: 0,
+  });
   const [moderadorForm, setModeradorForm] = useState({
     name: '',
     email: '',
@@ -455,7 +662,7 @@ export const ModeracaoPage: React.FC = () => {
     setLoadingUsuarios(true);
     setErro(null);
     try {
-      const usuariosData = await listarUsuariosAdmin(0, 20, filtros);
+      const usuariosData = await listarUsuariosAdmin(0, 100, filtros);
       setUsuarios(usuariosData.content ?? []);
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Nao foi possivel listar usuarios.');
@@ -527,7 +734,7 @@ export const ModeracaoPage: React.FC = () => {
       if (isAdmin) {
         const [dashResult, usuariosResult, auditoriaResult] = await Promise.allSettled([
           obterDashboardAdmin(filtrosDashboardAtuaisRef.current),
-          listarUsuariosAdmin(0, 20, filtrosUsuariosIniciaisRef.current),
+          listarUsuariosAdmin(0, 100, filtrosUsuariosIniciaisRef.current),
           listarAuditoria(filtrosAtuais.historico),
         ]);
         if (dashResult.status === 'fulfilled') {
@@ -667,7 +874,22 @@ export const ModeracaoPage: React.FC = () => {
     void executar(anuncioId, acao);
   };
 
+  const descartarDenunciaEmAnalise = () => {
+    if (!denunciaEmAnalise) return;
+    const denunciaId = denunciaEmAnalise.id;
+    setDenunciaEmAnalise(null);
+    void executar(denunciaId, () => descartarDenuncia(denunciaId, 'Denuncia improcedente.'));
+  };
+
+  const suspenderDenunciaEmAnalise = (mensagem: string) => {
+    if (!denunciaEmAnalise) return;
+    const denunciaId = denunciaEmAnalise.id;
+    setDenunciaEmAnalise(null);
+    void executar(denunciaId, () => suspenderAnuncioPorDenuncia(denunciaId, mensagem));
+  };
+
   const alterarFiltroUsuario = <K extends keyof UsuarioAdminFiltros>(campo: K, valor: UsuarioAdminFiltros[K]) => {
+    setPaginasListas((prev) => ({ ...prev, usuarios: 0 }));
     setUsuarioFiltros((prev) => ({ ...prev, [campo]: valor }));
   };
 
@@ -675,6 +897,9 @@ export const ModeracaoPage: React.FC = () => {
     K extends keyof FiltrosOperacionais,
     F extends keyof FiltrosOperacionais[K]
   >(grupo: K, campo: F, valor: FiltrosOperacionais[K][F]) => {
+    if (grupo in paginasListas) {
+      setPaginasListas((prev) => ({ ...prev, [grupo]: 0 }));
+    }
     setFiltrosOperacionais((prev) => ({
       ...prev,
       [grupo]: { ...prev[grupo], [campo]: valor },
@@ -709,6 +934,16 @@ export const ModeracaoPage: React.FC = () => {
   const avaliacoesFiltradas = avaliacoes.filter((avaliacao) =>
     contemTermo(filtrosOperacionais.avaliacoes.termo ?? '', avaliacao.id, avaliacao.anuncioTitulo, avaliacao.avaliadorNome, avaliacao.avaliadoNome, avaliacao.comentario)
   );
+  const historicoAtivo = isAdmin ? auditoria : historico;
+  const anunciosPagina = paginarItens(anunciosFiltrados, paginasListas.anuncios);
+  const denunciasPagina = paginarItens(denunciasFiltradas, paginasListas.denuncias);
+  const suspeitosPagina = paginarItens(suspeitosFiltrados, paginasListas.suspeitos);
+  const avaliacoesPagina = paginarItens(avaliacoesFiltradas, paginasListas.avaliacoes);
+  const historicoPagina = paginarItens(historicoAtivo, paginasListas.historico);
+  const usuariosPagina = paginarItens(usuarios, paginasListas.usuarios);
+  const alterarPaginaLista = (lista: ListaPaginada, pagina: number) => {
+    setPaginasListas((prev) => ({ ...prev, [lista]: pagina }));
+  };
   const counts = useMemo(
     () => ({
       anuncios: pendentes.length,
@@ -777,6 +1012,16 @@ export const ModeracaoPage: React.FC = () => {
           onApprove={() => executarAcaoDoDetalhe(() => aprovarAnuncio(anuncioDetalhado.id))}
           onReject={() => executarAcaoDoDetalhe(() => reprovarAnuncio(anuncioDetalhado.id))}
           processando={processando === anuncioDetalhado.id}
+        />
+      )}
+
+      {denunciaEmAnalise && (
+        <DenunciaAnaliseModal
+          denuncia={denunciaEmAnalise}
+          onClose={() => setDenunciaEmAnalise(null)}
+          onDismiss={descartarDenunciaEmAnalise}
+          onSuspend={suspenderDenunciaEmAnalise}
+          processando={processando === denunciaEmAnalise.id}
         />
       )}
 
@@ -1032,7 +1277,7 @@ export const ModeracaoPage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {anunciosFiltrados.map((anuncio) => (
+                          {anunciosPagina.map((anuncio) => (
                             <tr key={anuncio.id} className="transition-colors hover:bg-slate-50">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
@@ -1090,6 +1335,7 @@ export const ModeracaoPage: React.FC = () => {
                       </table>
                     </div>
                   )}
+                  <Pagination page={paginasListas.anuncios} total={anunciosFiltrados.length} onChange={(page) => alterarPaginaLista('anuncios', page)} />
                 </section>
               )}
 
@@ -1128,7 +1374,7 @@ export const ModeracaoPage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {denunciasFiltradas.map((denuncia) => (
+                          {denunciasPagina.map((denuncia) => (
                             <tr key={denuncia.id} className="transition-colors hover:bg-slate-50">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
@@ -1149,10 +1395,7 @@ export const ModeracaoPage: React.FC = () => {
                               <td className="px-4 py-3 text-xs font-black text-slate-600">{denuncia.status}</td>
                               <td className="px-4 py-3">
                                 {denuncia.status === 'ABERTA' ? <div className="flex justify-end gap-2">
-                                  <button onClick={() => executar(denuncia.id, () => descartarDenuncia(denuncia.id, 'Denuncia improcedente.'))} disabled={processando === denuncia.id} className="rounded-md bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-50">
-                                    Descartar
-                                  </button>
-                                  <button onClick={() => executar(denuncia.id, () => analisarDenuncia(denuncia.id, 'Denuncia analisada.'))} disabled={processando === denuncia.id} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
+                                  <button onClick={() => setDenunciaEmAnalise(denuncia)} disabled={processando === denuncia.id} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
                                     Analisar
                                   </button>
                                 </div> : <p className="text-right text-xs font-bold text-slate-400">Resolvida</p>}
@@ -1163,6 +1406,7 @@ export const ModeracaoPage: React.FC = () => {
                       </table>
                     </div>
                   )}
+                  <Pagination page={paginasListas.denuncias} total={denunciasFiltradas.length} onChange={(page) => alterarPaginaLista('denuncias', page)} />
                 </section>
               )}
 
@@ -1182,17 +1426,9 @@ export const ModeracaoPage: React.FC = () => {
                       <option value="">Todos os status</option>
                       {Object.keys(statusClass).map((status) => <option key={status} value={status}>{status}</option>)}
                     </select>
-                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                      Minimo de denuncias
-                      <input
-                        type="number"
-                        min="1"
-                        max="20"
-                        value={filtrosOperacionais.suspeitos.minimoDenuncias ?? 2}
-                        onChange={(event) => alterarFiltroOperacional('suspeitos', 'minimoDenuncias', Number(event.target.value) || 1)}
-                        className={`${filterControlClass} w-20`}
-                      />
-                    </label>
+                    <span className="inline-flex h-10 items-center rounded-md border border-orange-100 bg-orange-50 px-3 text-xs font-black uppercase text-orange-700">
+                      2 ou mais denuncias abertas
+                    </span>
                   </ListToolbar>
                   {suspeitosFiltrados.length === 0 ? (
                     <EmptyState text="Nenhum anuncio suspeito pelos filtros atuais." />
@@ -1209,7 +1445,7 @@ export const ModeracaoPage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {suspeitosFiltrados.map((anuncio) => (
+                          {suspeitosPagina.map((anuncio) => (
                             <tr key={anuncio.anuncioId} className="transition-colors hover:bg-slate-50">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
@@ -1237,6 +1473,7 @@ export const ModeracaoPage: React.FC = () => {
                       </table>
                     </div>
                   )}
+                  <Pagination page={paginasListas.suspeitos} total={suspeitosFiltrados.length} onChange={(page) => alterarPaginaLista('suspeitos', page)} />
                 </section>
               )}
 
@@ -1274,7 +1511,7 @@ export const ModeracaoPage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {avaliacoesFiltradas.map((avaliacao) => (
+                          {avaliacoesPagina.map((avaliacao) => (
                             <tr key={avaliacao.id} className="transition-colors hover:bg-slate-50">
                               <td className="px-4 py-3">
                                 <p className="font-extrabold text-slate-900">{avaliacao.anuncioTitulo}</p>
@@ -1304,6 +1541,7 @@ export const ModeracaoPage: React.FC = () => {
                       </table>
                     </div>
                   )}
+                  <Pagination page={paginasListas.avaliacoes} total={avaliacoesFiltradas.length} onChange={(page) => alterarPaginaLista('avaliacoes', page)} />
                 </section>
               )}
 
@@ -1313,13 +1551,14 @@ export const ModeracaoPage: React.FC = () => {
                     value={filtrosOperacionais.historico.termo ?? ''}
                     onChange={(value) => alterarFiltroOperacional('historico', 'termo', value)}
                     placeholder="Buscar por acao, alvo, responsavel ou ID"
-                    resultCount={(isAdmin ? auditoria : historico).length}
+                    resultCount={historicoAtivo.length}
                   >
                     <input value={filtrosOperacionais.historico.acao ?? ''} onChange={(event) => alterarFiltroOperacional('historico', 'acao', event.target.value)} placeholder="Filtrar acao exata" className={filterControlClass} />
                     <input type="date" aria-label="Historico desde" value={filtrosOperacionais.historico.criadoDe ?? ''} onChange={(event) => alterarFiltroOperacional('historico', 'criadoDe', event.target.value)} className={filterControlClass} />
                     <input type="date" aria-label="Historico ate" value={filtrosOperacionais.historico.criadoAte ?? ''} onChange={(event) => alterarFiltroOperacional('historico', 'criadoAte', event.target.value)} className={filterControlClass} />
                   </ListToolbar>
-                  <HistoricoList itens={isAdmin ? auditoria : historico} />
+                  <HistoricoList itens={historicoPagina} />
+                  <Pagination page={paginasListas.historico} total={historicoAtivo.length} onChange={(page) => alterarPaginaLista('historico', page)} />
                 </section>
               )}
 
@@ -1421,7 +1660,10 @@ export const ModeracaoPage: React.FC = () => {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setUsuarioFiltros(FILTROS_USUARIO_INICIAIS)}
+                        onClick={() => {
+                          setPaginasListas((prev) => ({ ...prev, usuarios: 0 }));
+                          setUsuarioFiltros(FILTROS_USUARIO_INICIAIS);
+                        }}
                         className="mb-4 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 hover:border-blue-200 hover:text-blue-600"
                       >
                         Limpar filtros de usuarios
@@ -1440,7 +1682,7 @@ export const ModeracaoPage: React.FC = () => {
                         )}
                         {usuarios.length > 0 && (
                           <div className="divide-y divide-slate-100 md:hidden">
-                            {usuarios.map((usuario) => {
+                            {usuariosPagina.map((usuario) => {
                               const isSelf = usuario.id === user?.id;
                               return (
                                 <article key={usuario.id} className="space-y-3 p-4">
@@ -1488,7 +1730,7 @@ export const ModeracaoPage: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                              {usuarios.map((usuario) => {
+                              {usuariosPagina.map((usuario) => {
                                 const isSelf = usuario.id === user?.id;
                                 return (
                                   <tr key={usuario.id} className="hover:bg-slate-50">
@@ -1520,6 +1762,7 @@ export const ModeracaoPage: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      <Pagination page={paginasListas.usuarios} total={usuarios.length} onChange={(page) => alterarPaginaLista('usuarios', page)} />
                     </div>
                   </div>
 

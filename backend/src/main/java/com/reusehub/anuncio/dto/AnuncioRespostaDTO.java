@@ -25,6 +25,7 @@ public class AnuncioRespostaDTO {
     private Anuncio.StatusAnuncio status;
     private Integer totalVisualizacoes;
     private BigDecimal notaRelevancia;
+    private String motivoSuspensao;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 

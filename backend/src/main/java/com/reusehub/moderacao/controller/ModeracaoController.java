@@ -64,6 +64,19 @@ public class ModeracaoController {
         ));
     }
 
+    @PatchMapping("/denuncias/{id}/suspender-anuncio")
+    public ResponseEntity<DenunciaRespostaDTO> suspenderAnuncioDaDenuncia(
+            @PathVariable UUID id,
+            @RequestBody(required = false) AcaoModeracaoDTO dto,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(moderacaoService.suspenderAnuncioPorDenuncia(
+                id,
+                authentication.getName(),
+                dto != null ? dto.justificativa() : null
+        ));
+    }
+
     @GetMapping("/suspeitos")
     public ResponseEntity<List<AnuncioSuspeitoDTO>> listarSuspeitos(
             @RequestParam(defaultValue = "2") long minimoDenuncias,

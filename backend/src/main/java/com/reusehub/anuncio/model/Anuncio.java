@@ -65,6 +65,9 @@ public class Anuncio {
     @Column(name = "expira_em")
     private LocalDateTime expiraEm;
 
+    @Column(name = "motivo_suspensao", columnDefinition = "TEXT")
+    private String motivoSuspensao;
+
     @OneToMany(mappedBy = "anuncio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("ordemExibicao ASC")
     @Builder.Default

@@ -41,6 +41,7 @@ export interface Anuncio {
   status: "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO";
   totalVisualizacoes: number;
   notaRelevancia: number | null;
+  motivoSuspensao?: string | null;
   criadoEm: string;
   atualizadoEm: string;
   usuarioId: string;

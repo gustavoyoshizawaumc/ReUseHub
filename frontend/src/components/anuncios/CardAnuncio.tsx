@@ -1,6 +1,7 @@
 ﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertCircle,
   Ban,
   Box,
   CheckCircle2,
@@ -193,6 +194,15 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
           {anuncio.titulo}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-500">{anuncio.descricao}</p>
+        {mostrarStatus && anuncio.status === "SUSPENSO" && anuncio.motivoSuspensao && (
+          <div className="mt-3 rounded-md border border-orange-100 bg-orange-50 p-3 text-orange-800">
+            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wide">
+              <AlertCircle size={14} />
+              Motivo da suspensao
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-relaxed">{anuncio.motivoSuspensao}</p>
+          </div>
+        )}
         <div className="mt-3 grid gap-1.5 text-xs font-semibold text-slate-500">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate font-bold text-slate-700">{anuncio.nomeUsuario}</span>

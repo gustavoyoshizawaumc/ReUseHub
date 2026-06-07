@@ -13,6 +13,7 @@ import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
 import com.reusehub.moderacao.service.ModeracaoService;
+import com.reusehub.notificacao.service.NotificacaoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +46,7 @@ class ModeracaoServiceTest {
     @Mock private DenunciaAnuncioRepository denunciaRepository;
     @Mock private HistoricoModeracaoRepository historicoRepository;
     @Mock private AvaliacaoRepository avaliacaoRepository;
+    @Mock private NotificacaoService notificacaoService;
 
     @InjectMocks
     private ModeracaoService moderacaoService;

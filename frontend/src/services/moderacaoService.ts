@@ -46,6 +46,10 @@ export interface DenunciaModeracao {
   anuncioId: string;
   tituloAnuncio: string;
   imagensUrls: string[];
+  nomeAnunciante?: string;
+  statusAnuncio?: Anuncio['status'];
+  tipoAnuncio?: Anuncio['tipo'];
+  categoriaAnuncio?: string;
   denuncianteId: string;
   nomeDenunciante: string;
   motivo: string;
@@ -240,6 +244,15 @@ export async function descartarDenuncia(id: string, justificativa?: string): Pro
     body: JSON.stringify({ justificativa }),
   });
   return parseResponse(response, 'Erro ao descartar denuncia');
+}
+
+export async function suspenderAnuncioPorDenuncia(id: string, justificativa: string): Promise<DenunciaModeracao> {
+  const response = await fetch(`${MODERACAO_URL}/denuncias/${id}/suspender-anuncio`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ justificativa }),
+  });
+  return parseResponse(response, 'Erro ao suspender anuncio pela denuncia');
 }
 
 export async function listarSuspeitos(filtros: SuspeitoModeracaoFiltros | number = {}): Promise<AnuncioSuspeito[]> {

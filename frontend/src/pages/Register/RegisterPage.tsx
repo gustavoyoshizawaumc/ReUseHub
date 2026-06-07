@@ -13,7 +13,7 @@ type RegisterFormData = RegisterRequest & {
  * Deve espelhar o @Pattern do RegisterRequest no backend.
  */
 const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
 /** Requisitos individuais, usados na dica visual abaixo do campo. */
 const passwordRequisitos = (senha: string) => [
@@ -21,7 +21,7 @@ const passwordRequisitos = (senha: string) => [
   { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
   { label: "Uma letra minúscula", ok: /[a-z]/.test(senha) },
   { label: "Um número", ok: /\d/.test(senha) },
-  { label: "Um caractere especial", ok: /[^A-Za-z0-9]/.test(senha) },
+  { label: "Um caractere especial (!, ?, @...)", ok: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(senha) },
 ];
 
 /**
@@ -102,7 +102,7 @@ export const RegisterPage: React.FC = () => {
       case "password":
         if (typeof value === "string" && !PASSWORD_REGEX.test(value))
           error =
-            "Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.";
+            "Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial como !, ? ou @.";
         break;
       case "confirmPassword":
         if (typeof value === "string" && value !== formData.password)
@@ -162,7 +162,7 @@ export const RegisterPage: React.FC = () => {
     } catch (err) {
       const mensagem = err instanceof Error
         ? err.message
-        : "Erro ao cadastrar. Tente novamente.";
+        : "Nao foi possivel cadastrar. Confira os campos informados.";
       setFormError(mensagem);
     } finally {
       setIsLoading(false);
