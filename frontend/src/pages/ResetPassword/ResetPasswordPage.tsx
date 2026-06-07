@@ -14,7 +14,7 @@ const Spinner: React.FC = () => (
  * Deve espelhar o @Pattern do RedefinirSenhaRequest no backend.
  */
 const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
 /** Requisitos individuais, usados na dica visual abaixo do campo. */
 const passwordRequisitos = (senha: string) => [
@@ -22,7 +22,7 @@ const passwordRequisitos = (senha: string) => [
   { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
   { label: "Uma letra minúscula", ok: /[a-z]/.test(senha) },
   { label: "Um número", ok: /\d/.test(senha) },
-  { label: "Um caractere especial", ok: /[^A-Za-z0-9]/.test(senha) },
+  { label: "Um caractere especial (!, ?, @...)", ok: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(senha) },
 ];
 
 export const ResetPasswordPage: React.FC = () => {
@@ -52,7 +52,7 @@ export const ResetPasswordPage: React.FC = () => {
   const validateField = (name: string, value: string): string => {
     if (name === "novaSenha") {
       if (!PASSWORD_REGEX.test(value))
-        return "Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.";
+        return "Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial como !, ? ou @.";
     }
     if (name === "confirmacaoSenha") {
       if (value !== formData.novaSenha) return "As senhas não coincidem.";

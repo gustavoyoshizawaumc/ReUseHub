@@ -1,38 +1,21 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Armchair,
-  Baby,
-  Bike,
-  Building2,
-  Car,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  CookingPot,
-  Cog,
-  Dumbbell,
-  Gamepad2,
-  Hammer,
   Heart,
   LayoutDashboard,
-  Laptop,
   LogIn,
   LogOut,
   MapPin,
   MessageCircle,
-  MonitorSmartphone,
-  Music,
-  PawPrint,
   PlusCircle,
   Repeat2,
   Search,
   ShieldCheck,
-  Shirt,
-  Smartphone,
   User,
   UserPlus,
-  WashingMachine,
 } from "lucide-react";
 import { authService } from "../services/authService";
 import { listarConversas } from "../services/chatService";
@@ -42,28 +25,10 @@ import { OperationalHeader } from "./OperationalHeader";
 import { isUsuarioOperacional } from "../utils/perfil";
 import { API_BASE_URL } from "../config/api";
 import { registrarBusca } from "../utils/ultimasBuscas";
+import { useCategorias } from "../hooks/useCategorias";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-const CATEGORIES_BAR = [
-  { icon: Car, label: "Autos", categoriaId: 2 },
-  { icon: Cog, label: "Autopeças", categoriaId: 3 },
-  { icon: Smartphone, label: "Celulares", categoriaId: 4 },
-  { icon: CookingPot, label: "Casa", categoriaId: 5 },
-  { icon: Dumbbell, label: "Esporte", categoriaId: 6 },
-  { icon: Shirt, label: "Moda e Beleza", categoriaId: 8 },
-  { icon: Baby, label: "Infantil", categoriaId: 9 },
-  { icon: PawPrint, label: "Pets", categoriaId: 10 },
-  { icon: Music, label: "Hobbies", categoriaId: 11 },
-  { icon: Bike, label: "Agro", categoriaId: 12 },
-  { icon: MonitorSmartphone, label: "Eletrônicos", categoriaId: 15 },
-  { icon: Gamepad2, label: "Games", categoriaId: 16 },
-  { icon: Laptop, label: "Informática", categoriaId: 19 },
-  { icon: WashingMachine, label: "Eletrodoméstico", categoriaId: 20 },
-  { icon: Armchair, label: "Móveis", categoriaId: 21 },
-  { icon: Hammer, label: "Construção", categoriaId: 22 },
-  { icon: Building2, label: "Escritório", categoriaId: 23 },
-].sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 
 const Logo: React.FC = () => (
   <span className="font-bold text-[18px] leading-none select-none tracking-tight font-plus-jakarta-sans sm:text-[20px]">
@@ -105,6 +70,7 @@ const RAIOS_BUSCA_CEP = [5, 10, 25, 50, 100];
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { categorias } = useCategorias();
   const [user, setUser] = useState<UsuarioRespostaDTO | null>(() => authService.getUser());
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -117,6 +83,13 @@ export const Header: React.FC = () => {
   const [podeRolarCategoriasDireita, setPodeRolarCategoriasDireita] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const categoriasRef = useRef<HTMLDivElement>(null);
+  const categoriasBar = useMemo(
+    () =>
+      categorias
+        .map((categoria) => ({ label: categoria.nome, categoriaId: categoria.id }))
+        .sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
+    [categorias]
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -194,7 +167,7 @@ export const Header: React.FC = () => {
       lista.removeEventListener("scroll", atualizarSetas);
       window.removeEventListener("resize", atualizarSetas);
     };
-  }, []);
+  }, [categoriasBar.length]);
 
   const handleLogout = () => {
     authService.logout();
@@ -406,26 +379,23 @@ export const Header: React.FC = () => {
             ref={categoriasRef}
             className="scrollbar-hide flex items-center justify-start gap-1 overflow-x-auto scroll-smooth px-0 py-2 md:px-10"
           >
-            {CATEGORIES_BAR.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.label}
-                  onClick={() => {
-                    setActiveCategory(cat.categoriaId);
-                    navegarParaBusca(criarParamsBusca(undefined, cat.categoriaId), cat.label);
-                  }}
-                  className={`flex w-[80px] flex-shrink-0 flex-col items-center gap-1 border-b-2 px-1 pb-1 transition-colors sm:w-[92px] sm:px-2 ${
-                    activeCategory === cat.categoriaId ? "border-reusehub-blue text-reusehub-blue font-bold" : "border-transparent text-slate-400 font-bold hover:text-reusehub-blue"
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${activeCategory === cat.categoriaId ? "bg-blue-50" : "bg-slate-50"}`}>
-                    <Icon size={16} strokeWidth={2} />
-                  </div>
-                  <span className="whitespace-nowrap text-[10px] tracking-wide">{cat.label}</span>
-                </button>
-              );
-            })}
+            {categoriasBar.map((cat) => (
+              <button
+                key={cat.categoriaId}
+                onClick={() => {
+                  setActiveCategory(cat.categoriaId);
+                  navegarParaBusca(criarParamsBusca(undefined, cat.categoriaId), cat.label);
+                }}
+                title={cat.label}
+                className={`flex h-11 max-w-[160px] flex-shrink-0 items-center border-b-2 px-3 text-center text-[12px] font-extrabold leading-tight transition-colors ${
+                  activeCategory === cat.categoriaId
+                    ? "border-reusehub-blue text-reusehub-blue"
+                    : "border-transparent text-slate-500 hover:text-reusehub-blue"
+                }`}
+              >
+                <span className="line-clamp-2">{cat.label}</span>
+              </button>
+            ))}
           </div>
 
           <button

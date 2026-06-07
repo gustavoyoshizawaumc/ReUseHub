@@ -8,6 +8,7 @@ import com.reusehub.auth.dto.RegisterRequest;
 import com.reusehub.auth.dto.UsuarioRespostaDTO;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
+import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.auth.repository.TokenUsuarioRepository;
 import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
@@ -43,6 +44,8 @@ class AuthServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+    @Mock
+    private CredencialBloqueadaRepository credencialBloqueadaRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock

@@ -31,6 +31,7 @@ type StatusAnuncio =
   | "PENDENTE"
   | "ATIVO"
   | "REPROVADO"
+  | "SUSPENSO"
   | "RESERVADO"
   | "CONCLUIDO"
   | "CANCELADO";
@@ -118,6 +119,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       pendentes: 0,
       ativos: 0,
       reprovados: 0,
+      suspensos: 0,
       cancelados: 0,
       concluidos: 0,
       reservados: 0,
@@ -128,6 +130,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       if (status === "PENDENTE") base.pendentes += 1;
       if (status === "ATIVO") base.ativos += 1;
       if (status === "REPROVADO") base.reprovados += 1;
+      if (status === "SUSPENSO") base.suspensos += 1;
       if (status === "CANCELADO") base.cancelados += 1;
       if (status === "CONCLUIDO") base.concluidos += 1;
       if (status === "RESERVADO") base.reservados += 1;
@@ -165,8 +168,8 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       subtext: "Em andamento ou finalizados",
     },
     {
-      label: "Reprovados/Cancelados",
-      value: contadores.reprovados + contadores.cancelados,
+      label: "Suspensos/Reprovados",
+      value: contadores.suspensos + contadores.reprovados + contadores.cancelados,
       icon: XCircle,
       wrapper: "bg-rose-50 border-rose-100",
       iconBox: "bg-rose-100 text-rose-700",
@@ -179,6 +182,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     { value: "TODOS", label: "Todos" },
     { value: "PENDENTE", label: "Pendentes" },
     { value: "ATIVO", label: "Ativos" },
+    { value: "SUSPENSO", label: "Suspensos" },
     { value: "REPROVADO", label: "Reprovados" },
     { value: "RESERVADO", label: "Reservados" },
     { value: "CONCLUIDO", label: "Concluídos" },

@@ -168,6 +168,7 @@ public class AnuncioService {
         anuncio.setCategoria(categoria);
         anuncio.setEndereco(endereco);
         anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
+        anuncio.setMotivoSuspensao(null);
 
         Anuncio atualizado = anuncioRepository.save(anuncio);
         return mapearParaRespostaDTO(atualizado);
@@ -198,6 +199,7 @@ public class AnuncioService {
         adicionarNovasImagens(anuncio, imagensNovasValidas, idsParaManter.size());
 
         anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
+        anuncio.setMotivoSuspensao(null);
         Anuncio atualizado = anuncioRepository.save(anuncio);
         return mapearParaRespostaDTO(atualizado);
     }
@@ -303,6 +305,7 @@ public class AnuncioService {
         validarEstadoPendenteParaModerar(anuncio, "aprovados");
 
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
+        anuncio.setMotivoSuspensao(null);
         Anuncio atualizado = anuncioRepository.save(anuncio);
         moderacaoService.registrar(moderador, "ANUNCIO_APROVADO", "ANUNCIO", id, "Aprovado na fila de moderacao.");
         return mapearParaRespostaDTO(atualizado);

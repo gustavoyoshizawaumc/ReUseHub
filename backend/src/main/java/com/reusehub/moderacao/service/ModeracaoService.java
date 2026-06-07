@@ -21,6 +21,7 @@ import com.reusehub.moderacao.dto.AnuncioSuspeitoDTO;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
 import com.reusehub.moderacao.model.HistoricoModeracao;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
+import com.reusehub.notificacao.service.NotificacaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +50,7 @@ public class ModeracaoService {
     private final DenunciaAnuncioRepository denunciaRepository;
     private final HistoricoModeracaoRepository historicoRepository;
     private final AvaliacaoRepository avaliacaoRepository;
+    private final NotificacaoService notificacaoService;
 
     public DenunciaRespostaDTO criarDenuncia(String emailUsuario, DenunciaCriacaoDTO dto) {
         Usuario denunciante = buscarUsuarioPorEmail(emailUsuario);
@@ -103,13 +105,32 @@ public class ModeracaoService {
         return mapearDenuncia(denunciaRepository.save(denuncia));
     }
 
+    public DenunciaRespostaDTO suspenderAnuncioPorDenuncia(UUID denunciaId, String emailModerador, String justificativa) {
+        Usuario moderador = validarModerador(emailModerador);
+        DenunciaAnuncio denuncia = buscarDenuncia(denunciaId);
+        Anuncio anuncio = denuncia.getAnuncio();
+        String motivoSuspensao = validarMensagemSuspensao(justificativa);
+
+        anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
+        anuncio.setMotivoSuspensao(motivoSuspensao);
+        denuncia.setStatus(DenunciaAnuncio.StatusDenuncia.ANALISADA);
+
+        anuncioRepository.save(anuncio);
+        DenunciaAnuncio denunciaSalva = denunciaRepository.save(denuncia);
+        registrar(moderador, "DENUNCIA_ANALISADA_COM_SUSPENSAO", "DENUNCIA", denunciaId, motivoSuspensao);
+        registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncio.getId(), motivoSuspensao);
+        notificarSuspensao(anuncio, motivoSuspensao);
+
+        return mapearDenuncia(denunciaSalva);
+    }
+
     @Transactional(readOnly = true)
     public List<AnuncioSuspeitoDTO> listarSuspeitos(
             long minimoDenuncias,
             String termo,
             Anuncio.StatusAnuncio status
     ) {
-        long minimo = Math.max(1, minimoDenuncias);
+        long minimo = Math.max(2, minimoDenuncias);
         return denunciaRepository.listarAnunciosSuspeitos(
                         minimo,
                         normalizarPesquisa(termo),
@@ -134,9 +155,12 @@ public class ModeracaoService {
     public AnuncioSuspeitoDTO suspenderAnuncio(UUID anuncioId, String emailModerador, String justificativa) {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncio(anuncioId);
+        String motivoSuspensao = validarMensagemSuspensao(justificativa);
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
+        anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
-        registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncioId, justificativa);
+        registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncioId, motivoSuspensao);
+        notificarSuspensao(anuncio, motivoSuspensao);
         return mapearSuspeito(anuncio);
     }
 
@@ -144,6 +168,7 @@ public class ModeracaoService {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncio(anuncioId);
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
+        anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
         registrar(moderador, "ANUNCIO_REATIVADO", "ANUNCIO", anuncioId, justificativa);
         return mapearSuspeito(anuncio);
@@ -153,6 +178,7 @@ public class ModeracaoService {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncio(anuncioId);
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
+        anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
         registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", anuncioId, justificativa);
         return mapearSuspeito(anuncio);
@@ -247,11 +273,16 @@ public class ModeracaoService {
 
     private DenunciaRespostaDTO mapearDenuncia(DenunciaAnuncio denuncia) {
         UUID anuncioId = denuncia.getAnuncio().getId();
+        Anuncio anuncio = denuncia.getAnuncio();
         return new DenunciaRespostaDTO(
                 denuncia.getId(),
                 anuncioId,
-                denuncia.getAnuncio().getTitulo(),
+                anuncio.getTitulo(),
                 imagensDoAnuncio(anuncioId),
+                anuncio.getUsuario().getName(),
+                anuncio.getStatus() != null ? anuncio.getStatus().name() : null,
+                anuncio.getTipo() != null ? anuncio.getTipo().name() : null,
+                anuncio.getCategoria() != null ? anuncio.getCategoria().getNome() : null,
                 denuncia.getDenunciante().getId(),
                 denuncia.getDenunciante().getName(),
                 denuncia.getMotivo(),
@@ -302,10 +333,31 @@ public class ModeracaoService {
     }
 
     private List<String> imagensDoAnuncio(UUID anuncioId) {
-        return imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(anuncioId)
-                .stream()
+        List<ImagemAnuncio> imagens = imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(anuncioId);
+        if (imagens == null) {
+            return List.of();
+        }
+        return imagens.stream()
                 .map(ImagemAnuncio::getUrlImagem)
                 .toList();
+    }
+
+    private String validarMensagemSuspensao(String justificativa) {
+        if (justificativa == null || justificativa.isBlank()) {
+            throw new RegraNegocioException("Informe o motivo da suspensao para o anunciante.");
+        }
+        return justificativa.trim();
+    }
+
+    private void notificarSuspensao(Anuncio anuncio, String motivoSuspensao) {
+        notificacaoService.criar(
+                anuncio.getUsuario(),
+                "ANUNCIO_SUSPENSO",
+                "Anuncio suspenso",
+                "Seu anuncio \"" + anuncio.getTitulo() + "\" foi suspenso pela moderacao. Motivo: " + motivoSuspensao,
+                anuncio.getId(),
+                "ANUNCIO"
+        );
     }
 
     private String normalizarPesquisa(String valor) {

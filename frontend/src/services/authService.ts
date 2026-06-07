@@ -14,6 +14,14 @@ const API_URL = apiUrl("/api/auth");
 const lerMensagemErro = async (response: Response, fallback: string): Promise<string> => {
   try {
     const error = await response.json();
+    if (error.erros && typeof error.erros === "object") {
+      const mensagens = Object.values(error.erros)
+        .filter((mensagem): mensagem is string => typeof mensagem === "string" && mensagem.trim().length > 0);
+
+      if (mensagens.length > 0) {
+        return mensagens.join(" ");
+      }
+    }
     return error.mensagem || error.message || fallback;
   } catch {
     return fallback;
@@ -31,7 +39,7 @@ export const authService = {
     });
 
     if (!response.ok) {
-      throw new Error(await lerMensagemErro(response, "Erro ao cadastrar"));
+      throw new Error(await lerMensagemErro(response, "Nao foi possivel cadastrar. Confira os campos informados."));
     }
 
     const result: AuthResponse = await response.json();
