@@ -134,7 +134,41 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
 
             sub.nota_relevancia DESC,
             sub.criado_em DESC
-        """, nativeQuery = true)
+        """,
+        countQuery = """
+        SELECT count(*)
+        FROM anuncios a
+        JOIN enderecos e ON a.endereco_id = e.id
+        WHERE a.status = 'ATIVO'
+
+        AND (
+            :termo IS NULL
+            OR to_tsvector('portuguese_unaccent',
+                   coalesce(a.titulo, '') || ' ' || coalesce(a.descricao, ''))
+               @@ plainto_tsquery('portuguese_unaccent', unaccent(:termo))
+        )
+
+        AND (:categoriaId IS NULL OR a.categoria_id = :categoriaId)
+
+        AND (:tipo IS NULL OR a.tipo::text = :tipo)
+
+        AND (:condicao IS NULL OR a.condicao::text = :condicao)
+
+        AND (
+            :lat IS NULL OR :lng IS NULL OR :raioKm IS NULL
+            OR (
+                e.latitude IS NOT NULL AND e.longitude IS NOT NULL
+                AND (
+                    6371 * acos(
+                        cos(radians(:lat)) * cos(radians(e.latitude)) *
+                        cos(radians(e.longitude) - radians(:lng)) +
+                        sin(radians(:lat)) * sin(radians(e.latitude))
+                    )
+                ) <= :raioKm
+            )
+        )
+        """,
+        nativeQuery = true)
     Page<Anuncio> buscarComFiltros(
             @Param("termo") String termo,
             @Param("categoriaId") Integer categoriaId,
