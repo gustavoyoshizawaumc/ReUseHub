@@ -79,6 +79,9 @@ export const HomePage: React.FC = () => {
     <div className="min-h-screen bg-slate-50">
       <Header />
       <main>
+        <h1 className="sr-only">
+          ReUseHub — plataforma de doação e troca de itens usados
+        </h1>
         <HeroBanner />
         <ConteudoHome
           dados={dados}

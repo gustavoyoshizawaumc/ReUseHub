@@ -20,9 +20,9 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="md:col-span-2 flex flex-col items-start">
-          <h4 className="text-slate-100 font-semibold mb-4 text-sm tracking-wider">
+          <h3 className="text-slate-100 font-semibold mb-4 text-sm tracking-wider">
             Navegar
-          </h4>
+          </h3>
           <ul className="text-xs space-y-4 text-left">
             <li>
               <Link
@@ -60,9 +60,9 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="md:col-span-2 flex flex-col items-start">
-          <h4 className="text-slate-100 font-semibold mb-4 text-sm tracking-wider">
+          <h3 className="text-slate-100 font-semibold mb-4 text-sm tracking-wider">
             Conta
-          </h4>
+          </h3>
           <ul className="text-xs space-y-4 text-left">
             <li>
               <Link
@@ -100,9 +100,9 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="md:col-span-2 flex flex-col items-start">
-          <h4 className="text-slate-100 font-semibold mb-4 text-sm tracking-wider">
+          <h3 className="text-slate-100 font-semibold mb-4 text-sm tracking-wider">
             Suporte
-          </h4>
+          </h3>
           <ul className="text-xs space-y-4 text-left">
             <li>
               <Link
