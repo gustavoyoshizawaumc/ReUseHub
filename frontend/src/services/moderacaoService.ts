@@ -154,12 +154,6 @@ export interface DenunciaModeracaoFiltros {
   status?: '' | StatusDenuncia;
 }
 
-export interface SuspeitoModeracaoFiltros {
-  termo?: string;
-  status?: '' | Anuncio['status'];
-  minimoDenuncias?: number;
-}
-
 export interface AvaliacaoModeracaoFiltros {
   termo?: string;
   nota?: number | '';
@@ -254,27 +248,6 @@ export async function suspenderAnuncioPorDenuncia(id: string, justificativa: str
     body: JSON.stringify({ justificativa }),
   });
   return parseResponse(response, 'Erro ao suspender anuncio pela denuncia');
-}
-
-export async function listarSuspeitos(filtros: SuspeitoModeracaoFiltros | number = {}): Promise<AnuncioSuspeito[]> {
-  const normalizados = typeof filtros === 'number' ? { minimoDenuncias: filtros } : filtros;
-  const params = new URLSearchParams();
-  adicionarParametro(params, 'minimoDenuncias', normalizados.minimoDenuncias ?? 2);
-  adicionarParametro(params, 'termo', normalizados.termo?.trim());
-  adicionarParametro(params, 'status', normalizados.status);
-  const response = await fetch(`${MODERACAO_URL}/suspeitos?${params.toString()}`, {
-    headers: getAuthHeaders(),
-  });
-  return parseResponse(response, 'Erro ao listar suspeitos');
-}
-
-export async function suspenderAnuncio(id: string, justificativa?: string): Promise<AnuncioSuspeito> {
-  const response = await fetch(`${MODERACAO_URL}/anuncios/${id}/suspender`, {
-    method: 'PATCH',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ justificativa }),
-  });
-  return parseResponse(response, 'Erro ao suspender anuncio');
 }
 
 export async function reativarAnuncio(id: string, justificativa?: string): Promise<AnuncioSuspeito> {

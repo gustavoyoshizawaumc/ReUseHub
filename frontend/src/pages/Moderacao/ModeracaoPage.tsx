@@ -43,19 +43,16 @@ import {
   listarAvaliacoesModeracao,
   listarDenuncias,
   listarMeuHistorico,
-  listarSuspeitos,
   listarUsuariosAdmin,
   obterDashboardAdmin,
   reativarAnuncio,
   reprovarAnuncio,
   reprovarSuspeito,
   removerAvaliacaoModeracao,
-  suspenderAnuncio,
   suspenderAnuncioPorDenuncia,
   type AdminDashboard,
   type AdminUsuario,
   type AnuncioModeracaoFiltros,
-  type AnuncioSuspeito,
   type AvaliacaoModeracaoFiltros,
   type AvaliacaoModeracao,
   type DashboardAdminFiltros,
@@ -63,7 +60,6 @@ import {
   type DenunciaModeracao,
   type HistoricoModeracaoFiltros,
   type HistoricoModeracao,
-  type SuspeitoModeracaoFiltros,
   type UsuarioAdminFiltros,
 } from '../../services/moderacaoService';
 import { useCategorias } from '../../hooks/useCategorias';
@@ -75,7 +71,7 @@ const BASE_URL = API_BASE_URL;
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Filler, Tooltip, Legend);
 
-type Aba = 'visao-geral' | 'anuncios' | 'denuncias' | 'suspeitos' | 'avaliacoes' | 'historico' | 'usuarios';
+type Aba = 'visao-geral' | 'anuncios' | 'denuncias' | 'avaliacoes' | 'historico' | 'usuarios';
 
 const paginaConfig: Record<Aba, { title: string; description: string }> = {
   'visao-geral': {
@@ -88,11 +84,7 @@ const paginaConfig: Record<Aba, { title: string; description: string }> = {
   },
   denuncias: {
     title: 'Denuncias',
-    description: 'Analise relatos abertos e registre a decisao tomada pela moderacao.',
-  },
-  suspeitos: {
-    title: 'Anuncios suspeitos',
-    description: 'Acompanhe conteudos com recorrencia de denuncias e aplique a acao adequada.',
+    description: 'Analise os anuncios denunciados, agrupados por recorrencia, e registre a decisao.',
   },
   avaliacoes: {
     title: 'Avaliacoes',
@@ -111,7 +103,6 @@ const paginaConfig: Record<Aba, { title: string; description: string }> = {
 const obterAbaPelaRota = (pathname: string, isAdmin: boolean): Aba => {
   if (pathname.endsWith('/anuncios')) return 'anuncios';
   if (pathname.endsWith('/denuncias')) return 'denuncias';
-  if (pathname.endsWith('/suspeitos')) return 'suspeitos';
   if (pathname.endsWith('/avaliacoes')) return 'avaliacoes';
   if (pathname.endsWith('/historico')) return 'historico';
   if (pathname.endsWith('/usuarios') && isAdmin) return 'usuarios';
@@ -134,7 +125,6 @@ const CHAVE_FILTROS_DASHBOARD = 'reusehub:moderacao:filtros-dashboard';
 type FiltrosOperacionais = {
   anuncios: AnuncioModeracaoFiltros;
   denuncias: DenunciaModeracaoFiltros;
-  suspeitos: SuspeitoModeracaoFiltros;
   avaliacoes: AvaliacaoModeracaoFiltros;
   historico: HistoricoModeracaoFiltros;
 };
@@ -142,7 +132,6 @@ type FiltrosOperacionais = {
 const FILTROS_OPERACIONAIS_INICIAIS: FiltrosOperacionais = {
   anuncios: { termo: '', status: '' },
   denuncias: { termo: '', status: '' },
-  suspeitos: { termo: '', status: '', minimoDenuncias: 2 },
   avaliacoes: { termo: '', nota: '', criadoDe: '', criadoAte: '' },
   historico: { termo: '', acao: '', criadoDe: '', criadoAte: '' },
 };
@@ -227,7 +216,49 @@ const ListToolbar = ({
 
 const filterControlClass = 'h-10 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500';
 const PAGE_SIZE_LISTAGENS = 10;
-type ListaPaginada = 'anuncios' | 'denuncias' | 'suspeitos' | 'avaliacoes' | 'historico' | 'usuarios';
+type ListaPaginada = 'anuncios' | 'denuncias' | 'avaliacoes' | 'historico' | 'usuarios';
+
+interface GrupoDenuncia {
+  anuncioId: string;
+  tituloAnuncio: string;
+  imagensUrls: string[];
+  nomeAnunciante?: string;
+  statusAnuncio?: Anuncio['status'];
+  tipoAnuncio?: Anuncio['tipo'];
+  categoriaAnuncio?: string;
+  relatos: DenunciaModeracao[];
+  totalAbertas: number;
+}
+
+// Agrupa as denuncias por anuncio (1 entrada por anuncio) e ordena pelos mais
+// denunciados primeiro. O agrupamento e feito no cliente sobre a lista carregada.
+const agruparDenunciasPorAnuncio = (denuncias: DenunciaModeracao[]): GrupoDenuncia[] => {
+  const porAnuncio = new Map<string, GrupoDenuncia>();
+  for (const denuncia of denuncias) {
+    let grupo = porAnuncio.get(denuncia.anuncioId);
+    if (!grupo) {
+      grupo = {
+        anuncioId: denuncia.anuncioId,
+        tituloAnuncio: denuncia.tituloAnuncio,
+        imagensUrls: denuncia.imagensUrls,
+        nomeAnunciante: denuncia.nomeAnunciante,
+        statusAnuncio: denuncia.statusAnuncio,
+        tipoAnuncio: denuncia.tipoAnuncio,
+        categoriaAnuncio: denuncia.categoriaAnuncio,
+        relatos: [],
+        totalAbertas: 0,
+      };
+      porAnuncio.set(denuncia.anuncioId, grupo);
+    }
+    grupo.relatos.push(denuncia);
+  }
+  const grupos = [...porAnuncio.values()];
+  for (const grupo of grupos) {
+    grupo.totalAbertas = grupo.relatos.filter((relato) => relato.status === 'ABERTA').length;
+  }
+  grupos.sort((a, b) => b.totalAbertas - a.totalAbertas || b.relatos.length - a.relatos.length);
+  return grupos;
+};
 
 const totalPaginas = (total: number) => Math.max(1, Math.ceil(total / PAGE_SIZE_LISTAGENS));
 
@@ -551,21 +582,28 @@ const ReprovarAnuncioModal = ({
 };
 
 const DenunciaAnaliseModal = ({
-  denuncia,
+  grupo,
   onClose,
   onDismiss,
   onSuspend,
+  onReactivate,
+  onReprove,
   processando,
 }: {
-  denuncia: DenunciaModeracao;
+  grupo: GrupoDenuncia;
   onClose: () => void;
   onDismiss: () => void;
   onSuspend: (mensagem: string) => void;
+  onReactivate: () => void;
+  onReprove: () => void;
   processando: boolean;
 }) => {
   const [mensagemSuspensao, setMensagemSuspensao] = useState('');
   const [erroMensagem, setErroMensagem] = useState<string | null>(null);
-  const foto = imageUrl(denuncia.imagensUrls?.[0]);
+  const foto = imageUrl(grupo.imagensUrls?.[0]);
+  const podeSuspender = grupo.statusAnuncio !== 'SUSPENSO' && grupo.statusAnuncio !== 'REPROVADO';
+  const podeReativar = grupo.statusAnuncio === 'SUSPENSO';
+  const podeReprovar = grupo.statusAnuncio !== 'REPROVADO';
 
   const suspender = () => {
     const mensagem = mensagemSuspensao.trim();
@@ -581,15 +619,15 @@ const DenunciaAnaliseModal = ({
       <article className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Analise da denuncia</p>
-            <h3 className="mt-1 truncate text-xl font-black text-slate-950">{denuncia.tituloAnuncio}</h3>
-            <p className="mt-1 text-xs font-semibold text-slate-500">Denuncia {denuncia.id}</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Analise das denuncias</p>
+            <h3 className="mt-1 truncate text-xl font-black text-slate-950">{grupo.tituloAnuncio}</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500">{grupo.relatos.length} relato(s) neste anuncio</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-            aria-label="Fechar analise da denuncia"
+            aria-label="Fechar analise das denuncias"
           >
             <X size={18} />
           </button>
@@ -599,7 +637,7 @@ const DenunciaAnaliseModal = ({
           <section className="border-b border-slate-200 bg-slate-50 p-5 lg:border-b-0 lg:border-r">
             <div className="aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 bg-white">
               {foto ? (
-                <img src={foto} alt={denuncia.tituloAnuncio} className="h-full w-full object-cover" />
+                <img src={foto} alt={grupo.tituloAnuncio} className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-300">
                   <FileText size={42} />
@@ -611,79 +649,112 @@ const DenunciaAnaliseModal = ({
             <dl className="mt-4 grid grid-cols-1 gap-3 text-sm">
               <div className="rounded-md bg-white p-3">
                 <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Anunciante</dt>
-                <dd className="mt-1 font-bold text-slate-800">{denuncia.nomeAnunciante || '-'}</dd>
+                <dd className="mt-1 font-bold text-slate-800">{grupo.nomeAnunciante || '-'}</dd>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-md bg-white p-3">
                   <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</dt>
-                  <dd className="mt-1 font-bold text-slate-800">{denuncia.statusAnuncio || '-'}</dd>
+                  <dd className="mt-1 font-bold text-slate-800">{grupo.statusAnuncio || '-'}</dd>
                 </div>
                 <div className="rounded-md bg-white p-3">
                   <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipo</dt>
-                  <dd className="mt-1 font-bold text-slate-800">{denuncia.tipoAnuncio || '-'}</dd>
+                  <dd className="mt-1 font-bold text-slate-800">{grupo.tipoAnuncio || '-'}</dd>
                 </div>
               </div>
               <div className="rounded-md bg-white p-3">
                 <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categoria</dt>
-                <dd className="mt-1 font-bold text-slate-800">{denuncia.categoriaAnuncio || '-'}</dd>
+                <dd className="mt-1 font-bold text-slate-800">{grupo.categoriaAnuncio || '-'}</dd>
               </div>
               <div className="rounded-md border border-orange-100 bg-orange-50 p-3">
                 <dt className="text-[10px] font-black uppercase tracking-widest text-orange-500">Recorrencia</dt>
-                <dd className="mt-1 font-black text-orange-700">{denuncia.denunciasAbertasDoAnuncio} denuncia(s) aberta(s)</dd>
+                <dd className="mt-1 font-black text-orange-700">{grupo.totalAbertas} denuncia(s) aberta(s)</dd>
               </div>
             </dl>
           </section>
 
           <section className="space-y-5 p-5">
             <div>
-              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Relato recebido</h4>
-              <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-black text-slate-900">{denuncia.motivo}</p>
-                <p className="mt-1 text-xs font-bold text-slate-500">Enviado por {denuncia.nomeDenunciante}</p>
-                <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-700">
-                  {denuncia.descricao || 'O denunciante nao adicionou detalhes.'}
-                </p>
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Relatos recebidos ({grupo.relatos.length})</h4>
+              <div className="mt-3 space-y-3">
+                {grupo.relatos.map((relato) => (
+                  <div key={relato.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-black text-slate-900">{relato.motivo}</p>
+                      <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase text-slate-500">{relato.status}</span>
+                    </div>
+                    <p className="mt-1 text-xs font-bold text-slate-500">Enviado por {relato.nomeDenunciante}</p>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
+                      {relato.descricao || 'O denunciante nao adicionou detalhes.'}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <label className="block">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Mensagem ao anunciante em caso de suspensao</span>
-              <textarea
-                value={mensagemSuspensao}
-                onChange={(event) => {
-                  setMensagemSuspensao(event.target.value);
-                  setErroMensagem(null);
-                }}
-                rows={5}
-                placeholder="Explique objetivamente por que o anuncio foi suspenso e o que precisa ser corrigido."
-                className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
-              />
-              {erroMensagem && <span className="mt-1 block text-xs font-bold text-rose-600">{erroMensagem}</span>}
-            </label>
+            {podeSuspender && (
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Mensagem ao anunciante em caso de suspensao</span>
+                <textarea
+                  value={mensagemSuspensao}
+                  onChange={(event) => {
+                    setMensagemSuspensao(event.target.value);
+                    setErroMensagem(null);
+                  }}
+                  rows={5}
+                  placeholder="Explique objetivamente por que o anuncio foi suspenso e o que precisa ser corrigido."
+                  className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
+                />
+                {erroMensagem && <span className="mt-1 block text-xs font-bold text-rose-600">{erroMensagem}</span>}
+              </label>
+            )}
           </section>
         </div>
 
         <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-semibold text-slate-400">
-            Descarte apenas quando a denuncia for improcedente. Suspensoes notificam o anunciante.
+            Descarte quando as denuncias forem improcedentes. Suspender/reprovar notifica o anunciante.
           </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={onDismiss}
-              disabled={processando}
-              className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
-            >
-              Descartar denuncia
-            </button>
-            <button
-              type="button"
-              onClick={suspender}
-              disabled={processando}
-              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-orange-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
-            >
-              <ShieldOff size={16} /> Suspender anuncio
-            </button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            {grupo.totalAbertas > 0 && (
+              <button
+                type="button"
+                onClick={onDismiss}
+                disabled={processando}
+                className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+              >
+                Descartar denuncias
+              </button>
+            )}
+            {podeReativar && (
+              <button
+                type="button"
+                onClick={onReactivate}
+                disabled={processando}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <CheckCircle2 size={16} /> Reativar anuncio
+              </button>
+            )}
+            {podeReprovar && (
+              <button
+                type="button"
+                onClick={onReprove}
+                disabled={processando}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+              >
+                <XCircle size={16} /> Reprovar definitivo
+              </button>
+            )}
+            {podeSuspender && (
+              <button
+                type="button"
+                onClick={suspender}
+                disabled={processando}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-orange-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+              >
+                <ShieldOff size={16} /> Suspender anuncio
+              </button>
+            )}
           </div>
         </footer>
       </article>
@@ -702,7 +773,6 @@ export const ModeracaoPage: React.FC = () => {
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [denuncias, setDenuncias] = useState<DenunciaModeracao[]>([]);
   const [totalDenunciasAbertas, setTotalDenunciasAbertas] = useState(0);
-  const [suspeitos, setSuspeitos] = useState<AnuncioSuspeito[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoModeracao[]>([]);
   const [historico, setHistorico] = useState<HistoricoModeracao[]>([]);
   const [auditoria, setAuditoria] = useState<HistoricoModeracao[]>([]);
@@ -716,7 +786,7 @@ export const ModeracaoPage: React.FC = () => {
   const [processando, setProcessando] = useState<string | null>(null);
   const [anuncioDetalhado, setAnuncioDetalhado] = useState<Anuncio | null>(null);
   const [anuncioParaReprovar, setAnuncioParaReprovar] = useState<Anuncio | null>(null);
-  const [denunciaEmAnalise, setDenunciaEmAnalise] = useState<DenunciaModeracao | null>(null);
+  const [grupoEmAnalise, setGrupoEmAnalise] = useState<GrupoDenuncia | null>(null);
   const [fotoDetalheAtual, setFotoDetalheAtual] = useState(0);
   const filtrosUsuariosInicializadosRef = useRef(false);
   const filtrosDashboardInicializadosRef = useRef(false);
@@ -732,7 +802,6 @@ export const ModeracaoPage: React.FC = () => {
   const [paginasListas, setPaginasListas] = useState<Record<ListaPaginada, number>>({
     anuncios: 0,
     denuncias: 0,
-    suspeitos: 0,
     avaliacoes: 0,
     historico: 0,
     usuarios: 0,
@@ -774,16 +843,14 @@ export const ModeracaoPage: React.FC = () => {
 
   const carregarOperacionais = useCallback(async (filtros = filtrosOperacionais) => {
     try {
-      const [anunciosData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
+      const [anunciosData, denunciasData, avaliacoesData, historicoData] = await Promise.all([
         listarAnunciosModeracao(filtros.anuncios),
         listarDenuncias(filtros.denuncias),
-        listarSuspeitos(filtros.suspeitos),
         listarAvaliacoesModeracao(filtros.avaliacoes),
         listarMeuHistorico(filtros.historico),
       ]);
       setAnuncios(anunciosData.content ?? []);
       setDenuncias(denunciasData.content ?? []);
-      setSuspeitos(suspeitosData ?? []);
       setAvaliacoes(avaliacoesData.content ?? []);
       setHistorico(historicoData.content ?? []);
 
@@ -801,12 +868,11 @@ export const ModeracaoPage: React.FC = () => {
     setErro(null);
     try {
       const filtrosAtuais = filtrosOperacionaisAtuaisRef.current;
-      const [pendentesData, anunciosData, denunciasAbertasData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
+      const [pendentesData, anunciosData, denunciasAbertasData, denunciasData, avaliacoesData, historicoData] = await Promise.all([
         listarAnunciosPendentes(0, 1),
         listarAnunciosModeracao(filtrosAtuais.anuncios),
         listarDenuncias({ status: 'ABERTA' }, 0, 1),
         listarDenuncias(filtrosAtuais.denuncias),
-        listarSuspeitos(filtrosAtuais.suspeitos),
         listarAvaliacoesModeracao(filtrosAtuais.avaliacoes),
         listarMeuHistorico(filtrosAtuais.historico),
       ]);
@@ -814,7 +880,6 @@ export const ModeracaoPage: React.FC = () => {
       setAnuncios(anunciosData.content ?? []);
       setTotalDenunciasAbertas(denunciasAbertasData.totalElements ?? 0);
       setDenuncias(denunciasData.content ?? []);
-      setSuspeitos(suspeitosData ?? []);
       setAvaliacoes(avaliacoesData.content ?? []);
       setHistorico(historicoData.content ?? []);
 
@@ -968,18 +1033,35 @@ export const ModeracaoPage: React.FC = () => {
     void executar(anuncioId, acao);
   };
 
-  const descartarDenunciaEmAnalise = () => {
-    if (!denunciaEmAnalise) return;
-    const denunciaId = denunciaEmAnalise.id;
-    setDenunciaEmAnalise(null);
-    void executar(denunciaId, () => descartarDenuncia(denunciaId, 'Denuncia improcedente.'));
+  // Acoes por anuncio: o backend resolve todas as denuncias abertas do anuncio.
+  // descartar/suspender usam um relato representativo (por denunciaId);
+  // reativar/reprovar agem direto no anuncio (acoes herdadas da antiga aba Suspeitos).
+  const descartarGrupoEmAnalise = () => {
+    if (!grupoEmAnalise) return;
+    const { anuncioId, relatos } = grupoEmAnalise;
+    setGrupoEmAnalise(null);
+    void executar(anuncioId, () => descartarDenuncia(relatos[0].id, 'Denuncia improcedente.'));
   };
 
-  const suspenderDenunciaEmAnalise = (mensagem: string) => {
-    if (!denunciaEmAnalise) return;
-    const denunciaId = denunciaEmAnalise.id;
-    setDenunciaEmAnalise(null);
-    void executar(denunciaId, () => suspenderAnuncioPorDenuncia(denunciaId, mensagem));
+  const suspenderGrupoEmAnalise = (mensagem: string) => {
+    if (!grupoEmAnalise) return;
+    const { anuncioId, relatos } = grupoEmAnalise;
+    setGrupoEmAnalise(null);
+    void executar(anuncioId, () => suspenderAnuncioPorDenuncia(relatos[0].id, mensagem));
+  };
+
+  const reativarGrupoEmAnalise = () => {
+    if (!grupoEmAnalise) return;
+    const { anuncioId } = grupoEmAnalise;
+    setGrupoEmAnalise(null);
+    void executar(anuncioId, () => reativarAnuncio(anuncioId, 'Reativado apos analise.'));
+  };
+
+  const reprovarGrupoEmAnalise = () => {
+    if (!grupoEmAnalise) return;
+    const { anuncioId } = grupoEmAnalise;
+    setGrupoEmAnalise(null);
+    void executar(anuncioId, () => reprovarSuspeito(anuncioId, 'Reprovado apos denuncias.'));
   };
 
   const alterarFiltroUsuario = <K extends keyof UsuarioAdminFiltros>(campo: K, valor: UsuarioAdminFiltros[K]) => {
@@ -1022,16 +1104,13 @@ export const ModeracaoPage: React.FC = () => {
   const denunciasFiltradas = denuncias.filter((denuncia) =>
     contemTermo(filtrosOperacionais.denuncias.termo ?? '', denuncia.id, denuncia.tituloAnuncio, denuncia.nomeDenunciante, denuncia.motivo, denuncia.descricao)
   );
-  const suspeitosFiltrados = suspeitos.filter((anuncio) =>
-    contemTermo(filtrosOperacionais.suspeitos.termo ?? '', anuncio.anuncioId, anuncio.titulo, anuncio.nomeUsuario, anuncio.status)
-  );
+  const denunciasAgrupadas = agruparDenunciasPorAnuncio(denunciasFiltradas);
   const avaliacoesFiltradas = avaliacoes.filter((avaliacao) =>
     contemTermo(filtrosOperacionais.avaliacoes.termo ?? '', avaliacao.id, avaliacao.anuncioTitulo, avaliacao.avaliadorNome, avaliacao.avaliadoNome, avaliacao.comentario)
   );
   const historicoAtivo = isAdmin ? auditoria : historico;
   const anunciosPagina = paginarItens(anunciosFiltrados, paginasListas.anuncios);
-  const denunciasPagina = paginarItens(denunciasFiltradas, paginasListas.denuncias);
-  const suspeitosPagina = paginarItens(suspeitosFiltrados, paginasListas.suspeitos);
+  const denunciasAgrupadasPagina = paginarItens(denunciasAgrupadas, paginasListas.denuncias);
   const avaliacoesPagina = paginarItens(avaliacoesFiltradas, paginasListas.avaliacoes);
   const historicoPagina = paginarItens(historicoAtivo, paginasListas.historico);
   const usuariosPagina = paginarItens(usuarios, paginasListas.usuarios);
@@ -1042,10 +1121,9 @@ export const ModeracaoPage: React.FC = () => {
     () => ({
       anuncios: totalPendentes,
       denuncias: totalDenunciasAbertas,
-      suspeitos: suspeitos.length,
       avaliacoes: avaliacoes.length,
     }),
-    [avaliacoes.length, totalPendentes, suspeitos.length, totalDenunciasAbertas]
+    [avaliacoes.length, totalPendentes, totalDenunciasAbertas]
   );
 
   const metricas = dashboard
@@ -1122,13 +1200,15 @@ export const ModeracaoPage: React.FC = () => {
         />
       )}
 
-      {denunciaEmAnalise && (
+      {grupoEmAnalise && (
         <DenunciaAnaliseModal
-          denuncia={denunciaEmAnalise}
-          onClose={() => setDenunciaEmAnalise(null)}
-          onDismiss={descartarDenunciaEmAnalise}
-          onSuspend={suspenderDenunciaEmAnalise}
-          processando={processando === denunciaEmAnalise.id}
+          grupo={grupoEmAnalise}
+          onClose={() => setGrupoEmAnalise(null)}
+          onDismiss={descartarGrupoEmAnalise}
+          onSuspend={suspenderGrupoEmAnalise}
+          onReactivate={reativarGrupoEmAnalise}
+          onReprove={reprovarGrupoEmAnalise}
+          processando={processando === grupoEmAnalise.anuncioId}
         />
       )}
 
@@ -1149,7 +1229,6 @@ export const ModeracaoPage: React.FC = () => {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <MetricCard label="Anuncios pendentes" value={totalPendentes} icon={Clock3} />
                 <MetricCard label="Denuncias abertas" value={totalDenunciasAbertas} icon={AlertTriangle} tone="orange" />
-                <MetricCard label="Anuncios suspeitos" value={suspeitos.length} icon={ShieldOff} tone="orange" />
                 <MetricCard label="Avaliacoes registradas" value={avaliacoes.length} icon={Star} />
               </div>
 
@@ -1452,7 +1531,7 @@ export const ModeracaoPage: React.FC = () => {
                     value={filtrosOperacionais.denuncias.termo ?? ''}
                     onChange={(value) => alterarFiltroOperacional('denuncias', 'termo', value)}
                     placeholder="Buscar por anuncio, denunciante, motivo ou ID"
-                    resultCount={denunciasFiltradas.length}
+                    resultCount={denunciasAgrupadas.length}
                   >
                     <select
                       value={filtrosOperacionais.denuncias.status ?? ''}
@@ -1465,80 +1544,8 @@ export const ModeracaoPage: React.FC = () => {
                       <option value="DESCARTADA">Descartada</option>
                     </select>
                   </ListToolbar>
-                  {denunciasFiltradas.length === 0 ? (
-                    <EmptyState text="Nenhuma denuncia aberta." />
-                  ) : (
-                    <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
-                      <table className="w-full min-w-[900px] text-left text-sm">
-                        <thead className="bg-slate-50 text-[11px] font-black uppercase text-slate-400">
-                          <tr>
-                            <th className="px-4 py-3">Anuncio</th>
-                            <th className="px-4 py-3">Motivo</th>
-                            <th className="px-4 py-3">Denunciante</th>
-                            <th className="px-4 py-3">Recorrencia</th>
-                            <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3 text-right">Acoes</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {denunciasPagina.map((denuncia) => (
-                            <tr key={denuncia.id} className="transition-colors hover:bg-slate-50">
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-3">
-                                  <Thumb urls={denuncia.imagensUrls} title={denuncia.tituloAnuncio} />
-                                  <p className="font-extrabold text-slate-900">{denuncia.tituloAnuncio}</p>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <p className="font-bold text-slate-700">{denuncia.motivo}</p>
-                                {denuncia.descricao && <p className="mt-0.5 max-w-sm truncate text-xs text-slate-400">{denuncia.descricao}</p>}
-                              </td>
-                              <td className="px-4 py-3 text-xs font-bold text-slate-600">{denuncia.nomeDenunciante}</td>
-                              <td className="px-4 py-3">
-                                <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-black uppercase text-orange-700">
-                                  {denuncia.denunciasAbertasDoAnuncio} aberta(s)
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-xs font-black text-slate-600">{denuncia.status}</td>
-                              <td className="px-4 py-3">
-                                {denuncia.status === 'ABERTA' ? <div className="flex justify-end gap-2">
-                                  <button onClick={() => setDenunciaEmAnalise(denuncia)} disabled={processando === denuncia.id} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
-                                    Analisar
-                                  </button>
-                                </div> : <p className="text-right text-xs font-bold text-slate-400">Resolvida</p>}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <Pagination page={paginasListas.denuncias} total={denunciasFiltradas.length} onChange={(page) => alterarPaginaLista('denuncias', page)} />
-                </section>
-              )}
-
-              {aba === 'suspeitos' && (
-                <section>
-                  <ListToolbar
-                    value={filtrosOperacionais.suspeitos.termo ?? ''}
-                    onChange={(value) => alterarFiltroOperacional('suspeitos', 'termo', value)}
-                    placeholder="Buscar por titulo, anunciante ou ID"
-                    resultCount={suspeitosFiltrados.length}
-                  >
-                    <select
-                      value={filtrosOperacionais.suspeitos.status ?? ''}
-                      onChange={(event) => alterarFiltroOperacional('suspeitos', 'status', event.target.value as SuspeitoModeracaoFiltros['status'])}
-                      className={filterControlClass}
-                    >
-                      <option value="">Todos os status</option>
-                      {Object.keys(statusClass).map((status) => <option key={status} value={status}>{status}</option>)}
-                    </select>
-                    <span className="inline-flex h-10 items-center rounded-md border border-orange-100 bg-orange-50 px-3 text-xs font-black uppercase text-orange-700">
-                      2 ou mais denuncias abertas
-                    </span>
-                  </ListToolbar>
-                  {suspeitosFiltrados.length === 0 ? (
-                    <EmptyState text="Nenhum anuncio suspeito pelos filtros atuais." />
+                  {denunciasAgrupadas.length === 0 ? (
+                    <EmptyState text="Nenhuma denuncia pelos filtros atuais." />
                   ) : (
                     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
                       <table className="w-full min-w-[820px] text-left text-sm">
@@ -1546,32 +1553,36 @@ export const ModeracaoPage: React.FC = () => {
                           <tr>
                             <th className="px-4 py-3">Anuncio</th>
                             <th className="px-4 py-3">Anunciante</th>
+                            <th className="px-4 py-3">Recorrencia</th>
                             <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3">Denuncias</th>
                             <th className="px-4 py-3 text-right">Acoes</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {suspeitosPagina.map((anuncio) => (
-                            <tr key={anuncio.anuncioId} className="transition-colors hover:bg-slate-50">
+                          {denunciasAgrupadasPagina.map((grupo) => (
+                            <tr key={grupo.anuncioId} className="transition-colors hover:bg-slate-50">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                  <Thumb urls={anuncio.imagensUrls} title={anuncio.titulo} />
-                                  <p className="font-extrabold text-slate-900">{anuncio.titulo}</p>
+                                  <Thumb urls={grupo.imagensUrls} title={grupo.tituloAnuncio} />
+                                  <p className="font-extrabold text-slate-900">{grupo.tituloAnuncio}</p>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 font-bold text-slate-600">{anuncio.nomeUsuario}</td>
+                              <td className="px-4 py-3 text-xs font-bold text-slate-600">{grupo.nomeAnunciante || '-'}</td>
                               <td className="px-4 py-3">
-                                <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase ${statusClass[anuncio.status] ?? statusClass.PENDENTE}`}>
-                                  {anuncio.status}
+                                <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-black uppercase text-orange-700">
+                                  {grupo.totalAbertas} aberta(s)
                                 </span>
                               </td>
-                              <td className="px-4 py-3 font-black text-orange-700">{anuncio.denunciasAbertas}</td>
+                              <td className="px-4 py-3">
+                                <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase ${statusClass[grupo.statusAnuncio ?? 'PENDENTE'] ?? statusClass.PENDENTE}`}>
+                                  {grupo.statusAnuncio ?? '-'}
+                                </span>
+                              </td>
                               <td className="px-4 py-3">
                                 <div className="flex justify-end gap-2">
-                                  {anuncio.status !== 'SUSPENSO' && <button onClick={() => executar(anuncio.anuncioId, () => suspenderAnuncio(anuncio.anuncioId, 'Suspenso para analise.'))} className="rounded-md bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 transition-colors hover:bg-orange-100">Suspender</button>}
-                                  {anuncio.status === 'SUSPENSO' && <button onClick={() => executar(anuncio.anuncioId, () => reativarAnuncio(anuncio.anuncioId, 'Reativado apos analise.'))} className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">Reativar</button>}
-                                  {anuncio.status !== 'REPROVADO' && <button onClick={() => executar(anuncio.anuncioId, () => reprovarSuspeito(anuncio.anuncioId, 'Reprovado apos denuncias.'))} className="rounded-md bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100">Reprovar</button>}
+                                  <button onClick={() => setGrupoEmAnalise(grupo)} disabled={processando === grupo.anuncioId} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
+                                    Analisar
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -1580,7 +1591,7 @@ export const ModeracaoPage: React.FC = () => {
                       </table>
                     </div>
                   )}
-                  <Pagination page={paginasListas.suspeitos} total={suspeitosFiltrados.length} onChange={(page) => alterarPaginaLista('suspeitos', page)} />
+                  <Pagination page={paginasListas.denuncias} total={denunciasAgrupadas.length} onChange={(page) => alterarPaginaLista('denuncias', page)} />
                 </section>
               )}
 
