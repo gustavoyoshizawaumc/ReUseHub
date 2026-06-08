@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -244,6 +245,39 @@ class AuthServiceTest {
             Mockito.when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuarioModelo));
 
             assertThrows(RegraNegocioException.class, () -> authService.login(request));
+        }
+
+        @Test
+        @DisplayName("deve estourar BadCredentialsException generica quando o e-mail nao existir (anti-enumeration)")
+        void erroEmailInexistente() {
+            LoginRequest request = new LoginRequest();
+            request.setEmail("inexistente@test.com");
+            request.setPassword("senha123");
+
+            Mockito.when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
+
+            BadCredentialsException ex = assertThrows(
+                    BadCredentialsException.class,
+                    () -> authService.login(request)
+            );
+            // Nao deve vazar o e-mail na mensagem (anti user-enumeration).
+            // A mensagem amigavel exibida ao usuario e responsabilidade do GlobalExceptionHandler.
+            assertFalse(ex.getMessage().contains(request.getEmail()));
+        }
+
+        @Test
+        @DisplayName("deve propagar BadCredentialsException quando a senha estiver incorreta")
+        void erroSenhaIncorreta() {
+            LoginRequest request = new LoginRequest();
+            request.setEmail("gustavo@reusehub.com");
+            request.setPassword("senha_errada");
+
+            Mockito.when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuarioModelo));
+            Mockito.when(authenticationManager.authenticate(Mockito.any()))
+                    .thenThrow(new BadCredentialsException("Bad credentials"));
+
+            assertThrows(BadCredentialsException.class, () -> authService.login(request));
+            Mockito.verify(jwtService, Mockito.never()).gerarToken(Mockito.any());
         }
     }
 
