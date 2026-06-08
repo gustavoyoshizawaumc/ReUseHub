@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  ShieldAlert,
   ShieldCheck,
   Star,
   Users,
@@ -23,7 +22,6 @@ interface ModeracaoLayoutProps {
   counts: {
     anuncios: number;
     denuncias: number;
-    suspeitos: number;
     avaliacoes: number;
   };
 }
@@ -52,7 +50,6 @@ export const ModeracaoLayout: React.FC<ModeracaoLayoutProps> = ({ children, titl
     { to: '/moderacao', label: 'Visao geral', icon: LayoutDashboard, end: true },
     { to: '/moderacao/anuncios', label: 'Anuncios', icon: ClipboardCheck, count: counts.anuncios },
     { to: '/moderacao/denuncias', label: 'Denuncias', icon: AlertTriangle, count: counts.denuncias },
-    { to: '/moderacao/suspeitos', label: 'Suspeitos', icon: ShieldAlert, count: counts.suspeitos },
     { to: '/moderacao/avaliacoes', label: 'Avaliacoes', icon: Star, count: counts.avaliacoes },
     { to: '/moderacao/historico', label: isAdmin ? 'Auditoria' : 'Historico', icon: History },
     ...(isAdmin ? [{ to: '/moderacao/usuarios', label: 'Usuarios', icon: Users }] : []),
