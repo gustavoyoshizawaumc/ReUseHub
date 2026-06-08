@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
@@ -25,6 +25,7 @@ import { useFeedback } from "../../components/feedback/feedbackContext";
 import { useAnuncios } from "../../hooks/useAnuncios";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";
+import type { Anuncio } from "../../types/anuncio.types";
 import type { BuscaFiltro } from "../../types/busca.types";
 
 type StatusAnuncio =
@@ -39,6 +40,11 @@ type StatusAnuncio =
 interface AnunciosPageBaseProps {
   modo: "publico" | "privado";
 }
+
+// Quantidade maxima de anuncios carregados (sem paginar) para alimentar os
+// contadores do painel do anunciante. Alto o suficiente para cobrir qualquer
+// usuario real; em escala maior o ideal seria um endpoint de COUNT no backend.
+const LIMITE_ANUNCIOS_RESUMO = 2000;
 
 const extrairFiltrosDaUrl = (searchParams: URLSearchParams): BuscaFiltro => {
   const filtro: BuscaFiltro = {};
@@ -104,6 +110,53 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     listar();
   }, [buscarComFiltros, exibindoMeusAnuncios, listar, listarMeus, searchParams]);
 
+  // Resumo de "Meus Anuncios" para os cards de contagem.
+  // A lista principal e paginada (10 por pagina), entao contar a partir dela
+  // travava os numeros em 10. Aqui buscamos todos os anuncios do usuario (sem
+  // paginar) só para alimentar os contadores. Recarrega no mount e quando
+  // `recarregarResumo` e chamado, mas NAO em cada tecla da busca/filtro.
+  const [resumoAnuncios, setResumoAnuncios] = useState<Anuncio[]>([]);
+  const [gatilhoResumo, setGatilhoResumo] = useState(0);
+  const recarregarResumo = useCallback(() => setGatilhoResumo((valor) => valor + 1), []);
+
+  useEffect(() => {
+    // So o modo privado exibe os cards de contagem; no publico nem buscamos.
+    if (!exibindoMeusAnuncios) return;
+
+    let cancelado = false;
+    anuncioService
+      .listarMeusAnuncios(0, LIMITE_ANUNCIOS_RESUMO)
+      .then((resposta) => {
+        if (!cancelado) setResumoAnuncios(resposta.content);
+      })
+      .catch(() => {
+        // Mantem os contadores anteriores; a lista principal ja sinaliza erros.
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [exibindoMeusAnuncios, gatilhoResumo]);
+
+  // Reatividade ao vivo: quando a aba volta ao foco, rebusca o resumo. Cobre o
+  // caso de a moderacao aprovar/reprovar/suspender enquanto o usuario esta com a
+  // pagina aberta — ao voltar pra aba, os contadores se ajustam sozinhos.
+  useEffect(() => {
+    if (!exibindoMeusAnuncios) return;
+
+    const aoVoltarFoco = () => {
+      if (document.visibilityState === "visible") recarregarResumo();
+    };
+
+    window.addEventListener("focus", aoVoltarFoco);
+    document.addEventListener("visibilitychange", aoVoltarFoco);
+
+    return () => {
+      window.removeEventListener("focus", aoVoltarFoco);
+      document.removeEventListener("visibilitychange", aoVoltarFoco);
+    };
+  }, [exibindoMeusAnuncios, recarregarResumo]);
+
   const anuncioCriado = searchParams.get("status") === "pendente-criado";
   const anuncioAtualizado = searchParams.get("status") === "atualizado";
   const anuncioExcluido = searchParams.get("status") === "excluido";
@@ -125,7 +178,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       reservados: 0,
     };
 
-    anuncios.forEach((anuncio) => {
+    resumoAnuncios.forEach((anuncio) => {
       const status = anuncio.status as StatusAnuncio;
       if (status === "PENDENTE") base.pendentes += 1;
       if (status === "ATIVO") base.ativos += 1;
@@ -137,7 +190,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     });
 
     return base;
-  }, [anuncios]);
+  }, [resumoAnuncios]);
 
   const statusCards = [
     {
@@ -219,6 +272,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       await anuncioService.deletarAnuncio(id);
       if (exibindoMeusAnuncios) {
         listarMeus(paginacao.currentPage);
+        recarregarResumo();
       } else {
         listar(paginacao.currentPage);
       }
@@ -283,15 +337,29 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     setSearchParams(params, { replace: true });
   };
 
+  // Pagina usando o mesmo criterio do carregamento inicial (useEffect):
+  // busca ativa -> paginarFiltros; "Meus Anuncios" -> listarMeus; senao -> listar.
+  // Sem isso, a paginacao caia sempre no endpoint publico /filtrar e substituia
+  // a lista de "Meus Anuncios" pelos anuncios ATIVOS de todos os usuarios.
+  const paginarPagina = (page: number) => {
+    if (possuiBuscaAtiva(extrairFiltrosDaUrl(searchParams))) {
+      paginarFiltros(page);
+    } else if (exibindoMeusAnuncios) {
+      listarMeus(page);
+    } else {
+      listar(page);
+    }
+  };
+
   const handleProxima = () => {
     if (paginacao.currentPage < paginacao.totalPages - 1) {
-      paginarFiltros(paginacao.currentPage + 1);
+      paginarPagina(paginacao.currentPage + 1);
     }
   };
 
   const handleAnterior = () => {
     if (paginacao.currentPage > 0) {
-      paginarFiltros(paginacao.currentPage - 1);
+      paginarPagina(paginacao.currentPage - 1);
     }
   };
 
