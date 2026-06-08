@@ -25,7 +25,6 @@ import { useFeedback } from "../../components/feedback/feedbackContext";
 import { useAnuncios } from "../../hooks/useAnuncios";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";
-import type { Anuncio } from "../../types/anuncio.types";
 import type { BuscaFiltro } from "../../types/busca.types";
 
 type StatusAnuncio =
@@ -41,10 +40,12 @@ interface AnunciosPageBaseProps {
   modo: "publico" | "privado";
 }
 
-// Quantidade maxima de anuncios carregados (sem paginar) para alimentar os
-// contadores do painel do anunciante. Alto o suficiente para cobrir qualquer
-// usuario real; em escala maior o ideal seria um endpoint de COUNT no backend.
-const LIMITE_ANUNCIOS_RESUMO = 2000;
+// Em "Meus Anuncios" carregamos todos os anuncios do usuario de uma vez e
+// filtramos/paginamos no client (escala pequena). LIMITE e o teto de itens
+// buscados — alto o suficiente para qualquer usuario real; em escala maior o
+// ideal seria filtrar/paginar no backend e ter um endpoint de COUNT.
+const LIMITE_MEUS_ANUNCIOS = 2000;
+const TAMANHO_PAGINA_MEUS_ANUNCIOS = 10;
 
 const extrairFiltrosDaUrl = (searchParams: URLSearchParams): BuscaFiltro => {
   const filtro: BuscaFiltro = {};
@@ -94,58 +95,46 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     paginarFiltros,
   } = useAnuncios();
 
+  // Modo publico: busca/lista reagindo aos filtros da URL.
+  // O modo privado tem carregamento proprio (efeito abaixo), pois termo e status
+  // sao filtrados no client e nao devem cair na busca publica /filtrar.
   useEffect(() => {
-    const filtroUrl = extrairFiltrosDaUrl(searchParams);
+    if (exibindoMeusAnuncios) return;
 
+    const filtroUrl = extrairFiltrosDaUrl(searchParams);
     if (possuiBuscaAtiva(filtroUrl)) {
       buscarComFiltros(filtroUrl);
       return;
     }
 
-    if (exibindoMeusAnuncios) {
-      listarMeus();
-      return;
-    }
-
     listar();
-  }, [buscarComFiltros, exibindoMeusAnuncios, listar, listarMeus, searchParams]);
+  }, [buscarComFiltros, exibindoMeusAnuncios, listar, searchParams]);
 
-  // Resumo de "Meus Anuncios" para os cards de contagem.
-  // A lista principal e paginada (10 por pagina), entao contar a partir dela
-  // travava os numeros em 10. Aqui buscamos todos os anuncios do usuario (sem
-  // paginar) só para alimentar os contadores. Recarrega no mount e quando
-  // `recarregarResumo` e chamado, mas NAO em cada tecla da busca/filtro.
-  const [resumoAnuncios, setResumoAnuncios] = useState<Anuncio[]>([]);
-  const [gatilhoResumo, setGatilhoResumo] = useState(0);
-  const recarregarResumo = useCallback(() => setGatilhoResumo((valor) => valor + 1), []);
+  // Modo privado: carrega TODOS os anuncios do usuario de uma vez (sem paginar
+  // no servidor) para servir de fonte unica de contadores, filtro de status,
+  // busca por texto e paginacao — tudo resolvido no client. `gatilhoMeusAnuncios`
+  // permite recarregar sob demanda (apos excluir ou ao voltar o foco) sem reagir
+  // a cada tecla da busca/filtro.
+  const [gatilhoMeusAnuncios, setGatilhoMeusAnuncios] = useState(0);
+  const [paginaMeusAnuncios, setPaginaMeusAnuncios] = useState(0);
+  const recarregarMeusAnuncios = useCallback(
+    () => setGatilhoMeusAnuncios((valor) => valor + 1),
+    []
+  );
 
   useEffect(() => {
-    // So o modo privado exibe os cards de contagem; no publico nem buscamos.
     if (!exibindoMeusAnuncios) return;
+    listarMeus(0, LIMITE_MEUS_ANUNCIOS);
+  }, [exibindoMeusAnuncios, gatilhoMeusAnuncios, listarMeus]);
 
-    let cancelado = false;
-    anuncioService
-      .listarMeusAnuncios(0, LIMITE_ANUNCIOS_RESUMO)
-      .then((resposta) => {
-        if (!cancelado) setResumoAnuncios(resposta.content);
-      })
-      .catch(() => {
-        // Mantem os contadores anteriores; a lista principal ja sinaliza erros.
-      });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [exibindoMeusAnuncios, gatilhoResumo]);
-
-  // Reatividade ao vivo: quando a aba volta ao foco, rebusca o resumo. Cobre o
-  // caso de a moderacao aprovar/reprovar/suspender enquanto o usuario esta com a
-  // pagina aberta — ao voltar pra aba, os contadores se ajustam sozinhos.
+  // Reatividade ao vivo: ao voltar o foco para a aba, recarrega a lista. Cobre o
+  // caso de a moderacao aprovar/reprovar/suspender enquanto a pagina esta aberta
+  // — contadores e lista se ajustam sozinhos.
   useEffect(() => {
     if (!exibindoMeusAnuncios) return;
 
     const aoVoltarFoco = () => {
-      if (document.visibilityState === "visible") recarregarResumo();
+      if (document.visibilityState === "visible") recarregarMeusAnuncios();
     };
 
     window.addEventListener("focus", aoVoltarFoco);
@@ -155,7 +144,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       window.removeEventListener("focus", aoVoltarFoco);
       document.removeEventListener("visibilitychange", aoVoltarFoco);
     };
-  }, [exibindoMeusAnuncios, recarregarResumo]);
+  }, [exibindoMeusAnuncios, recarregarMeusAnuncios]);
 
   const anuncioCriado = searchParams.get("status") === "pendente-criado";
   const anuncioAtualizado = searchParams.get("status") === "atualizado";
@@ -178,7 +167,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       reservados: 0,
     };
 
-    resumoAnuncios.forEach((anuncio) => {
+    anuncios.forEach((anuncio) => {
       const status = anuncio.status as StatusAnuncio;
       if (status === "PENDENTE") base.pendentes += 1;
       if (status === "ATIVO") base.ativos += 1;
@@ -190,7 +179,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     });
 
     return base;
-  }, [resumoAnuncios]);
+  }, [anuncios]);
 
   const statusCards = [
     {
@@ -242,9 +231,9 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     { value: "CANCELADO", label: "Cancelados" },
   ];
 
-  const anunciosVisiveis = useMemo(() => {
-    if (!exibindoMeusAnuncios) return anuncios;
-
+  // Modo privado: filtra a lista COMPLETA por status + termo (client-side).
+  // Antes o filtro/busca so atuava sobre os 10 da pagina; agora cobre tudo.
+  const anunciosPrivadosFiltrados = useMemo(() => {
     return anuncios.filter((anuncio) => {
       const combinaStatus =
         statusSelecionado === "TODOS" || anuncio.status === statusSelecionado;
@@ -255,7 +244,45 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
       return combinaStatus && combinaTermo;
     });
-  }, [anuncios, exibindoMeusAnuncios, statusSelecionado, termoMeusAnuncios]);
+  }, [anuncios, statusSelecionado, termoMeusAnuncios]);
+
+  // Paginacao client-side do modo privado sobre a lista ja filtrada.
+  const totalPaginasMeusAnuncios = Math.max(
+    1,
+    Math.ceil(anunciosPrivadosFiltrados.length / TAMANHO_PAGINA_MEUS_ANUNCIOS)
+  );
+
+  // Pagina segura: evita pagina vazia quando o filtro encolhe a lista (ex.: apos
+  // excluir ou ao trocar para um status com menos itens).
+  const paginaMeusAnunciosSegura = Math.min(
+    paginaMeusAnuncios,
+    totalPaginasMeusAnuncios - 1
+  );
+
+  const inicioPaginaMeusAnuncios = paginaMeusAnunciosSegura * TAMANHO_PAGINA_MEUS_ANUNCIOS;
+  const anunciosVisiveis = exibindoMeusAnuncios
+    ? anunciosPrivadosFiltrados.slice(
+        inicioPaginaMeusAnuncios,
+        inicioPaginaMeusAnuncios + TAMANHO_PAGINA_MEUS_ANUNCIOS
+      )
+    : anuncios;
+
+  // Distingue "ainda nao tem anuncios" de "o filtro nao retornou nada", para o
+  // estado vazio mostrar a mensagem certa (e o botao de criar so no 1o caso).
+  const semAnunciosCadastrados = exibindoMeusAnuncios && anuncios.length === 0;
+  const filtroPrivadoSemResultados =
+    exibindoMeusAnuncios && anuncios.length > 0 && anunciosVisiveis.length === 0;
+
+  const tituloEstadoVazio = filtroPrivadoSemResultados
+    ? "Nenhum anúncio para este filtro"
+    : exibindoMeusAnuncios
+      ? "Você ainda não criou nenhum anúncio"
+      : "Nenhum anúncio encontrado";
+  const descricaoEstadoVazio = filtroPrivadoSemResultados
+    ? "Tente outro status ou limpe a busca."
+    : exibindoMeusAnuncios
+      ? "Quando você cadastrar um item, ele aparecerá aqui."
+      : "Tente ajustar os filtros ou limpar a busca.";
 
   const handleDelete = async (id: string) => {
     const confirmado = await confirm({
@@ -271,8 +298,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     try {
       await anuncioService.deletarAnuncio(id);
       if (exibindoMeusAnuncios) {
-        listarMeus(paginacao.currentPage);
-        recarregarResumo();
+        recarregarMeusAnuncios();
       } else {
         listar(paginacao.currentPage);
       }
@@ -318,6 +344,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       params.delete("termo");
     }
     setSearchParams(params, { replace: true });
+    setPaginaMeusAnuncios(0);
   };
 
   const handleFiltrarStatus = (novoStatus: string) => {
@@ -328,6 +355,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       params.set("statusFiltro", novoStatus);
     }
     setSearchParams(params, { replace: true });
+    setPaginaMeusAnuncios(0);
   };
 
   const limparFiltrosPrivados = () => {
@@ -335,33 +363,48 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     params.delete("termo");
     params.delete("statusFiltro");
     setSearchParams(params, { replace: true });
+    setPaginaMeusAnuncios(0);
   };
 
-  // Pagina usando o mesmo criterio do carregamento inicial (useEffect):
-  // busca ativa -> paginarFiltros; "Meus Anuncios" -> listarMeus; senao -> listar.
-  // Sem isso, a paginacao caia sempre no endpoint publico /filtrar e substituia
-  // a lista de "Meus Anuncios" pelos anuncios ATIVOS de todos os usuarios.
-  const paginarPagina = (page: number) => {
+  // Paginacao do modo publico (no servidor): busca ativa -> paginarFiltros;
+  // caso contrario, lista padrao. O modo privado pagina no client (estado local).
+  const paginarPaginaPublica = (page: number) => {
     if (possuiBuscaAtiva(extrairFiltrosDaUrl(searchParams))) {
       paginarFiltros(page);
-    } else if (exibindoMeusAnuncios) {
-      listarMeus(page);
     } else {
       listar(page);
     }
   };
 
   const handleProxima = () => {
+    if (exibindoMeusAnuncios) {
+      setPaginaMeusAnuncios((pagina) =>
+        Math.min(pagina + 1, totalPaginasMeusAnuncios - 1)
+      );
+      return;
+    }
     if (paginacao.currentPage < paginacao.totalPages - 1) {
-      paginarPagina(paginacao.currentPage + 1);
+      paginarPaginaPublica(paginacao.currentPage + 1);
     }
   };
 
   const handleAnterior = () => {
+    if (exibindoMeusAnuncios) {
+      setPaginaMeusAnuncios((pagina) => Math.max(pagina - 1, 0));
+      return;
+    }
     if (paginacao.currentPage > 0) {
-      paginarPagina(paginacao.currentPage - 1);
+      paginarPaginaPublica(paginacao.currentPage - 1);
     }
   };
+
+  // Valores de paginacao exibidos no rodape: client-side no privado, servidor no publico.
+  const paginaAtualExibida = exibindoMeusAnuncios
+    ? paginaMeusAnunciosSegura
+    : paginacao.currentPage;
+  const totalPaginasExibidas = exibindoMeusAnuncios
+    ? totalPaginasMeusAnuncios
+    : paginacao.totalPages;
 
   const handleToggleFavorito = async (anuncioId: string) => {
     if (!possuiUsuarioAutenticado) {
@@ -610,14 +653,12 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                     <Package size={40} />
                   </div>
                   <h3 className="text-xl font-extrabold text-slate-800">
-                    {exibindoMeusAnuncios ? "Você ainda não criou nenhum anúncio" : "Nenhum anúncio encontrado"}
+                    {tituloEstadoVazio}
                   </h3>
                   <p className="text-slate-500 mt-2 max-w-md leading-relaxed">
-                    {exibindoMeusAnuncios
-                      ? "Quando você cadastrar um item, ele aparecerá aqui."
-                      : "Tente ajustar os filtros ou limpar a busca."}
+                    {descricaoEstadoVazio}
                   </p>
-                  {exibindoMeusAnuncios && (
+                  {semAnunciosCadastrados && (
                     <button
                       onClick={() => navigate("/create-listing")}
                       className="mt-6 bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-2xl font-bold transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-2 active:scale-95"
@@ -661,22 +702,22 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                 ))}
               </div>
 
-              {!loading && paginacao.totalPages > 1 && (
+              {!loading && totalPaginasExibidas > 1 && (
                 <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mt-8">
                   <button
                     onClick={handleAnterior}
-                    disabled={paginacao.currentPage === 0}
+                    disabled={paginaAtualExibida === 0}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all"
                   >
                     <ChevronLeft size={20} />
                     Anterior
                   </button>
                   <p className="text-sm font-bold text-slate-400 hidden sm:block">
-                    Página <span className="text-blue-600">{paginacao.currentPage + 1}</span> de {paginacao.totalPages}
+                    Página <span className="text-blue-600">{paginaAtualExibida + 1}</span> de {totalPaginasExibidas}
                   </p>
                   <button
                     onClick={handleProxima}
-                    disabled={paginacao.currentPage >= paginacao.totalPages - 1}
+                    disabled={paginaAtualExibida >= totalPaginasExibidas - 1}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 transition-all"
                   >
                     Próxima
