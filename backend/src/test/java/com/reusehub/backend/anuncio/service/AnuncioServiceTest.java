@@ -145,6 +145,7 @@ class AnuncioServiceTest {
                             .id(entrada.getId())
                             .titulo(entrada.getTitulo())
                             .status(entrada.getStatus())
+                            .motivoReprovacao(entrada.getMotivoReprovacao())
                             .categoriaId(entrada.getCategoria() != null ? entrada.getCategoria().getId() : null)
                             .build();
                 });
@@ -717,10 +718,31 @@ class AnuncioServiceTest {
             Mockito.when(anuncioRepository.findById(validId)).thenReturn(Optional.of(anuncioPendente));
             Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class))).thenAnswer(i -> i.getArgument(0));
 
-            AnuncioRespostaDTO resultado = anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com");
+            AnuncioRespostaDTO resultado = anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com", "Fotos fora do padrao.");
 
             assertNotNull(resultado);
             assertEquals(Anuncio.StatusAnuncio.REPROVADO, resultado.getStatus());
+            // O motivo deve ser persistido (trimado) e exibido ao anunciante.
+            assertEquals("Fotos fora do padrao.", resultado.getMotivoReprovacao());
+            // O anunciante deve ser notificado da reprovacao com o motivo.
+            Mockito.verify(moderacaoService).notificarReprovacao(anuncioPendente, "Fotos fora do padrao.");
+        }
+
+        @Test
+        @DisplayName("deve estourar RegraNegocioException se o motivo da reprovacao estiver em branco")
+        void erroReprovarSemMotivo() {
+            UUID validId = anuncioPendente.getId();
+            assertNotNull(validId);
+
+            Mockito.when(usuarioRepository.findByEmail("moderador@reusehub.com")).thenReturn(Optional.of(usuarioModerador));
+            Mockito.when(anuncioRepository.findById(validId)).thenReturn(Optional.of(anuncioPendente));
+
+            assertThrows(RegraNegocioException.class, () -> {
+                anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com", "   ");
+            });
+            // Sem motivo valido, nada deve ser persistido nem notificado.
+            Mockito.verify(anuncioRepository, Mockito.never()).save(Mockito.any());
+            Mockito.verify(moderacaoService, Mockito.never()).notificarReprovacao(Mockito.any(), Mockito.any());
         }
 
         @Test
@@ -732,7 +754,7 @@ class AnuncioServiceTest {
             Mockito.when(usuarioRepository.findByEmail("dono@reusehub.com")).thenReturn(Optional.of(usuarioDono));
 
             assertThrows(AcessoNegadoException.class, () -> {
-                anuncioService.reprovarAnuncio(validId, "dono@reusehub.com");
+                anuncioService.reprovarAnuncio(validId, "dono@reusehub.com", "Fotos fora do padrao.");
             });
         }
 
@@ -747,7 +769,7 @@ class AnuncioServiceTest {
             Mockito.when(anuncioRepository.findById(validId)).thenReturn(Optional.of(anuncioPendente));
 
             assertThrows(RegraNegocioException.class, () -> {
-                anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com");
+                anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com", "Fotos fora do padrao.");
             });
         }
     }

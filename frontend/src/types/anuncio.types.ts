@@ -42,6 +42,7 @@ export interface Anuncio {
   totalVisualizacoes: number;
   notaRelevancia: number | null;
   motivoSuspensao?: string | null;
+  motivoReprovacao?: string | null;
   criadoEm: string;
   atualizadoEm: string;
   usuarioId: string;

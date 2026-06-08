@@ -205,10 +205,11 @@ export async function aprovarAnuncio(id: string): Promise<Anuncio> {
   return parseResponse(response, 'Erro ao aprovar anuncio');
 }
 
-export async function reprovarAnuncio(id: string): Promise<Anuncio> {
+export async function reprovarAnuncio(id: string, justificativa: string): Promise<Anuncio> {
   const response = await fetch(`${ANUNCIOS_URL}/moderacao/${id}/reprovar`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
+    body: JSON.stringify({ justificativa }),
   });
   return parseResponse(response, 'Erro ao reprovar anuncio');
 }

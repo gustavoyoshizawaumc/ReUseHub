@@ -43,6 +43,7 @@ public class AnuncioRespostaMapper {
                 .totalVisualizacoes(anuncio.getTotalVisualizacoes())
                 .notaRelevancia(anuncio.getNotaRelevancia() != null ? anuncio.getNotaRelevancia() : BigDecimal.ZERO)
                 .motivoSuspensao(anuncio.getMotivoSuspensao())
+                .motivoReprovacao(anuncio.getMotivoReprovacao())
                 .criadoEm(anuncio.getCriadoEm())
                 .atualizadoEm(anuncio.getAtualizadoEm())
                 .usuarioId(anuncio.getUsuario().getId())

@@ -68,6 +68,9 @@ public class Anuncio {
     @Column(name = "motivo_suspensao", columnDefinition = "TEXT")
     private String motivoSuspensao;
 
+    @Column(name = "motivo_reprovacao", columnDefinition = "TEXT")
+    private String motivoReprovacao;
+
     @OneToMany(mappedBy = "anuncio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("ordemExibicao ASC")
     @Builder.Default

@@ -169,6 +169,7 @@ public class AnuncioService {
         anuncio.setEndereco(endereco);
         anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
         anuncio.setMotivoSuspensao(null);
+        anuncio.setMotivoReprovacao(null);
 
         Anuncio atualizado = anuncioRepository.save(anuncio);
         return mapearParaRespostaDTO(atualizado);
@@ -200,6 +201,7 @@ public class AnuncioService {
 
         anuncio.setStatus(Anuncio.StatusAnuncio.PENDENTE);
         anuncio.setMotivoSuspensao(null);
+        anuncio.setMotivoReprovacao(null);
         Anuncio atualizado = anuncioRepository.save(anuncio);
         return mapearParaRespostaDTO(atualizado);
     }
@@ -306,20 +308,31 @@ public class AnuncioService {
 
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
         anuncio.setMotivoSuspensao(null);
+        anuncio.setMotivoReprovacao(null);
         Anuncio atualizado = anuncioRepository.save(anuncio);
         moderacaoService.registrar(moderador, "ANUNCIO_APROVADO", "ANUNCIO", id, "Aprovado na fila de moderacao.");
         return mapearParaRespostaDTO(atualizado);
     }
 
-    public AnuncioRespostaDTO reprovarAnuncio(UUID id, String emailModerador) {
+    public AnuncioRespostaDTO reprovarAnuncio(UUID id, String emailModerador, String justificativa) {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarEstadoPendenteParaModerar(anuncio, "reprovados");
+        String motivo = validarMotivoReprovacao(justificativa);
 
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
+        anuncio.setMotivoReprovacao(motivo);
         Anuncio atualizado = anuncioRepository.save(anuncio);
-        moderacaoService.registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", id, "Reprovado na fila de moderacao.");
+        moderacaoService.registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", id, motivo);
+        moderacaoService.notificarReprovacao(atualizado, motivo);
         return mapearParaRespostaDTO(atualizado);
+    }
+
+    private String validarMotivoReprovacao(String justificativa) {
+        if (justificativa == null || justificativa.isBlank()) {
+            throw new RegraNegocioException("Informe o motivo da reprovacao para o anunciante.");
+        }
+        return justificativa.trim();
     }
 
     @Transactional(readOnly = true)
