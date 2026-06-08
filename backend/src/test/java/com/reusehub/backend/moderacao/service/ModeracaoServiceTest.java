@@ -4,6 +4,7 @@ import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
+import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
@@ -24,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -124,6 +126,72 @@ class ModeracaoServiceTest {
             assertEquals("Voce ja denunciou este anuncio.", erro.getMessage());
             Mockito.verify(denunciaRepository, Mockito.never()).save(Mockito.any());
         }
+    }
+
+    @Nested
+    @DisplayName("Cenarios para resolucao por anuncio (resolver junto)")
+    class ResolucaoPorAnuncioCenarios {
+
+        @Test
+        @DisplayName("descartar deve fechar TODAS as denuncias abertas do anuncio")
+        void descartarFechaTodasDoAnuncio() {
+            Usuario moderador = construirModerador();
+            DenunciaAnuncio d1 = construirDenunciaAberta();
+            DenunciaAnuncio d2 = construirDenunciaAberta();
+
+            Mockito.when(usuarioRepository.findByEmail(moderador.getEmail())).thenReturn(Optional.of(moderador));
+            Mockito.when(denunciaRepository.findById(d1.getId())).thenReturn(Optional.of(d1));
+            Mockito.when(denunciaRepository.findByAnuncioIdAndStatus(
+                    anuncioAlheio.getId(), DenunciaAnuncio.StatusDenuncia.ABERTA
+            )).thenReturn(List.of(d1, d2));
+
+            moderacaoService.descartarDenuncia(d1.getId(), moderador.getEmail(), "Improcedente.");
+
+            assertEquals(DenunciaAnuncio.StatusDenuncia.DESCARTADA, d1.getStatus());
+            assertEquals(DenunciaAnuncio.StatusDenuncia.DESCARTADA, d2.getStatus());
+            Mockito.verify(denunciaRepository).saveAll(Mockito.anyList());
+        }
+
+        @Test
+        @DisplayName("suspender deve suspender o anuncio e fechar todas as denuncias abertas dele")
+        void suspenderFechaTodasDoAnuncio() {
+            Usuario moderador = construirModerador();
+            DenunciaAnuncio d1 = construirDenunciaAberta();
+            DenunciaAnuncio d2 = construirDenunciaAberta();
+
+            Mockito.when(usuarioRepository.findByEmail(moderador.getEmail())).thenReturn(Optional.of(moderador));
+            Mockito.when(denunciaRepository.findById(d1.getId())).thenReturn(Optional.of(d1));
+            Mockito.when(denunciaRepository.findByAnuncioIdAndStatus(
+                    anuncioAlheio.getId(), DenunciaAnuncio.StatusDenuncia.ABERTA
+            )).thenReturn(List.of(d1, d2));
+
+            moderacaoService.suspenderAnuncioPorDenuncia(d1.getId(), moderador.getEmail(), "Conteudo proibido.");
+
+            assertEquals(Anuncio.StatusAnuncio.SUSPENSO, anuncioAlheio.getStatus());
+            assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d1.getStatus());
+            assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d2.getStatus());
+            Mockito.verify(notificacaoService).criar(
+                    Mockito.any(), Mockito.eq("ANUNCIO_SUSPENSO"), Mockito.anyString(), Mockito.anyString(),
+                    Mockito.any(), Mockito.anyString()
+            );
+        }
+    }
+
+    private Usuario construirModerador() {
+        Usuario moderador = construirUsuario("moderador@reusehub.com");
+        moderador.setPerfil(Perfil.MODERADOR);
+        return moderador;
+    }
+
+    private DenunciaAnuncio construirDenunciaAberta() {
+        return DenunciaAnuncio.builder()
+                .id(UUID.randomUUID())
+                .anuncio(anuncioAlheio)
+                .denunciante(denunciante)
+                .motivo(MOTIVO_PADRAO)
+                .descricao(DESCRICAO_PADRAO)
+                .status(DenunciaAnuncio.StatusDenuncia.ABERTA)
+                .build();
     }
 
     private Usuario construirUsuario(String email) {

@@ -100,9 +100,10 @@ public class ModeracaoService {
     public DenunciaRespostaDTO descartarDenuncia(UUID denunciaId, String emailModerador, String justificativa) {
         Usuario moderador = validarModerador(emailModerador);
         DenunciaAnuncio denuncia = buscarDenuncia(denunciaId);
-        denuncia.setStatus(DenunciaAnuncio.StatusDenuncia.DESCARTADA);
+        // Decisao por anuncio: descartar fecha todas as denuncias abertas do mesmo anuncio.
+        fecharDenunciasAbertas(denuncia.getAnuncio().getId(), DenunciaAnuncio.StatusDenuncia.DESCARTADA);
         registrar(moderador, "DENUNCIA_DESCARTADA", "DENUNCIA", denunciaId, justificativa);
-        return mapearDenuncia(denunciaRepository.save(denuncia));
+        return mapearDenuncia(denuncia);
     }
 
     public DenunciaRespostaDTO suspenderAnuncioPorDenuncia(UUID denunciaId, String emailModerador, String justificativa) {
@@ -113,15 +114,15 @@ public class ModeracaoService {
 
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
-        denuncia.setStatus(DenunciaAnuncio.StatusDenuncia.ANALISADA);
-
         anuncioRepository.save(anuncio);
-        DenunciaAnuncio denunciaSalva = denunciaRepository.save(denuncia);
+        // Suspender resolve todas as denuncias abertas do anuncio de uma vez.
+        fecharDenunciasAbertas(anuncio.getId(), DenunciaAnuncio.StatusDenuncia.ANALISADA);
+
         registrar(moderador, "DENUNCIA_ANALISADA_COM_SUSPENSAO", "DENUNCIA", denunciaId, motivoSuspensao);
         registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncio.getId(), motivoSuspensao);
         notificarSuspensao(anuncio, motivoSuspensao);
 
-        return mapearDenuncia(denunciaSalva);
+        return mapearDenuncia(denuncia);
     }
 
     @Transactional(readOnly = true)
@@ -170,6 +171,8 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
+        // Reativar = denuncias eram improcedentes: descarta as abertas do anuncio.
+        fecharDenunciasAbertas(anuncioId, DenunciaAnuncio.StatusDenuncia.DESCARTADA);
         registrar(moderador, "ANUNCIO_REATIVADO", "ANUNCIO", anuncioId, justificativa);
         return mapearSuspeito(anuncio);
     }
@@ -180,6 +183,8 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
+        // Reprovar definitivo resolve todas as denuncias abertas do anuncio.
+        fecharDenunciasAbertas(anuncioId, DenunciaAnuncio.StatusDenuncia.ANALISADA);
         registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", anuncioId, justificativa);
         return mapearSuspeito(anuncio);
     }
@@ -347,6 +352,13 @@ public class ModeracaoService {
             throw new RegraNegocioException("Informe o motivo da suspensao para o anunciante.");
         }
         return justificativa.trim();
+    }
+
+    private void fecharDenunciasAbertas(UUID anuncioId, DenunciaAnuncio.StatusDenuncia novoStatus) {
+        List<DenunciaAnuncio> abertas = denunciaRepository.findByAnuncioIdAndStatus(
+                anuncioId, DenunciaAnuncio.StatusDenuncia.ABERTA);
+        abertas.forEach(denuncia -> denuncia.setStatus(novoStatus));
+        denunciaRepository.saveAll(abertas);
     }
 
     private void notificarSuspensao(Anuncio anuncio, String motivoSuspensao) {
