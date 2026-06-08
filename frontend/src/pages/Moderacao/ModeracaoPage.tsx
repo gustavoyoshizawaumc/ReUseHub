@@ -612,7 +612,7 @@ export const ModeracaoPage: React.FC = () => {
   const isAdmin = user?.perfil === 'ADMIN';
   const aba = obterAbaPelaRota(location.pathname, isAdmin);
   const paginaAtual = paginaConfig[aba];
-  const [pendentes, setPendentes] = useState<Anuncio[]>([]);
+  const [totalPendentes, setTotalPendentes] = useState(0);
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [denuncias, setDenuncias] = useState<DenunciaModeracao[]>([]);
   const [totalDenunciasAbertas, setTotalDenunciasAbertas] = useState(0);
@@ -715,7 +715,7 @@ export const ModeracaoPage: React.FC = () => {
     try {
       const filtrosAtuais = filtrosOperacionaisAtuaisRef.current;
       const [pendentesData, anunciosData, denunciasAbertasData, denunciasData, suspeitosData, avaliacoesData, historicoData] = await Promise.all([
-        listarAnunciosPendentes(0, 20),
+        listarAnunciosPendentes(0, 1),
         listarAnunciosModeracao(filtrosAtuais.anuncios),
         listarDenuncias({ status: 'ABERTA' }, 0, 1),
         listarDenuncias(filtrosAtuais.denuncias),
@@ -723,7 +723,7 @@ export const ModeracaoPage: React.FC = () => {
         listarAvaliacoesModeracao(filtrosAtuais.avaliacoes),
         listarMeuHistorico(filtrosAtuais.historico),
       ]);
-      setPendentes(pendentesData.content ?? []);
+      setTotalPendentes(pendentesData.totalElements ?? 0);
       setAnuncios(anunciosData.content ?? []);
       setTotalDenunciasAbertas(denunciasAbertasData.totalElements ?? 0);
       setDenuncias(denunciasData.content ?? []);
@@ -946,12 +946,12 @@ export const ModeracaoPage: React.FC = () => {
   };
   const counts = useMemo(
     () => ({
-      anuncios: pendentes.length,
+      anuncios: totalPendentes,
       denuncias: totalDenunciasAbertas,
       suspeitos: suspeitos.length,
       avaliacoes: avaliacoes.length,
     }),
-    [avaliacoes.length, pendentes.length, suspeitos.length, totalDenunciasAbertas]
+    [avaliacoes.length, totalPendentes, suspeitos.length, totalDenunciasAbertas]
   );
 
   const metricas = dashboard
@@ -1040,7 +1040,7 @@ export const ModeracaoPage: React.FC = () => {
           {aba === 'visao-geral' && (
             <section className="space-y-6">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard label="Anuncios pendentes" value={pendentes.length} icon={Clock3} />
+                <MetricCard label="Anuncios pendentes" value={totalPendentes} icon={Clock3} />
                 <MetricCard label="Denuncias abertas" value={totalDenunciasAbertas} icon={AlertTriangle} tone="orange" />
                 <MetricCard label="Anuncios suspeitos" value={suspeitos.length} icon={ShieldOff} tone="orange" />
                 <MetricCard label="Avaliacoes registradas" value={avaliacoes.length} icon={Star} />
