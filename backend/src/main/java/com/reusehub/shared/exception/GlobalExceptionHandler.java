@@ -7,12 +7,23 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final String MENSAGEM_CREDENCIAIS_INVALIDAS = "E-mail ou senha incorretos.";
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e) {
+        // Mensagem unica e generica para senha errada OU e-mail inexistente,
+        // evitando revelar se um e-mail esta cadastrado (user enumeration).
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(construirErro("Falha na autenticacao", MENSAGEM_CREDENCIAIS_INVALIDAS, HttpStatus.UNAUTHORIZED));
+    }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e) {
