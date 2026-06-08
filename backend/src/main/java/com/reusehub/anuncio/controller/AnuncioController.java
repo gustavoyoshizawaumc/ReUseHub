@@ -3,6 +3,7 @@ package com.reusehub.anuncio.controller;
 import com.reusehub.anuncio.dto.*;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.service.AnuncioService;
+import com.reusehub.moderacao.dto.AcaoModeracaoDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -220,10 +221,11 @@ public class AnuncioController {
     @PatchMapping("/moderacao/{id}/reprovar")
     public ResponseEntity<AnuncioRespostaDTO> reprovar(
             @PathVariable UUID id,
+            @RequestBody(required = false) AcaoModeracaoDTO dto,
             Authentication authentication
     ) {
         String email = authentication.getName();
-        AnuncioRespostaDTO resposta = anuncioService.reprovarAnuncio(id, email);
+        AnuncioRespostaDTO resposta = anuncioService.reprovarAnuncio(id, email, dto != null ? dto.justificativa() : null);
         return ResponseEntity.ok(resposta);
     }
 

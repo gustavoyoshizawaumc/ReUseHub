@@ -26,6 +26,7 @@ public class AnuncioRespostaDTO {
     private Integer totalVisualizacoes;
     private BigDecimal notaRelevancia;
     private String motivoSuspensao;
+    private String motivoReprovacao;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 

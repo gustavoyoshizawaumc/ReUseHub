@@ -848,6 +848,17 @@ export const ModeracaoPage: React.FC = () => {
     });
   };
 
+  const solicitarMotivoReprovacao = (): string | null => {
+    const motivo = window.prompt('Informe o motivo da reprovacao (sera exibido ao anunciante):');
+    if (motivo === null) return null;
+    const motivoLimpo = motivo.trim();
+    if (!motivoLimpo) {
+      window.alert('Informe um motivo para a reprovacao.');
+      return null;
+    }
+    return motivoLimpo;
+  };
+
   const removerAvaliacao = async (avaliacao: AvaliacaoModeracao) => {
     const justificativa = window.prompt('Informe a justificativa para remover esta avaliacao:');
     if (justificativa === null) return;
@@ -1010,7 +1021,10 @@ export const ModeracaoPage: React.FC = () => {
           onFotoAtualChange={setFotoDetalheAtual}
           onClose={fecharDetalhesAnuncio}
           onApprove={() => executarAcaoDoDetalhe(() => aprovarAnuncio(anuncioDetalhado.id))}
-          onReject={() => executarAcaoDoDetalhe(() => reprovarAnuncio(anuncioDetalhado.id))}
+          onReject={() => {
+            const motivo = solicitarMotivoReprovacao();
+            if (motivo) void executarAcaoDoDetalhe(() => reprovarAnuncio(anuncioDetalhado.id, motivo));
+          }}
           processando={processando === anuncioDetalhado.id}
         />
       )}
@@ -1314,7 +1328,7 @@ export const ModeracaoPage: React.FC = () => {
                                     <button onClick={() => abrirDetalhesAnuncio(anuncio)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700">
                                       <Eye size={15} /> Ver detalhes
                                     </button>
-                                    <button onClick={() => executar(anuncio.id, () => reprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
+                                    <button onClick={() => { const motivo = solicitarMotivoReprovacao(); if (motivo) void executar(anuncio.id, () => reprovarAnuncio(anuncio.id, motivo)); }} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
                                       <XCircle size={15} /> Reprovar
                                     </button>
                                     <button onClick={() => executar(anuncio.id, () => aprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">

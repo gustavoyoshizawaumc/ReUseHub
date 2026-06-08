@@ -203,6 +203,15 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
             <p className="mt-1 text-sm font-semibold leading-relaxed">{anuncio.motivoSuspensao}</p>
           </div>
         )}
+        {mostrarStatus && anuncio.status === "REPROVADO" && anuncio.motivoReprovacao && (
+          <div className="mt-3 rounded-md border border-orange-100 bg-orange-50 p-3 text-orange-800">
+            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wide">
+              <AlertCircle size={14} />
+              Motivo da reprovacao
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-relaxed">{anuncio.motivoReprovacao}</p>
+          </div>
+        )}
         <div className="mt-3 grid gap-1.5 text-xs font-semibold text-slate-500">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate font-bold text-slate-700">{anuncio.nomeUsuario}</span>

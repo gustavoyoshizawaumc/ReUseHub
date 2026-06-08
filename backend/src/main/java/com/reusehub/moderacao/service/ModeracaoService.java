@@ -360,6 +360,17 @@ public class ModeracaoService {
         );
     }
 
+    public void notificarReprovacao(Anuncio anuncio, String motivoReprovacao) {
+        notificacaoService.criar(
+                anuncio.getUsuario(),
+                "ANUNCIO_REPROVADO",
+                "Anuncio reprovado",
+                "Seu anuncio \"" + anuncio.getTitulo() + "\" foi reprovado pela moderacao. Motivo: " + motivoReprovacao,
+                anuncio.getId(),
+                "ANUNCIO"
+        );
+    }
+
     private String normalizarPesquisa(String valor) {
         return valor == null || valor.isBlank() ? "" : valor.trim();
     }
