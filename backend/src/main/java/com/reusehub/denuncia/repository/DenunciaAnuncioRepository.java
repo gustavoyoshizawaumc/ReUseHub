@@ -43,6 +43,8 @@ public interface DenunciaAnuncioRepository extends JpaRepository<DenunciaAnuncio
 
     long countByAnuncioIdAndStatus(UUID anuncioId, DenunciaAnuncio.StatusDenuncia status);
 
+    List<DenunciaAnuncio> findByAnuncioIdAndStatus(UUID anuncioId, DenunciaAnuncio.StatusDenuncia status);
+
     boolean existsByDenuncianteIdAndAnuncioId(UUID denuncianteId, UUID anuncioId);
 
     @Query("""
