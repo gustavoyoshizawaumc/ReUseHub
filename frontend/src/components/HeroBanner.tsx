@@ -79,6 +79,7 @@ export const HeroBanner: React.FC = () => {
               activeSlide === 0 ? slides.length - 1 : activeSlide - 1,
             )
           }
+          aria-label="Slide anterior"
           className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-black/15 text-white opacity-0 backdrop-blur-sm transition-all hover:bg-black/30 group-hover:opacity-100 sm:flex"
         >
           <ChevronLeft size={22} strokeWidth={2.4} />
@@ -89,6 +90,7 @@ export const HeroBanner: React.FC = () => {
               activeSlide === slides.length - 1 ? 0 : activeSlide + 1,
             )
           }
+          aria-label="Próximo slide"
           className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-black/15 text-white opacity-0 backdrop-blur-sm transition-all hover:bg-black/30 group-hover:opacity-100 sm:flex"
         >
           <ChevronRight size={22} strokeWidth={2.4} />

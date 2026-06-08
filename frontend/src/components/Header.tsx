@@ -242,7 +242,7 @@ export const Header: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 bg-transparent px-4 text-[14px] text-slate-700 outline-none"
           />
-          <button type="submit" className="bg-reusehub-blue hover:bg-blue-700 text-white px-5 h-full transition-colors">
+          <button type="submit" aria-label="Buscar" className="bg-reusehub-blue hover:bg-blue-700 text-white px-5 h-full transition-colors">
             <Search size={16} />
           </button>
         </form>
