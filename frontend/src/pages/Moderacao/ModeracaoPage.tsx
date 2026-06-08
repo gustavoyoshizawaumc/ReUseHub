@@ -845,7 +845,7 @@ export const ModeracaoPage: React.FC = () => {
     try {
       const [anunciosData, denunciasData, avaliacoesData, historicoData] = await Promise.all([
         listarAnunciosModeracao(filtros.anuncios),
-        listarDenuncias(filtros.denuncias),
+        listarDenuncias({ ...filtros.denuncias, status: 'ABERTA' }),
         listarAvaliacoesModeracao(filtros.avaliacoes),
         listarMeuHistorico(filtros.historico),
       ]);
@@ -872,7 +872,7 @@ export const ModeracaoPage: React.FC = () => {
         listarAnunciosPendentes(0, 1),
         listarAnunciosModeracao(filtrosAtuais.anuncios),
         listarDenuncias({ status: 'ABERTA' }, 0, 1),
-        listarDenuncias(filtrosAtuais.denuncias),
+        listarDenuncias({ ...filtrosAtuais.denuncias, status: 'ABERTA' }),
         listarAvaliacoesModeracao(filtrosAtuais.avaliacoes),
         listarMeuHistorico(filtrosAtuais.historico),
       ]);
@@ -1532,18 +1532,7 @@ export const ModeracaoPage: React.FC = () => {
                     onChange={(value) => alterarFiltroOperacional('denuncias', 'termo', value)}
                     placeholder="Buscar por anuncio, denunciante, motivo ou ID"
                     resultCount={denunciasAgrupadas.length}
-                  >
-                    <select
-                      value={filtrosOperacionais.denuncias.status ?? ''}
-                      onChange={(event) => alterarFiltroOperacional('denuncias', 'status', event.target.value as DenunciaModeracaoFiltros['status'])}
-                      className={filterControlClass}
-                    >
-                      <option value="">Todos os status</option>
-                      <option value="ABERTA">Aberta</option>
-                      <option value="ANALISADA">Analisada</option>
-                      <option value="DESCARTADA">Descartada</option>
-                    </select>
-                  </ListToolbar>
+                  />
                   {denunciasAgrupadas.length === 0 ? (
                     <EmptyState text="Nenhuma denuncia pelos filtros atuais." />
                   ) : (
