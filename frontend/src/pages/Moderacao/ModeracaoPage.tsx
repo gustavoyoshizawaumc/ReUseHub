@@ -464,6 +464,92 @@ const AnuncioDetalheModal = ({
   );
 };
 
+const ReprovarAnuncioModal = ({
+  anuncio,
+  onClose,
+  onConfirm,
+  processando,
+}: {
+  anuncio: Anuncio;
+  onClose: () => void;
+  onConfirm: (motivo: string) => void;
+  processando: boolean;
+}) => {
+  const [motivo, setMotivo] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+
+  const confirmar = () => {
+    const texto = motivo.trim();
+    if (!texto) {
+      setErro('Informe o motivo da reprovacao.');
+      return;
+    }
+    onConfirm(texto);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <article className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-widest text-rose-600">Reprovar anuncio</p>
+            <h3 className="mt-1 truncate text-xl font-black text-slate-950">{anuncio.titulo}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            aria-label="Fechar"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="space-y-4 p-5">
+          <label className="block">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Motivo da reprovacao</span>
+            <textarea
+              value={motivo}
+              autoFocus
+              onChange={(event) => {
+                setMotivo(event.target.value);
+                setErro(null);
+              }}
+              rows={4}
+              placeholder="Explique objetivamente por que o anuncio foi reprovado e o que precisa ser corrigido."
+              className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
+            />
+            {erro && <span className="mt-1 block text-xs font-bold text-rose-600">{erro}</span>}
+          </label>
+          <p className="flex items-start gap-2 rounded-md border border-orange-100 bg-orange-50 p-3 text-xs font-semibold text-orange-800">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            O motivo sera exibido ao anunciante e enviado por notificacao.
+          </p>
+        </div>
+
+        <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={processando}
+            className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={confirmar}
+            disabled={processando}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+          >
+            <XCircle size={16} /> Reprovar anuncio
+          </button>
+        </footer>
+      </article>
+    </div>
+  );
+};
+
 const DenunciaAnaliseModal = ({
   denuncia,
   onClose,
@@ -629,6 +715,7 @@ export const ModeracaoPage: React.FC = () => {
   const [erroDashboard, setErroDashboard] = useState<string | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
   const [anuncioDetalhado, setAnuncioDetalhado] = useState<Anuncio | null>(null);
+  const [anuncioParaReprovar, setAnuncioParaReprovar] = useState<Anuncio | null>(null);
   const [denunciaEmAnalise, setDenunciaEmAnalise] = useState<DenunciaModeracao | null>(null);
   const [fotoDetalheAtual, setFotoDetalheAtual] = useState(0);
   const filtrosUsuariosInicializadosRef = useRef(false);
@@ -848,15 +935,11 @@ export const ModeracaoPage: React.FC = () => {
     });
   };
 
-  const solicitarMotivoReprovacao = (): string | null => {
-    const motivo = window.prompt('Informe o motivo da reprovacao (sera exibido ao anunciante):');
-    if (motivo === null) return null;
-    const motivoLimpo = motivo.trim();
-    if (!motivoLimpo) {
-      window.alert('Informe um motivo para a reprovacao.');
-      return null;
-    }
-    return motivoLimpo;
+  const confirmarReprovacao = (motivo: string) => {
+    if (!anuncioParaReprovar) return;
+    const id = anuncioParaReprovar.id;
+    setAnuncioParaReprovar(null);
+    void executar(id, () => reprovarAnuncio(id, motivo));
   };
 
   const removerAvaliacao = async (avaliacao: AvaliacaoModeracao) => {
@@ -1022,10 +1105,20 @@ export const ModeracaoPage: React.FC = () => {
           onClose={fecharDetalhesAnuncio}
           onApprove={() => executarAcaoDoDetalhe(() => aprovarAnuncio(anuncioDetalhado.id))}
           onReject={() => {
-            const motivo = solicitarMotivoReprovacao();
-            if (motivo) void executarAcaoDoDetalhe(() => reprovarAnuncio(anuncioDetalhado.id, motivo));
+            const alvo = anuncioDetalhado;
+            fecharDetalhesAnuncio();
+            setAnuncioParaReprovar(alvo);
           }}
           processando={processando === anuncioDetalhado.id}
+        />
+      )}
+
+      {anuncioParaReprovar && (
+        <ReprovarAnuncioModal
+          anuncio={anuncioParaReprovar}
+          onClose={() => setAnuncioParaReprovar(null)}
+          onConfirm={confirmarReprovacao}
+          processando={processando === anuncioParaReprovar.id}
         />
       )}
 
@@ -1328,7 +1421,7 @@ export const ModeracaoPage: React.FC = () => {
                                     <button onClick={() => abrirDetalhesAnuncio(anuncio)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700">
                                       <Eye size={15} /> Ver detalhes
                                     </button>
-                                    <button onClick={() => { const motivo = solicitarMotivoReprovacao(); if (motivo) void executar(anuncio.id, () => reprovarAnuncio(anuncio.id, motivo)); }} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
+                                    <button onClick={() => setAnuncioParaReprovar(anuncio)} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
                                       <XCircle size={15} /> Reprovar
                                     </button>
                                     <button onClick={() => executar(anuncio.id, () => aprovarAnuncio(anuncio.id))} disabled={processando === anuncio.id} className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
