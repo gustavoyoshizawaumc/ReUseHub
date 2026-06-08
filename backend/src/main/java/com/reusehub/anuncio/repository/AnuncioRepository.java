@@ -37,6 +37,12 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
 
     Page<Anuncio> findByStatusOrderByCriadoEmDesc(Anuncio.StatusAnuncio status, Pageable pageable);
 
+    /**
+     * Lista anuncios para a fila de moderacao.
+     * Ordena por atualizadoEm (e nao criadoEm) para que anuncios editados, que
+     * voltam ao status PENDENTE, subam ao topo da fila em vez de permanecerem na
+     * posicao original de criacao. criadoEm e usado apenas como desempate.
+     */
     @Query("""
             select a from Anuncio a
             where (:status = '' or cast(a.status as string) = :status)
@@ -46,7 +52,7 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
                 or lower(a.usuario.name) like lower(concat('%', :termo, '%'))
                 or cast(a.id as string) like concat('%', :termo, '%')
               )
-            order by a.criadoEm desc
+            order by a.atualizadoEm desc, a.criadoEm desc
             """)
     Page<Anuncio> buscarParaModeracao(
             @Param("termo") String termo,
