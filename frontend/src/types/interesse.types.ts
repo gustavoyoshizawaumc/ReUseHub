@@ -1,4 +1,4 @@
-export type AnuncioStatus = "PENDENTE" | "ATIVO" | "REPROVADO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO";
+export type AnuncioStatus = "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "CONCLUIDO" | "CANCELADO";
 
 export type InteresseStatus = "PENDENTE" | "ACEITO" | "REJEITADO" | "CANCELADO";
 

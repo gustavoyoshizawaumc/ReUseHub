@@ -32,7 +32,6 @@ type StatusAnuncio =
   | "ATIVO"
   | "REPROVADO"
   | "SUSPENSO"
-  | "RESERVADO"
   | "CONCLUIDO"
   | "CANCELADO";
 
@@ -164,7 +163,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       suspensos: 0,
       cancelados: 0,
       concluidos: 0,
-      reservados: 0,
     };
 
     anuncios.forEach((anuncio) => {
@@ -175,7 +173,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       if (status === "SUSPENSO") base.suspensos += 1;
       if (status === "CANCELADO") base.cancelados += 1;
       if (status === "CONCLUIDO") base.concluidos += 1;
-      if (status === "RESERVADO") base.reservados += 1;
     });
 
     return base;
@@ -201,13 +198,13 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       subtext: "Já publicados",
     },
     {
-      label: "Reservados/Concluídos",
-      value: contadores.reservados + contadores.concluidos,
+      label: "Concluídos",
+      value: contadores.concluidos,
       icon: Package,
       wrapper: "bg-blue-50 border-blue-100",
       iconBox: "bg-blue-100 text-blue-700",
       text: "text-blue-900",
-      subtext: "Em andamento ou finalizados",
+      subtext: "Negócios finalizados",
     },
     {
       label: "Suspensos/Reprovados",
@@ -226,7 +223,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     { value: "ATIVO", label: "Ativos" },
     { value: "SUSPENSO", label: "Suspensos" },
     { value: "REPROVADO", label: "Reprovados" },
-    { value: "RESERVADO", label: "Reservados" },
     { value: "CONCLUIDO", label: "Concluídos" },
     { value: "CANCELADO", label: "Cancelados" },
   ];

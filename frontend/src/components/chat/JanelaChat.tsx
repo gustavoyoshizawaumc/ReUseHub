@@ -205,13 +205,15 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   const avatarUrl = montarUrlImagem(conversaInfo.avatarOutroUsuario);
   const imagemAnuncio = montarUrlImagem(conversaInfo.imagemAnuncio);
   const imagemAnuncioOferecido = montarUrlImagem(conversaInfo.imagemAnuncioOferecido);
+  const aguardandoConfirmacaoRecebimento =
+    Boolean(conversaInfo.entreguePeloDonoEm) && !conversaInfo.recebimentoConfirmadoEm;
   const statusFechamento = conversaInfo.usuarioJaAvaliou
     ? 'Você já avaliou esta negociação'
     : conversaInfo.negociacaoCancelada
       ? 'Negociação cancelada'
     : conversaInfo.chatFechado
       ? 'Chat fechado após avaliação'
-      : conversaInfo.statusAnuncio === 'RESERVADO'
+      : aguardandoConfirmacaoRecebimento
         ? 'Aguardando confirmação de recebimento'
         : conversaInfo.statusAnuncio === 'CONCLUIDO'
           ? 'Negócio concluído'

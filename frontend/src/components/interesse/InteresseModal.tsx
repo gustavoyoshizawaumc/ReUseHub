@@ -35,7 +35,10 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
         const resposta = await anuncioService.listarMeusAnuncios();
         setMeusAnuncios(
           (resposta.content ?? []).filter(
-            (item: Anuncio) => item.id !== anuncio.id && item.status === "ATIVO"
+            (item: Anuncio) =>
+              item.id !== anuncio.id &&
+              item.status === "ATIVO" &&
+              item.tipo === "TROCA"
           )
         );
       } catch {
@@ -137,6 +140,11 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
                 </option>
               ))}
             </select>
+            {!loadingAnuncios && meusAnuncios.length === 0 && (
+              <p className="mt-2 text-xs font-semibold text-orange-700">
+                Você precisa ter um anúncio de troca publicado para enviar uma proposta.
+              </p>
+            )}
           </div>
         )}
 
@@ -164,7 +172,7 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
 
           <button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || (isTroca && meusAnuncios.length === 0)}
             className="w-full rounded-lg bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-60 sm:w-auto"
           >
             {submitting ? "Enviando..." : "Enviar proposta"}

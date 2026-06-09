@@ -52,20 +52,13 @@ public class InteresseTrocaService {
 
         Anuncio anuncioOferecido = null;
 
+        if (anuncioDesejado.getTipo() == Anuncio.TipoAnuncio.TROCA && dto.anuncioOferecidoId() == null) {
+            throw new RegraNegocioException("Para propor uma troca, selecione um anuncio seu de troca ativo.");
+        }
+
         if (dto.anuncioOferecidoId() != null) {
             anuncioOferecido = buscarAnuncio(dto.anuncioOferecidoId());
-
-            if (!anuncioOferecido.getUsuario().getId().equals(interessado.getId())) {
-                throw new AcessoNegadoException("Você só pode oferecer um anúncio que seja seu.");
-            }
-
-            if (anuncioOferecido.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
-                throw new RegraNegocioException("Você só pode oferecer anúncios ativos.");
-            }
-
-            if (anuncioOferecido.getId().equals(anuncioDesejado.getId())) {
-                throw new RegraNegocioException("O anúncio oferecido não pode ser o mesmo anúncio desejado.");
-            }
+            validarAnuncioOferecidoParaTroca(anuncioDesejado, anuncioOferecido, interessado);
         }
 
         InteresseTroca interesse = InteresseTroca.builder()
@@ -133,6 +126,14 @@ public class InteresseTrocaService {
             throw new RegraNegocioException("Este anuncio ja possui uma negociacao aceita.");
         }
 
+        if (interesse.getAnuncioDesejado().getTipo() == Anuncio.TipoAnuncio.TROCA) {
+            validarAnuncioOferecidoParaTroca(
+                    interesse.getAnuncioDesejado(),
+                    interesse.getAnuncioOferecido(),
+                    interesse.getInteressado()
+            );
+        }
+
         interesse.setStatus(InteresseTroca.StatusInteresse.ACEITO);
 
         ConversaRespostaDTO conversa = chatService.iniciarOuRecuperarConversaComOferta(
@@ -177,9 +178,6 @@ public class InteresseTrocaService {
             interesse.setEntreguePeloDonoEm(LocalDateTime.now());
         }
 
-        interesse.getAnuncioDesejado().setStatus(Anuncio.StatusAnuncio.RESERVADO);
-        anuncioRepository.save(interesse.getAnuncioDesejado());
-
         InteresseTroca salvo = interesseTrocaRepository.save(interesse);
         notificacaoService.criar(
                 interesse.getInteressado(),
@@ -205,7 +203,7 @@ public class InteresseTrocaService {
         }
 
         if (interesse.getEntreguePeloDonoEm() == null
-                || interesse.getAnuncioDesejado().getStatus() != Anuncio.StatusAnuncio.RESERVADO) {
+                || interesse.getAnuncioDesejado().getStatus() != Anuncio.StatusAnuncio.ATIVO) {
             throw new RegraNegocioException("O dono precisa marcar o item como entregue antes da confirmacao.");
         }
 
@@ -216,6 +214,10 @@ public class InteresseTrocaService {
         interesse.setRecebimentoConfirmadoEm(LocalDateTime.now());
         interesse.getAnuncioDesejado().setStatus(Anuncio.StatusAnuncio.CONCLUIDO);
         anuncioRepository.save(interesse.getAnuncioDesejado());
+        if (interesse.getAnuncioOferecido() != null) {
+            interesse.getAnuncioOferecido().setStatus(Anuncio.StatusAnuncio.CONCLUIDO);
+            anuncioRepository.save(interesse.getAnuncioOferecido());
+        }
 
         InteresseTroca salvo = interesseTrocaRepository.save(interesse);
         notificacaoService.criar(
@@ -252,11 +254,6 @@ public class InteresseTrocaService {
         interesse.setStatus(InteresseTroca.StatusInteresse.CANCELADO);
         interesse.setCanceladoEm(LocalDateTime.now());
         interesse.setCanceladoPor(usuario);
-
-        if (interesse.getAnuncioDesejado().getStatus() == Anuncio.StatusAnuncio.RESERVADO) {
-            interesse.getAnuncioDesejado().setStatus(Anuncio.StatusAnuncio.ATIVO);
-            anuncioRepository.save(interesse.getAnuncioDesejado());
-        }
 
         InteresseTroca salvo = interesseTrocaRepository.save(interesse);
         Usuario outroParticipante = usuarioEhDono
@@ -319,6 +316,32 @@ public class InteresseTrocaService {
     private void validarAnuncioDisponivelParaInteresse(Anuncio anuncio) {
         if (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
             throw new OperacaoInvalidaException("Só é possível demonstrar interesse em anúncios ativos.");
+        }
+    }
+
+    private void validarAnuncioOferecidoParaTroca(
+            Anuncio anuncioDesejado,
+            Anuncio anuncioOferecido,
+            Usuario interessado
+    ) {
+        if (anuncioOferecido == null) {
+            throw new RegraNegocioException("Para propor uma troca, selecione um anuncio seu de troca ativo.");
+        }
+
+        if (!anuncioOferecido.getUsuario().getId().equals(interessado.getId())) {
+            throw new AcessoNegadoException("Voce so pode oferecer um anuncio que seja seu.");
+        }
+
+        if (anuncioOferecido.getStatus() != Anuncio.StatusAnuncio.ATIVO) {
+            throw new RegraNegocioException("Voce so pode oferecer anuncios ativos.");
+        }
+
+        if (anuncioOferecido.getTipo() != Anuncio.TipoAnuncio.TROCA) {
+            throw new RegraNegocioException("Voce so pode oferecer anuncios de troca.");
+        }
+
+        if (anuncioOferecido.getId().equals(anuncioDesejado.getId())) {
+            throw new RegraNegocioException("O anuncio oferecido nao pode ser o mesmo anuncio desejado.");
         }
     }
 

@@ -3,10 +3,12 @@ package com.reusehub.backend.interesse.service;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
+import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.chat.service.ChatService;
+import com.reusehub.interesse.dto.InteresseCriacaoDTO;
 import com.reusehub.interesse.model.InteresseTroca;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.interesse.service.InteresseTrocaService;
@@ -54,6 +56,7 @@ class InteresseTrocaServiceTest {
                 .id(UUID.randomUUID())
                 .usuario(dono)
                 .titulo("Item para negociar")
+                .tipo(Anuncio.TipoAnuncio.TROCA)
                 .status(Anuncio.StatusAnuncio.ATIVO)
                 .build();
         interesse = InteresseTroca.builder()
@@ -63,8 +66,8 @@ class InteresseTrocaServiceTest {
                 .status(InteresseTroca.StatusInteresse.ACEITO)
                 .build();
 
-        Mockito.when(interesseTrocaRepository.findById(interesse.getId())).thenReturn(Optional.of(interesse));
-        Mockito.when(interesseTrocaRepository.save(interesse)).thenReturn(interesse);
+        Mockito.lenient().when(interesseTrocaRepository.findById(interesse.getId())).thenReturn(Optional.of(interesse));
+        Mockito.lenient().when(interesseTrocaRepository.save(interesse)).thenReturn(interesse);
     }
 
     @Test
@@ -88,9 +91,9 @@ class InteresseTrocaServiceTest {
     }
 
     @Test
-    @DisplayName("interessado pode cancelar entrega pendente e anuncio volta a ficar ativo")
+    @DisplayName("interessado pode cancelar entrega pendente sem mudar o status do anuncio")
     void interessadoCancelaEntregaPendente() {
-        anuncio.setStatus(Anuncio.StatusAnuncio.RESERVADO);
+        anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
         interesse.setEntreguePeloDonoEm(LocalDateTime.now());
         Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
 
@@ -99,7 +102,49 @@ class InteresseTrocaServiceTest {
         assertEquals(InteresseTroca.StatusInteresse.CANCELADO, interesse.getStatus());
         assertEquals(Anuncio.StatusAnuncio.ATIVO, anuncio.getStatus());
         assertEquals(interessado, interesse.getCanceladoPor());
+        Mockito.verify(anuncioRepository, Mockito.never()).save(Mockito.any(Anuncio.class));
+    }
+
+    @Test
+    @DisplayName("troca exige anuncio oferecido de troca ativo")
+    void trocaExigeAnuncioOferecido() {
+        Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
+        Mockito.when(anuncioRepository.findById(anuncio.getId())).thenReturn(Optional.of(anuncio));
+
+        assertThrows(RegraNegocioException.class, () -> interesseTrocaService.criarInteresse(
+                interessado.getEmail(),
+                new InteresseCriacaoDTO(anuncio.getId(), null, "Tenho interesse na troca")
+        ));
+    }
+
+    @Test
+    @DisplayName("troca nao aceita anuncio oferecido de doacao")
+    void trocaNaoAceitaAnuncioOferecidoDeDoacao() {
+        Anuncio anuncioOferecido = anuncioDoInteressado(Anuncio.TipoAnuncio.DOACAO, Anuncio.StatusAnuncio.ATIVO);
+        Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
+        Mockito.when(anuncioRepository.findById(anuncio.getId())).thenReturn(Optional.of(anuncio));
+        Mockito.when(anuncioRepository.findById(anuncioOferecido.getId())).thenReturn(Optional.of(anuncioOferecido));
+
+        assertThrows(RegraNegocioException.class, () -> interesseTrocaService.criarInteresse(
+                interessado.getEmail(),
+                new InteresseCriacaoDTO(anuncio.getId(), anuncioOferecido.getId(), "Tenho interesse na troca")
+        ));
+    }
+
+    @Test
+    @DisplayName("confirmacao de recebimento conclui o anuncio desejado e o oferecido")
+    void confirmarRecebimentoConcluiAnuncioDesejadoEOferecido() {
+        Anuncio anuncioOferecido = anuncioDoInteressado(Anuncio.TipoAnuncio.TROCA, Anuncio.StatusAnuncio.ATIVO);
+        interesse.setAnuncioOferecido(anuncioOferecido);
+        interesse.setEntreguePeloDonoEm(LocalDateTime.now());
+        Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
+
+        interesseTrocaService.confirmarRecebimento(interesse.getId(), interessado.getEmail());
+
+        assertEquals(Anuncio.StatusAnuncio.CONCLUIDO, anuncio.getStatus());
+        assertEquals(Anuncio.StatusAnuncio.CONCLUIDO, anuncioOferecido.getStatus());
         Mockito.verify(anuncioRepository).save(anuncio);
+        Mockito.verify(anuncioRepository).save(anuncioOferecido);
     }
 
     private Usuario usuario(String email, String nome) {
@@ -108,5 +153,15 @@ class InteresseTrocaServiceTest {
         usuario.setEmail(email);
         usuario.setName(nome);
         return usuario;
+    }
+
+    private Anuncio anuncioDoInteressado(Anuncio.TipoAnuncio tipo, Anuncio.StatusAnuncio status) {
+        return Anuncio.builder()
+                .id(UUID.randomUUID())
+                .usuario(interessado)
+                .titulo("Item oferecido")
+                .tipo(tipo)
+                .status(status)
+                .build();
     }
 }

@@ -190,7 +190,7 @@ public class ChatService {
                     && !negociacaoCancelada
                     && interesse.getEntreguePeloDonoEm() != null
                     && interesse.getRecebimentoConfirmadoEm() == null
-                    && anuncio.getStatus() == Anuncio.StatusAnuncio.RESERVADO
+                    && anuncio.getStatus() == Anuncio.StatusAnuncio.ATIVO
                     && !chatFechado;
             boolean podeAvaliar = (usuarioEhDono || usuarioEhInteressado)
                     && anuncio.getStatus() == Anuncio.StatusAnuncio.CONCLUIDO

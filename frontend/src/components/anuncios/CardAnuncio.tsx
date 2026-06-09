@@ -10,7 +10,6 @@ import {
   Flag,
   Heart,
   MapPin,
-  PackageCheck,
   Star,
   Tag,
   Trash2,
@@ -69,8 +68,6 @@ const getStatusConfig = (status: string) => {
       return { label: "Suspenso", className: "bg-orange-50 text-orange-700 border-orange-100", icon: Ban };
     case "REPROVADO":
       return { label: "Reprovado", className: "bg-orange-50 text-orange-700 border-orange-100", icon: XCircle };
-    case "RESERVADO":
-      return { label: "Reservado", className: "bg-blue-50 text-blue-700 border-blue-100", icon: PackageCheck };
     case "CONCLUIDO":
       return { label: "Concluido", className: "bg-slate-50 text-slate-700 border-slate-200", icon: CheckCircle2 };
     case "CANCELADO":

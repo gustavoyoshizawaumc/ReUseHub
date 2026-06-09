@@ -167,7 +167,6 @@ const statusClass: Record<string, string> = {
   SUSPENSO: 'bg-orange-50 text-orange-700 border-orange-100',
   REPROVADO: 'bg-rose-50 text-rose-700 border-rose-100',
   CONCLUIDO: 'bg-blue-50 text-blue-700 border-blue-100',
-  RESERVADO: 'bg-sky-50 text-sky-700 border-sky-100',
   CANCELADO: 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
@@ -1274,7 +1273,7 @@ export const ModeracaoPage: React.FC = () => {
                       </select>
                       <select value={dashboardFiltros.status ?? ''} onChange={(event) => alterarFiltroDashboard('status', event.target.value as DashboardAdminFiltros['status'])} className="h-10 rounded-md border border-slate-200 px-3 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500">
                         <option value="">Todos os status</option>
-                        {['ATIVO', 'PENDENTE', 'REPROVADO', 'SUSPENSO', 'RESERVADO', 'CONCLUIDO', 'CANCELADO'].map((status) => <option key={status} value={status}>{status}</option>)}
+                        {['ATIVO', 'PENDENTE', 'REPROVADO', 'SUSPENSO', 'CONCLUIDO', 'CANCELADO'].map((status) => <option key={status} value={status}>{status}</option>)}
                       </select>
                       <select value={dashboardFiltros.categoriaId ?? ''} onChange={(event) => alterarFiltroDashboard('categoriaId', event.target.value ? Number(event.target.value) : '')} className="h-10 rounded-md border border-slate-200 px-3 text-sm font-semibold text-slate-600 outline-none focus:border-blue-500">
                         <option value="">Todas as categorias</option>
