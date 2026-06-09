@@ -140,7 +140,7 @@ export const atualizarImagensDoAnuncio = async (
 
 export const alterarStatus = async (
   id: string,
-  status: "ATIVO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO"
+  status: "ATIVO" | "CONCLUIDO" | "CANCELADO"
 ): Promise<Anuncio> => {
   const response = await api.patch(`/${id}/status`, null, {
     params: { status },

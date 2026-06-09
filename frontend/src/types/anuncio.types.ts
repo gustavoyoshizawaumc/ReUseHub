@@ -38,7 +38,7 @@ export interface Anuncio {
   descricao: string;
   tipo: "DOACAO" | "TROCA";
   condicao: "NOVO" | "BOM" | "REGULAR" | "RUIM";
-  status: "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "RESERVADO" | "CONCLUIDO" | "CANCELADO";
+  status: "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "CONCLUIDO" | "CANCELADO";
   totalVisualizacoes: number;
   notaRelevancia: number | null;
   motivoSuspensao?: string | null;

@@ -97,7 +97,6 @@ public class Anuncio {
         ATIVO,
         REPROVADO,
         SUSPENSO,
-        RESERVADO,
         CONCLUIDO,
         CANCELADO
     }

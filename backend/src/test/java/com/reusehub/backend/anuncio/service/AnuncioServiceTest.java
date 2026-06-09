@@ -614,7 +614,7 @@ class AnuncioServiceTest {
     class AlterarStatusCenarios {
 
         @Test
-        @DisplayName("deve alterar status para RESERVADO com sucesso pelo dono")
+        @DisplayName("deve alterar status para CANCELADO com sucesso pelo dono")
         void alterarStatusSucesso() {
             UUID validId = anuncioPendente.getId();
             assertNotNull(validId);
@@ -622,10 +622,10 @@ class AnuncioServiceTest {
             Mockito.when(anuncioRepository.findById(validId)).thenReturn(Optional.of(anuncioPendente));
             Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class))).thenAnswer(i -> i.getArgument(0));
 
-            AnuncioRespostaDTO resultado = anuncioService.alterarStatus(validId, "dono@reusehub.com", Anuncio.StatusAnuncio.RESERVADO);
+            AnuncioRespostaDTO resultado = anuncioService.alterarStatus(validId, "dono@reusehub.com", Anuncio.StatusAnuncio.CANCELADO);
             
             assertNotNull(resultado);
-            assertEquals(Anuncio.StatusAnuncio.RESERVADO, anuncioPendente.getStatus());
+            assertEquals(Anuncio.StatusAnuncio.CANCELADO, anuncioPendente.getStatus());
         }
 
         @Test

@@ -237,12 +237,7 @@ public class AuthService {
         }
 
         boolean possuiNegociacaoEmAndamento = interesseTrocaRepository.existsNegociacaoEmAndamento(usuario.getId());
-        boolean possuiEntregaPendente = anuncioRepository.existsByUsuarioIdAndStatus(
-                usuario.getId(),
-                Anuncio.StatusAnuncio.RESERVADO
-        );
-
-        if (possuiNegociacaoEmAndamento || possuiEntregaPendente) {
+        if (possuiNegociacaoEmAndamento) {
             throw new RegraNegocioException(
                     "Conclua ou cancele as negociacoes em andamento antes de encerrar sua conta."
             );
