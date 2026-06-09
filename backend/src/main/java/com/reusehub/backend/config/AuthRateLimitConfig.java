@@ -17,7 +17,10 @@ public class AuthRateLimitConfig implements WebMvcConfigurer {
         registry.addInterceptor(authRateLimitInterceptor)
                 .addPathPatterns(
                         "/api/auth/registrar",
+                        "/api/auth/login",
                         "/api/auth/reativar-conta",
+                        "/api/auth/esqueci-senha",
+                        "/api/auth/redefinir-senha",
                         "/api/auth/minha-conta",
                         "/api/auth/minha-conta/desativar"
                 );
