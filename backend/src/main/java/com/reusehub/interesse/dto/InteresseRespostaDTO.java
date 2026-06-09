@@ -12,7 +12,12 @@ public record InteresseRespostaDTO(
         UUID anuncioDesejadoId,
         String anuncioDesejadoTitulo,
         String anuncioDesejadoImagemUrl,
+        Anuncio.TipoAnuncio anuncioDesejadoTipo,
         Anuncio.StatusAnuncio anuncioDesejadoStatus,
+        UUID anuncianteId,
+        String anuncianteNome,
+        String anuncianteAvatarUrl,
+        BigDecimal anuncianteNotaReputacao,
         UUID interessadoId,
         String interessadoNome,
         String interessadoAvatarUrl,
@@ -27,6 +32,7 @@ public record InteresseRespostaDTO(
         LocalDateTime recebimentoConfirmadoEm,
         LocalDateTime canceladoEm,
         boolean donoJaAvaliou,
+        boolean usuarioJaAvaliou,
         String conversaId
 ) {
 }

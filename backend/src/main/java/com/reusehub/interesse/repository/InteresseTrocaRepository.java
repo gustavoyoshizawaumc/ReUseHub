@@ -18,6 +18,17 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
 
     List<InteresseTroca> findByInteressadoIdOrderByCriadoEmDesc(UUID usuarioId);
 
+    @Query("""
+            select distinct interesse
+            from InteresseTroca interesse
+            left join interesse.anuncioOferecido oferecido
+            where interesse.interessado.id = :usuarioId
+               or interesse.anuncioDesejado.usuario.id = :usuarioId
+               or oferecido.usuario.id = :usuarioId
+            order by interesse.criadoEm desc
+            """)
+    List<InteresseTroca> findHistoricoByUsuarioIdOrderByCriadoEmDesc(@Param("usuarioId") UUID usuarioId);
+
     boolean existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
             UUID anuncioId,
             UUID interessadoId,

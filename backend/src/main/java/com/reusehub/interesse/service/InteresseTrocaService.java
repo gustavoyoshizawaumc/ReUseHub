@@ -87,7 +87,7 @@ public class InteresseTrocaService {
 
         return interesseTrocaRepository.findByAnuncioDesejadoUsuarioIdOrderByCriadoEmDesc(usuario.getId())
                 .stream()
-                .map(interesse -> mapear(interesse, null))
+                .map(interesse -> mapear(interesse, null, usuario.getId()))
                 .toList();
     }
 
@@ -97,7 +97,17 @@ public class InteresseTrocaService {
 
         return interesseTrocaRepository.findByInteressadoIdOrderByCriadoEmDesc(usuario.getId())
                 .stream()
-                .map(interesse -> mapear(interesse, null))
+                .map(interesse -> mapear(interesse, null, usuario.getId()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<InteresseRespostaDTO> listarHistorico(String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+
+        return interesseTrocaRepository.findHistoricoByUsuarioIdOrderByCriadoEmDesc(usuario.getId())
+                .stream()
+                .map(interesse -> mapear(interesse, null, usuario.getId()))
                 .toList();
     }
 
@@ -346,12 +356,32 @@ public class InteresseTrocaService {
     }
 
     private InteresseRespostaDTO mapear(InteresseTroca interesse, String conversaId) {
+        return mapear(interesse, conversaId, null);
+    }
+
+    private InteresseRespostaDTO mapear(InteresseTroca interesse, String conversaId, UUID usuarioAtualId) {
+        Usuario anunciante = interesse.getAnuncioDesejado().getUsuario();
+        boolean donoJaAvaliou = avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(
+                anunciante.getId(),
+                interesse.getAnuncioDesejado().getId()
+        );
+        boolean usuarioJaAvaliou = usuarioAtualId != null
+                && avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(
+                usuarioAtualId,
+                interesse.getAnuncioDesejado().getId()
+        );
+
         return new InteresseRespostaDTO(
                 interesse.getId(),
                 interesse.getAnuncioDesejado().getId(),
                 interesse.getAnuncioDesejado().getTitulo(),
                 buscarImagemCapa(interesse.getAnuncioDesejado()),
+                interesse.getAnuncioDesejado().getTipo(),
                 interesse.getAnuncioDesejado().getStatus(),
+                anunciante.getId(),
+                anunciante.getName(),
+                anunciante.getAvatarUrl(),
+                anunciante.getReputationScore(),
                 interesse.getInteressado().getId(),
                 interesse.getInteressado().getName(),
                 interesse.getInteressado().getAvatarUrl(),
@@ -365,10 +395,8 @@ public class InteresseTrocaService {
                 interesse.getEntreguePeloDonoEm(),
                 interesse.getRecebimentoConfirmadoEm(),
                 interesse.getCanceladoEm(),
-                avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(
-                        interesse.getAnuncioDesejado().getUsuario().getId(),
-                        interesse.getAnuncioDesejado().getId()
-                ),
+                donoJaAvaliou,
+                usuarioJaAvaliou,
                 conversaId
         );
     }

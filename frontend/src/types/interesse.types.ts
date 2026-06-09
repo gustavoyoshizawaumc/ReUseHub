@@ -13,7 +13,12 @@ export type InteresseResposta = {
   anuncioDesejadoId: string;
   anuncioDesejadoTitulo: string;
   anuncioDesejadoImagemUrl?: string | null;
+  anuncioDesejadoTipo: "DOACAO" | "TROCA";
   anuncioDesejadoStatus: AnuncioStatus;
+  anuncianteId: string;
+  anuncianteNome: string;
+  anuncianteAvatarUrl?: string | null;
+  anuncianteNotaReputacao?: number | null;
   interessadoId: string;
   interessadoNome: string;
   interessadoAvatarUrl?: string | null;
@@ -28,5 +33,6 @@ export type InteresseResposta = {
   recebimentoConfirmadoEm?: string | null;
   canceladoEm?: string | null;
   donoJaAvaliou?: boolean;
+  usuarioJaAvaliou?: boolean;
   conversaId?: string | null;
 };

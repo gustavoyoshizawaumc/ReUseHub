@@ -42,6 +42,12 @@ public class InteresseTrocaController {
         return ResponseEntity.ok(interesseTrocaService.listarInteressesEnviados(email));
     }
 
+    @GetMapping("/historico")
+    public ResponseEntity<List<InteresseRespostaDTO>> listarHistorico(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(interesseTrocaService.listarHistorico(email));
+    }
+
     @PatchMapping("/{id}/aceitar")
     public ResponseEntity<InteresseRespostaDTO> aceitar(
             @PathVariable UUID id,

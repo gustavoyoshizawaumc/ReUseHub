@@ -57,6 +57,18 @@ export async function listarInteressesEnviados(): Promise<InteresseResposta[]> {
   return response.json();
 }
 
+export async function listarHistoricoInteresses(): Promise<InteresseResposta[]> {
+  const response = await fetch(`${BASE_URL}/api/interesses/historico`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erro ao carregar historico de negociacoes");
+  }
+
+  return response.json();
+}
+
 export async function aceitarInteresse(id: string): Promise<InteresseResposta> {
   const response = await fetch(`${BASE_URL}/api/interesses/${id}/aceitar`, {
     method: "PATCH",
