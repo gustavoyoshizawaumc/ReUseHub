@@ -12,6 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,9 +20,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AuthRateLimitInterceptor implements HandlerInterceptor {
 
     private static final long JANELA_CURTA_MS = 60_000;
+    private static final long JANELA_MEDIA_MS = 15 * 60_000;
     private static final long JANELA_CONTA_MS = 60 * 60_000;
-    private static final int LIMITE_REGISTRO_REATIVACAO = 5;
-    private static final int LIMITE_ENCERRAMENTO_CONTA = 3;
+
+    private static final List<RotaProtegida> ROTAS_PROTEGIDAS = List.of(
+            new RotaProtegida("POST", "/api/auth/registrar", new Regra("auth-publico", 5, JANELA_CURTA_MS)),
+            new RotaProtegida("POST", "/api/auth/reativar-conta", new Regra("auth-publico", 5, JANELA_CURTA_MS)),
+            new RotaProtegida("POST", "/api/auth/login", new Regra("login", 10, JANELA_CURTA_MS)),
+            new RotaProtegida("POST", "/api/auth/esqueci-senha", new Regra("esqueci-senha", 5, JANELA_MEDIA_MS)),
+            new RotaProtegida("POST", "/api/auth/redefinir-senha", new Regra("redefinir-senha", 10, JANELA_MEDIA_MS)),
+            new RotaProtegida("DELETE", "/api/auth/minha-conta", new Regra("encerramento-conta", 3, JANELA_CONTA_MS)),
+            new RotaProtegida("PATCH", "/api/auth/minha-conta/desativar", new Regra("encerramento-conta", 3, JANELA_CONTA_MS))
+    );
 
     private final ConcurrentHashMap<String, Janela> tentativas = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -52,20 +62,11 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
     }
 
     private Regra regraPara(HttpServletRequest request) {
-        String metodo = request.getMethod();
-        String path = request.getRequestURI();
-
-        if ("POST".equalsIgnoreCase(metodo)
-                && ("/api/auth/registrar".equals(path) || "/api/auth/reativar-conta".equals(path))) {
-            return new Regra("auth-publico", LIMITE_REGISTRO_REATIVACAO, JANELA_CURTA_MS);
-        }
-
-        if (("DELETE".equalsIgnoreCase(metodo) && "/api/auth/minha-conta".equals(path))
-                || ("PATCH".equalsIgnoreCase(metodo) && "/api/auth/minha-conta/desativar".equals(path))) {
-            return new Regra("encerramento-conta", LIMITE_ENCERRAMENTO_CONTA, JANELA_CONTA_MS);
-        }
-
-        return null;
+        return ROTAS_PROTEGIDAS.stream()
+                .filter(rota -> rota.corresponde(request.getMethod(), request.getRequestURI()))
+                .map(RotaProtegida::regra)
+                .findFirst()
+                .orElse(null);
     }
 
     private String identificadorCliente(HttpServletRequest request) {
@@ -89,6 +90,13 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
                 "titulo", "Muitas tentativas",
                 "mensagem", "Aguarde alguns instantes antes de tentar novamente."
         ));
+    }
+
+    private record RotaProtegida(String metodo, String path, Regra regra) {
+
+        boolean corresponde(String metodo, String path) {
+            return this.metodo.equalsIgnoreCase(metodo) && this.path.equals(path);
+        }
     }
 
     private record Regra(String nome, int limite, long janelaMs) {
