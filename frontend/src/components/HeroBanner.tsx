@@ -51,6 +51,9 @@ export const HeroBanner: React.FC = () => {
                 <img
                   src={slide.desktopImage}
                   alt={slide.alt}
+                  decoding="async"
+                  fetchPriority={index === 0 ? "high" : "low"}
+                  loading={index === 0 ? "eager" : "lazy"}
                   className="w-full h-full object-cover select-none"
                 />
               </picture>
