@@ -26,6 +26,14 @@ import { isUsuarioOperacional } from "../utils/perfil";
 import { API_BASE_URL } from "../config/api";
 import { registrarBusca } from "../utils/ultimasBuscas";
 import { useCategorias } from "../hooks/useCategorias";
+import {
+  EVENTO_FILTRO_LOCALIZACAO,
+  RAIOS_BUSCA_CEP,
+  limparFiltroLocalizacaoSessao,
+  normalizarCep,
+  obterFiltroLocalizacaoSessao,
+  salvarFiltroLocalizacaoSessao,
+} from "../utils/filtroLocalizacao";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -65,8 +73,6 @@ const criarParamsBusca = (termo?: string, categoriaId?: number) => {
   return params;
 };
 
-const RAIOS_BUSCA_CEP = [5, 10, 25, 50, 100];
-
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,8 +81,8 @@ export const Header: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [cepBusca, setCepBusca] = useState("");
-  const [raioBuscaKm, setRaioBuscaKm] = useState(10);
+  const [cepBusca, setCepBusca] = useState(() => obterFiltroLocalizacaoSessao()?.cep ?? "");
+  const [raioBuscaKm, setRaioBuscaKm] = useState(() => obterFiltroLocalizacaoSessao()?.raioKm ?? 10);
   const [temChatPendente, setTemChatPendente] = useState(false);
   const [temTrocaPendente, setTemTrocaPendente] = useState(false);
   const [podeRolarCategoriasEsquerda, setPodeRolarCategoriasEsquerda] = useState(false);
@@ -99,10 +105,6 @@ export const Header: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchTerm(params.get("termo") ?? "");
     setActiveCategory(params.get("categoriaId") ? Number(params.get("categoriaId")) : null);
-    setCepBusca(params.get("cep") ?? "");
-    const raioUrl = Number(params.get("raioKm"));
-    setRaioBuscaKm(RAIOS_BUSCA_CEP.includes(raioUrl) ? raioUrl : 10);
-
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
@@ -111,6 +113,22 @@ export const Header: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [location.search]);
+
+  useEffect(() => {
+    const sincronizarFiltroLocalizacao = () => {
+      const filtro = obterFiltroLocalizacaoSessao();
+      setCepBusca(filtro?.cep ?? "");
+      setRaioBuscaKm(filtro?.raioKm ?? 10);
+    };
+
+    window.addEventListener(EVENTO_FILTRO_LOCALIZACAO, sincronizarFiltroLocalizacao);
+    window.addEventListener("storage", sincronizarFiltroLocalizacao);
+
+    return () => {
+      window.removeEventListener(EVENTO_FILTRO_LOCALIZACAO, sincronizarFiltroLocalizacao);
+      window.removeEventListener("storage", sincronizarFiltroLocalizacao);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -195,16 +213,13 @@ export const Header: React.FC = () => {
     navigate(query ? `/anuncios?${query}` : "/anuncios");
   };
 
-  const aplicarFiltroCepNaHome = () => {
-    const params = new URLSearchParams();
+  const aplicarFiltroCepGlobal = () => {
     if (cepBusca.length === 8) {
-      params.set("cep", cepBusca);
-      params.set("raioKm", String(raioBuscaKm));
-      params.set("ordenacao", "DISTANCIA");
+      salvarFiltroLocalizacaoSessao(cepBusca, raioBuscaKm);
+      return;
     }
 
-    const query = params.toString();
-    navigate(query ? `/?${query}` : "/");
+    limparFiltroLocalizacaoSessao();
   };
 
   const rolarCategorias = (direcao: "esquerda" | "direita") => {
@@ -250,7 +265,7 @@ export const Header: React.FC = () => {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            aplicarFiltroCepNaHome();
+            aplicarFiltroCepGlobal();
           }}
           className="hidden h-10 w-[245px] items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition-all focus-within:border-reusehub-blue focus-within:bg-white lg:flex xl:w-[270px]"
         >
@@ -261,7 +276,7 @@ export const Header: React.FC = () => {
             placeholder="Filtrar por CEP"
             value={cepBusca}
             maxLength={8}
-            onChange={(event) => setCepBusca(event.target.value.replace(/\D/g, ""))}
+            onChange={(event) => setCepBusca(normalizarCep(event.target.value))}
             className="min-w-0 flex-1 bg-transparent px-2 text-[13px] font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
             aria-label="CEP para filtrar anuncios por proximidade"
           />

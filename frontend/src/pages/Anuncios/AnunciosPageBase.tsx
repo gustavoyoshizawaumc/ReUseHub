@@ -26,6 +26,10 @@ import { useAnuncios } from "../../hooks/useAnuncios";
 import { useFavoritos } from "../../hooks/useFavoritos";
 import * as anuncioService from "../../services/anuncioService";
 import type { BuscaFiltro } from "../../types/busca.types";
+import {
+  EVENTO_FILTRO_LOCALIZACAO,
+  obterBuscaLocalizacaoSessao,
+} from "../../utils/filtroLocalizacao";
 
 type StatusAnuncio =
   | "PENDENTE"
@@ -55,12 +59,6 @@ const extrairFiltrosDaUrl = (searchParams: URLSearchParams): BuscaFiltro => {
   const categoriaId = Number(searchParams.get("categoriaId"));
   if (categoriaId && !Number.isNaN(categoriaId)) filtro.categoriaId = categoriaId;
 
-  const cep = searchParams.get("cep")?.replace(/\D/g, "");
-  if (cep && cep.length === 8) filtro.cep = cep;
-
-  const raioKm = Number(searchParams.get("raioKm"));
-  if (raioKm && !Number.isNaN(raioKm)) filtro.raioKm = raioKm;
-
   const ordenacao = searchParams.get("ordenacao");
   if (ordenacao === "RELEVANCIA" || ordenacao === "DISTANCIA" || ordenacao === "RECENTES" || ordenacao === "POPULARES") {
     filtro.ordenacao = ordenacao;
@@ -75,6 +73,7 @@ const possuiBuscaAtiva = (filtro: BuscaFiltro) =>
 export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [filtroLocalizacaoBusca, setFiltroLocalizacaoBusca] = useState<BuscaFiltro>(() => obterBuscaLocalizacaoSessao());
   const scrollPreservadoRef = useRef<number | null>(null);
   const [filtrosMoveisAbertos, setFiltrosMoveisAbertos] = useState(false);
   const exibindoMeusAnuncios = modo === "privado";
@@ -94,20 +93,41 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     paginarFiltros,
   } = useAnuncios();
 
+  const filtroPublicoAtual = useMemo(
+    () => ({
+      ...extrairFiltrosDaUrl(searchParams),
+      ...filtroLocalizacaoBusca,
+    }),
+    [filtroLocalizacaoBusca, searchParams]
+  );
+
+  useEffect(() => {
+    const atualizarFiltroLocalizacao = () => {
+      setFiltroLocalizacaoBusca(obterBuscaLocalizacaoSessao());
+    };
+
+    window.addEventListener(EVENTO_FILTRO_LOCALIZACAO, atualizarFiltroLocalizacao);
+    window.addEventListener("storage", atualizarFiltroLocalizacao);
+
+    return () => {
+      window.removeEventListener(EVENTO_FILTRO_LOCALIZACAO, atualizarFiltroLocalizacao);
+      window.removeEventListener("storage", atualizarFiltroLocalizacao);
+    };
+  }, []);
+
   // Modo publico: busca/lista reagindo aos filtros da URL.
   // O modo privado tem carregamento proprio (efeito abaixo), pois termo e status
   // sao filtrados no client e nao devem cair na busca publica /filtrar.
   useEffect(() => {
     if (exibindoMeusAnuncios) return;
 
-    const filtroUrl = extrairFiltrosDaUrl(searchParams);
-    if (possuiBuscaAtiva(filtroUrl)) {
-      buscarComFiltros(filtroUrl);
+    if (possuiBuscaAtiva(filtroPublicoAtual)) {
+      buscarComFiltros(filtroPublicoAtual);
       return;
     }
 
     listar();
-  }, [buscarComFiltros, exibindoMeusAnuncios, listar, searchParams]);
+  }, [buscarComFiltros, exibindoMeusAnuncios, filtroPublicoAtual, listar]);
 
   // Modo privado: carrega TODOS os anuncios do usuario de uma vez (sem paginar
   // no servidor) para servir de fonte unica de contadores, filtro de status,
@@ -327,8 +347,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   const handleFiltrar = async (filtro: BuscaFiltro) => {
     if (exibindoMeusAnuncios) return;
     preservarScroll();
-    const filtroBusca = extrairFiltrosDaUrl(searchParams);
-    await buscarComFiltros({ ...filtroBusca, ...filtro });
+    await buscarComFiltros({
+      ...extrairFiltrosDaUrl(searchParams),
+      ...filtro,
+      ...obterBuscaLocalizacaoSessao(),
+    });
     restaurarScrollPreservado();
   };
 
@@ -365,7 +388,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
   // Paginacao do modo publico (no servidor): busca ativa -> paginarFiltros;
   // caso contrario, lista padrao. O modo privado pagina no client (estado local).
   const paginarPaginaPublica = (page: number) => {
-    if (possuiBuscaAtiva(extrairFiltrosDaUrl(searchParams))) {
+    if (possuiBuscaAtiva(filtroPublicoAtual)) {
       paginarFiltros(page);
     } else {
       listar(page);

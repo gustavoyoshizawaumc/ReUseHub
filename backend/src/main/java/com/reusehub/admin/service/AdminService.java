@@ -43,6 +43,7 @@ public class AdminService {
     private static final LocalDateTime INICIO_FILTRO = LocalDate.of(1900, 1, 1).atStartOfDay();
     private static final LocalDateTime FIM_FILTRO = LocalDate.of(9999, 12, 31).atStartOfDay();
     private static final UUID UUID_SENTINELA = new UUID(0, 0);
+    private static final int DIAS_BLOQUEIO_RECADASTRO_EXCLUSAO = 90;
 
     private final UsuarioRepository usuarioRepository;
     private final CredencialBloqueadaRepository credencialBloqueadaRepository;
@@ -50,6 +51,7 @@ public class AdminService {
     private final DenunciaAnuncioRepository denunciaRepository;
     private final HistoricoModeracaoRepository historicoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AdminRootGuard adminRootGuard;
 
     public AdminUsuarioDTO criarContaInterna(AdminCriarModeradorDTO dto, Perfil perfilPadrao) {
         String emailNormalizado = SensitiveDataCrypto.normalizarEmail(dto.email());
@@ -137,8 +139,14 @@ public class AdminService {
     public void excluirUsuario(UUID usuarioId, String emailAdminLogado) {
         Usuario adminLogado = buscarUsuarioPorEmail(emailAdminLogado);
         Usuario usuario = buscarUsuario(usuarioId);
-        validarProtecaoAdmin(adminLogado, usuario, "excluir");
-        usuario.setIsActive(false);
+        validarProtecaoAdmin(adminLogado, usuario, "anonimizar");
+        registrarBloqueioCredenciais(
+                usuario,
+                CredencialBloqueada.Motivo.CONTA_EXCLUIDA,
+                LocalDateTime.now().plusDays(DIAS_BLOQUEIO_RECADASTRO_EXCLUSAO),
+                "Conta anonimizada por administrador. Recadastro bloqueado temporariamente."
+        );
+        anonimizarUsuarioPorAdmin(usuario);
         usuarioRepository.save(usuario);
     }
 
@@ -322,25 +330,69 @@ public class AdminService {
             throw new RegraNegocioException("Voce nao pode " + acao + " a propria conta admin.");
         }
 
-        if (alvo.getPerfil() == Perfil.ADMIN
-                && usuarioRepository.countAtivosNaoBanidosPorPerfil(Perfil.ADMIN) <= 1) {
-            throw new RegraNegocioException("Nao e possivel " + acao + " o ultimo administrador ativo.");
+        if (adminRootGuard.isAdminRaiz(alvo)) {
+            throw new RegraNegocioException("O administrador raiz do sistema nao pode ser " + acao + ".");
+        }
+
+        if (alvo.getPerfil() == Perfil.ADMIN) {
+            throw new RegraNegocioException("Administradores nao podem " + acao + " outros administradores.");
         }
     }
 
-    private void registrarBloqueioPermanenteBanimento(Usuario usuario) {
+    private void anonimizarUsuarioPorAdmin(Usuario usuario) {
+        LocalDateTime agora = LocalDateTime.now();
+        usuario.setName("Usuario excluido");
+        usuario.setEmail("excluido+" + usuario.getId() + "@anonimo.reusehub");
+        usuario.setCpf(gerarCpfAnonimo());
+        usuario.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        usuario.setPhone(null);
+        usuario.setAvatarUrl(null);
+        usuario.setBio(null);
+        usuario.setLgpdConsent(false);
+        usuario.setLgpdConsentAt(null);
+        usuario.setIsVerified(false);
+        usuario.setIsActive(false);
+        usuario.setBanido(false);
+        usuario.setContaExcluida(true);
+        usuario.setDesativadoEm(agora);
+        usuario.setExcluidoEm(agora);
+    }
+
+    private void registrarBloqueioCredenciais(
+            Usuario usuario,
+            CredencialBloqueada.Motivo motivo,
+            LocalDateTime expiraEm,
+            String detalhes
+    ) {
         credencialBloqueadaRepository.save(CredencialBloqueada.builder()
-                .emailHash(usuario.getEmailHash() != null
-                        ? usuario.getEmailHash()
-                        : SensitiveDataCrypto.emailHash(usuario.getEmail()))
-                .cpfHash(usuario.getCpfHash() != null
-                        ? usuario.getCpfHash()
-                        : SensitiveDataCrypto.cpfHash(usuario.getCpf()))
-                .motivo(CredencialBloqueada.Motivo.BANIMENTO)
+                .emailHash(hashEmailUsuario(usuario))
+                .cpfHash(hashCpfUsuario(usuario))
+                .motivo(motivo)
                 .usuarioOrigemId(usuario.getId())
-                .expiraEm(null)
-                .detalhes("Usuario banido por administrador.")
+                .expiraEm(expiraEm)
+                .detalhes(detalhes)
                 .build());
+    }
+
+    private void registrarBloqueioPermanenteBanimento(Usuario usuario) {
+        registrarBloqueioCredenciais(
+                usuario,
+                CredencialBloqueada.Motivo.BANIMENTO,
+                null,
+                "Usuario banido por administrador."
+        );
+    }
+
+    private String hashEmailUsuario(Usuario usuario) {
+        return usuario.getEmailHash() != null
+                ? usuario.getEmailHash()
+                : SensitiveDataCrypto.emailHash(usuario.getEmail());
+    }
+
+    private String hashCpfUsuario(Usuario usuario) {
+        return usuario.getCpfHash() != null
+                ? usuario.getCpfHash()
+                : SensitiveDataCrypto.cpfHash(usuario.getCpf());
     }
 
     private String gerarCpfTecnico() {
@@ -351,7 +403,17 @@ public class AdminService {
         return cpf;
     }
 
+    private String gerarCpfAnonimo() {
+        String cpf;
+        do {
+            cpf = String.format("9%010d", Math.abs(UUID.randomUUID().getMostSignificantBits()) % 10_000_000_000L);
+        } while (usuarioRepository.existsByCpf(cpf));
+        return cpf;
+    }
+
     private AdminUsuarioDTO mapearUsuario(Usuario usuario) {
+        boolean adminRaiz = adminRootGuard.isAdminRaiz(usuario);
+        boolean acoesRestritas = adminRaiz || usuario.getPerfil() == Perfil.ADMIN;
         return new AdminUsuarioDTO(
                 usuario.getId(),
                 mascararNome(usuario.getName()),
@@ -361,6 +423,8 @@ public class AdminService {
                 usuario.getPerfil(),
                 usuario.getIsActive(),
                 usuario.getBanido(),
+                adminRaiz,
+                acoesRestritas,
                 usuario.getReputationScore(),
                 usuario.getCreatedAt()
         );

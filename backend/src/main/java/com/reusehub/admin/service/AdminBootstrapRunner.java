@@ -43,7 +43,10 @@ public class AdminBootstrapRunner implements ApplicationRunner {
         }
 
         if (usuarioRepository.existsByEmail(email)) {
-            log.info("Bootstrap de administrador ignorado: conta ja existe para {}.", email);
+            Usuario admin = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalStateException("Administrador bootstrap existente nao foi encontrado."));
+            garantirAdminRaizAtivo(admin);
+            log.info("Bootstrap de administrador validado para {}.", email);
             return;
         }
 
@@ -63,6 +66,46 @@ public class AdminBootstrapRunner implements ApplicationRunner {
 
         usuarioRepository.save(admin);
         log.info("Conta ADMIN criada pelo bootstrap para {}.", email);
+    }
+
+    private void garantirAdminRaizAtivo(Usuario admin) {
+        boolean alterado = false;
+
+        if (admin.getPerfil() != Perfil.ADMIN) {
+            admin.setPerfil(Perfil.ADMIN);
+            alterado = true;
+        }
+        if (!Boolean.TRUE.equals(admin.getIsActive())) {
+            admin.setIsActive(true);
+            alterado = true;
+        }
+        if (Boolean.TRUE.equals(admin.getBanido())) {
+            admin.setBanido(false);
+            alterado = true;
+        }
+        if (Boolean.TRUE.equals(admin.getContaExcluida())) {
+            admin.setContaExcluida(false);
+            alterado = true;
+        }
+        if (!Boolean.TRUE.equals(admin.getIsVerified())) {
+            admin.setIsVerified(true);
+            alterado = true;
+        }
+        if (!Boolean.TRUE.equals(admin.getLgpdConsent())) {
+            admin.setLgpdConsent(true);
+            admin.setLgpdConsentAt(LocalDateTime.now());
+            alterado = true;
+        }
+        if (admin.getDesativadoEm() != null || admin.getExcluidoEm() != null) {
+            admin.setDesativadoEm(null);
+            admin.setExcluidoEm(null);
+            alterado = true;
+        }
+
+        if (alterado) {
+            usuarioRepository.save(admin);
+            log.warn("Conta ADMIN raiz foi restaurada para estado ativo e protegido.");
+        }
     }
 
     private String nomeBootstrap() {
