@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Header } from "../../components/Header";
 import { HeroBanner } from "../../components/HeroBanner";
 import { Footer } from "../../components/Footer";
@@ -10,6 +9,11 @@ import { ErroAoCarregarHome } from "../../components/ErroAoCarregarHome";
 import { useBootstrapHome } from "../../hooks/useBootstrapHome";
 import { useUltimasBuscasComAnuncios } from "../../hooks/useUltimasBuscasComAnuncios";
 import { buscarComFiltros } from "../../services/anuncioService";
+import {
+  EVENTO_FILTRO_LOCALIZACAO,
+  type FiltroLocalizacaoSessao,
+  obterFiltroLocalizacaoSessao,
+} from "../../utils/filtroLocalizacao";
 import type {
   Anuncio,
   AnuncioDestaque,
@@ -22,10 +26,9 @@ const TITULO_SECAO_ULTIMAS_BUSCAS = "Baseado em suas últimas buscas";
 const CONTEXTO_RECOMENDADOS: ContextoDestaque = "RECOMENDADOS_PARA_VOCE";
 
 export const HomePage: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const { dados, carregando, erro } = useBootstrapHome();
   const ultimasBuscas = useUltimasBuscasComAnuncios();
-  const filtroCep = useMemo(() => extrairFiltroCepDaUrl(searchParams), [searchParams]);
+  const [filtroCep, setFiltroCep] = useState(() => obterFiltroLocalizacaoSessao());
   const chaveFiltroCep = filtroCep ? `${filtroCep.cep}-${filtroCep.raioKm}` : null;
   const [resultadoCep, setResultadoCep] = useState<ResultadoCepHome | null>(null);
 
@@ -72,6 +75,20 @@ export const HomePage: React.FC = () => {
     };
   }, [chaveFiltroCep, filtroCep]);
 
+  useEffect(() => {
+    const sincronizarFiltro = () => {
+      setFiltroCep(obterFiltroLocalizacaoSessao());
+    };
+
+    window.addEventListener(EVENTO_FILTRO_LOCALIZACAO, sincronizarFiltro);
+    window.addEventListener("storage", sincronizarFiltro);
+
+    return () => {
+      window.removeEventListener(EVENTO_FILTRO_LOCALIZACAO, sincronizarFiltro);
+      window.removeEventListener("storage", sincronizarFiltro);
+    };
+  }, []);
+
   const resultadoCepAtual = resultadoCep?.chave === chaveFiltroCep ? resultadoCep : null;
   const carregandoCep = Boolean(chaveFiltroCep && !resultadoCepAtual);
 
@@ -104,7 +121,7 @@ interface ConteudoHomeProps {
   carregando: boolean;
   erro: string | null;
   secoes: SecaoHome[];
-  filtroCep: FiltroCepHome | null;
+  filtroCep: FiltroLocalizacaoSessao | null;
   anunciosPorCep: AnuncioDestaque[];
   carregandoCep: boolean;
   erroCep: string | null;
@@ -242,25 +259,10 @@ function filtrarSecoesPorAnuncios(
     .filter((secao) => secao.anuncios.length > 0);
 }
 
-interface FiltroCepHome {
-  cep: string;
-  raioKm: number;
-}
-
 interface ResultadoCepHome {
   chave: string | null;
   anuncios: AnuncioDestaque[];
   erro: string | null;
-}
-
-function extrairFiltroCepDaUrl(searchParams: URLSearchParams): FiltroCepHome | null {
-  const cep = searchParams.get("cep")?.replace(/\D/g, "") ?? "";
-  if (cep.length !== 8) return null;
-
-  const raioUrl = Number(searchParams.get("raioKm"));
-  const raioKm = [5, 10, 25, 50, 100].includes(raioUrl) ? raioUrl : 10;
-
-  return { cep, raioKm };
 }
 
 function transformarEmDestaque(anuncio: Anuncio): AnuncioDestaque {

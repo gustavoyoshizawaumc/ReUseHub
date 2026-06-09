@@ -88,6 +88,8 @@ export interface AdminUsuario {
   perfil: 'USUARIO' | 'MODERADOR' | 'ADMIN';
   ativo: boolean;
   banido: boolean;
+  adminRaiz?: boolean;
+  acoesRestritas?: boolean;
   notaReputacao: number;
   criadoEm: string;
 }
@@ -386,6 +388,14 @@ export async function alterarUsuarioAdmin(id: string, acao: 'ativar' | 'desativa
     headers: getAuthHeaders(),
   });
   return parseResponse(response, 'Erro ao alterar usuario');
+}
+
+export async function anonimizarUsuarioAdmin(id: string): Promise<void> {
+  const response = await fetch(`${ADMIN_URL}/usuarios/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return parseResponse(response, 'Erro ao anonimizar usuario');
 }
 
 export async function listarAuditoria(

@@ -5,14 +5,11 @@ import {
   Filter,
   HandHelping,
   Layers,
-  Loader2,
-  MapPin,
   PlusCircle,
   RotateCcw,
   SortAsc,
 } from "lucide-react";
 import type { BuscaFiltro, TipoOrdenacao } from "../../types/busca.types";
-import { useLocalizacao } from "../../hooks/useLocalizacao";
 import { useCategorias } from "../../hooks/useCategorias";
 
 interface FiltrosAnunciosProps {
@@ -27,24 +24,18 @@ const OPCOES_ORDENACAO: { value: TipoOrdenacao; label: string }[] = [
   { value: "POPULARES", label: "Mais visualizados" },
 ];
 
-const RAIOS_KM = [5, 10, 25, 50, 100];
-
 export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onLimpar }) => {
   const [tipo, setTipo] = useState<"DOACAO" | "TROCA" | "">("");
   const [condicao, setCondicao] = useState<"NOVO" | "BOM" | "REGULAR" | "RUIM" | "">("");
   const [categoriaId, setCategoriaId] = useState<number | "">("");
   const [ordenacao, setOrdenacao] = useState<TipoOrdenacao | "">("");
-  const [cep, setCep] = useState("");
-  const [raioKm, setRaioKm] = useState<number>(10);
-  const [fonteLocalizacao, setFonteLocalizacao] = useState<"gps" | "cep" | "nenhuma">("nenhuma");
 
-  const { coordenadas, carregandoLocalizacao, obterLocalizacao, limparLocalizacao } = useLocalizacao();
   const {
     categorias,
     carregando: carregandoCategorias,
     erro: erroCategorias,
   } = useCategorias();
-  const possuiFiltroAtivo = Boolean(tipo || condicao || categoriaId || ordenacao || fonteLocalizacao !== "nenhuma");
+  const possuiFiltroAtivo = Boolean(tipo || condicao || categoriaId || ordenacao);
 
   const montarFiltro = (): BuscaFiltro => {
     const filtro: BuscaFiltro = {};
@@ -52,15 +43,6 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onL
     if (condicao) filtro.condicao = condicao;
     if (categoriaId) filtro.categoriaId = Number(categoriaId);
     if (ordenacao) filtro.ordenacao = ordenacao;
-    if (fonteLocalizacao === "gps" && coordenadas) {
-      filtro.latitude = coordenadas.latitude;
-      filtro.longitude = coordenadas.longitude;
-      filtro.raioKm = raioKm;
-    }
-    if (fonteLocalizacao === "cep" && cep.length === 8) {
-      filtro.cep = cep;
-      filtro.raioKm = raioKm;
-    }
     return filtro;
   };
 
@@ -69,25 +51,11 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onL
     setCondicao("");
     setCategoriaId("");
     setOrdenacao("");
-    setCep("");
-    setRaioKm(10);
-    setFonteLocalizacao("nenhuma");
-    limparLocalizacao();
     onLimpar();
   };
 
   const handleTipo = (novoTipo: "DOACAO" | "TROCA") => {
     setTipo(tipo === novoTipo ? "" : novoTipo);
-  };
-
-  const handleUsarGps = () => {
-    if (fonteLocalizacao === "gps") {
-      setFonteLocalizacao("nenhuma");
-      limparLocalizacao();
-      return;
-    }
-    setFonteLocalizacao("gps");
-    obterLocalizacao();
   };
 
   const labelSecao = "text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2";
@@ -163,44 +131,6 @@ export const FiltrosAnuncios: React.FC<FiltrosAnunciosProps> = ({ onFiltrar, onL
           <option value="">Padrao</option>
           {OPCOES_ORDENACAO.map((op) => <option key={op.value} value={op.value}>{op.label}</option>)}
         </select>
-      </div>
-
-      <div className="space-y-3">
-        <h3 className={labelSecao}><MapPin size={14} /> Localizacao</h3>
-        <div className="flex flex-col gap-2">
-          <button type="button" onClick={handleUsarGps} disabled={carregandoLocalizacao} className={botaoFiltro(fonteLocalizacao === "gps", "bg-blue-50 border-blue-200 text-blue-700 shadow-sm")}>
-            <div className="flex items-center gap-3">
-              {carregandoLocalizacao ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
-              {carregandoLocalizacao ? "Obtendo..." : "Usar minha localizacao"}
-            </div>
-            {fonteLocalizacao === "gps" && coordenadas && <ChevronRight size={14} />}
-          </button>
-          <input
-            type="text"
-            placeholder="Ou digite seu CEP"
-            value={cep}
-            maxLength={8}
-            onChange={(e) => {
-              const valor = e.target.value.replace(/\D/g, "");
-              setCep(valor);
-              setFonteLocalizacao(valor.length === 8 ? "cep" : "nenhuma");
-            }}
-            className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all placeholder:font-normal"
-          />
-        </div>
-
-        {fonteLocalizacao !== "nenhuma" && (
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Raio de busca</p>
-            <div className="flex flex-wrap gap-2">
-              {RAIOS_KM.map((raio) => (
-                <button key={raio} type="button" onClick={() => setRaioKm(raio)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${raioKm === raio ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"}`}>
-                  {raio}km
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <button type="button" onClick={() => onFiltrar(montarFiltro())} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all active:scale-[0.99]">

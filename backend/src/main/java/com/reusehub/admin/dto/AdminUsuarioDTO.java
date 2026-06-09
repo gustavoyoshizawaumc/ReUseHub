@@ -15,6 +15,8 @@ public record AdminUsuarioDTO(
         Perfil perfil,
         Boolean ativo,
         Boolean banido,
+        Boolean adminRaiz,
+        Boolean acoesRestritas,
         BigDecimal notaReputacao,
         LocalDateTime criadoEm
 ) {

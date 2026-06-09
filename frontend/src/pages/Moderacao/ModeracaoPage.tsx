@@ -30,9 +30,11 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { ModeracaoLayout } from '../../components/moderacao/ModeracaoLayout';
+import { useFeedback } from '../../components/feedback/feedbackContext';
 import { authService } from '../../services/authService';
 import {
   alterarUsuarioAdmin,
+  anonimizarUsuarioAdmin,
   aprovarAnuncio,
   criarAdministrador,
   criarModerador,
@@ -766,6 +768,7 @@ export const ModeracaoPage: React.FC = () => {
   const { categorias } = useCategorias();
   const user = authService.getUser();
   const isAdmin = user?.perfil === 'ADMIN';
+  const { confirm } = useFeedback();
   const aba = obterAbaPelaRota(location.pathname, isAdmin);
   const paginaAtual = paginaConfig[aba];
   const [totalPendentes, setTotalPendentes] = useState(0);
@@ -999,6 +1002,19 @@ export const ModeracaoPage: React.FC = () => {
     });
   };
 
+  const anonimizarUsuario = async (usuario: AdminUsuario) => {
+    const confirmado = await confirm({
+      variant: 'warning',
+      title: 'Anonimizar usuario?',
+      message: 'Os dados pessoais serao removidos e a conta nao podera ser reativada.',
+      confirmLabel: 'Anonimizar',
+      cancelLabel: 'Cancelar',
+    });
+
+    if (!confirmado) return;
+    await executarUsuario(usuario.id, () => anonimizarUsuarioAdmin(usuario.id));
+  };
+
   const confirmarReprovacao = (motivo: string) => {
     if (!anuncioParaReprovar) return;
     const id = anuncioParaReprovar.id;
@@ -1138,22 +1154,40 @@ export const ModeracaoPage: React.FC = () => {
 
   const acoesUsuario = (usuario: AdminUsuario) => {
     const isSelf = usuario.id === user?.id;
+    const acoesRestritas = isSelf || usuario.acoesRestritas || usuario.perfil === 'ADMIN';
+    const motivoRestricao = usuario.adminRaiz
+      ? 'Administrador raiz protegido'
+      : usuario.perfil === 'ADMIN'
+        ? 'Administradores nao podem alterar outros administradores'
+        : isSelf
+          ? 'Voce nao pode alterar sua propria conta administrativa'
+          : undefined;
     return (
       <div className="flex flex-wrap justify-end gap-2">
         <button onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'ativar'))} className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Ativar</button>
         <button
-          disabled={isSelf}
+          disabled={acoesRestritas}
+          title={motivoRestricao}
           onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'desativar'))}
           className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Desativar
         </button>
         <button
-          disabled={isSelf}
+          disabled={acoesRestritas}
+          title={motivoRestricao}
           onClick={() => executarUsuario(usuario.id, () => alterarUsuarioAdmin(usuario.id, 'banir'))}
           className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Banir
+        </button>
+        <button
+          disabled={acoesRestritas}
+          title={motivoRestricao}
+          onClick={() => anonimizarUsuario(usuario)}
+          className="rounded-md bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Anonimizar
         </button>
       </div>
     );
@@ -1165,6 +1199,7 @@ export const ModeracaoPage: React.FC = () => {
         {usuario.ativo ? 'Ativo' : 'Inativo'}
       </span>
       {usuario.banido && <span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-black uppercase text-rose-700">Banido</span>}
+      {usuario.adminRaiz && <span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-black uppercase text-blue-700">Root</span>}
     </div>
   );
 

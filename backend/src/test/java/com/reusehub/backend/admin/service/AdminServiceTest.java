@@ -1,10 +1,13 @@
 package com.reusehub.backend.admin.service;
 
 import com.reusehub.admin.service.AdminService;
+import com.reusehub.admin.service.AdminRootGuard;
 import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.auth.model.CredencialBloqueada;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
+import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
@@ -23,7 +26,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,10 +37,12 @@ import static org.mockito.Mockito.when;
 class AdminServiceTest {
 
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private CredencialBloqueadaRepository credencialBloqueadaRepository;
     @Mock private AnuncioRepository anuncioRepository;
     @Mock private DenunciaAnuncioRepository denunciaRepository;
     @Mock private HistoricoModeracaoRepository historicoRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private AdminRootGuard adminRootGuard;
 
     @InjectMocks
     private AdminService adminService;
@@ -82,6 +90,60 @@ class AdminServiceTest {
         when(usuarioRepository.findById(gustavo.getId())).thenReturn(java.util.Optional.of(gustavo));
 
         assertThrows(RegraNegocioException.class, () -> adminService.ativarUsuario(gustavo.getId()));
+    }
+
+    @Test
+    @DisplayName("nao deve permitir banir o administrador raiz")
+    void naoBanirAdminRaiz() {
+        Usuario adminLogado = usuario("Admin Operador", "admin2@email.com", "12345678909");
+        adminLogado.setPerfil(Perfil.ADMIN);
+        Usuario adminRaiz = usuario("Administrador", "admin@reusehub.com", "12345678908");
+        adminRaiz.setPerfil(Perfil.ADMIN);
+
+        when(usuarioRepository.findByEmail("admin2@email.com")).thenReturn(java.util.Optional.of(adminLogado));
+        when(usuarioRepository.findById(adminRaiz.getId())).thenReturn(java.util.Optional.of(adminRaiz));
+        when(adminRootGuard.isAdminRaiz(adminRaiz)).thenReturn(true);
+
+        assertThrows(RegraNegocioException.class, () ->
+                adminService.banirUsuario(adminRaiz.getId(), "admin2@email.com")
+        );
+    }
+
+    @Test
+    @DisplayName("nao deve permitir admin banir outro admin")
+    void naoBanirOutroAdmin() {
+        Usuario adminLogado = usuario("Admin Operador", "admin2@email.com", "12345678909");
+        adminLogado.setPerfil(Perfil.ADMIN);
+        Usuario outroAdmin = usuario("Outro Admin", "admin3@email.com", "12345678908");
+        outroAdmin.setPerfil(Perfil.ADMIN);
+
+        when(usuarioRepository.findByEmail("admin2@email.com")).thenReturn(java.util.Optional.of(adminLogado));
+        when(usuarioRepository.findById(outroAdmin.getId())).thenReturn(java.util.Optional.of(outroAdmin));
+
+        assertThrows(RegraNegocioException.class, () ->
+                adminService.banirUsuario(outroAdmin.getId(), "admin2@email.com")
+        );
+    }
+
+    @Test
+    @DisplayName("deve anonimizar usuario comum ao excluir pelo admin")
+    void anonimizarUsuarioComum() {
+        Usuario adminLogado = usuario("Admin Operador", "admin2@email.com", "12345678909");
+        adminLogado.setPerfil(Perfil.ADMIN);
+
+        when(usuarioRepository.findByEmail("admin2@email.com")).thenReturn(java.util.Optional.of(adminLogado));
+        when(usuarioRepository.findById(gustavo.getId())).thenReturn(java.util.Optional.of(gustavo));
+        when(passwordEncoder.encode(any())).thenReturn("hash-anonimo");
+        when(credencialBloqueadaRepository.save(any(CredencialBloqueada.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        adminService.excluirUsuario(gustavo.getId(), "admin2@email.com");
+
+        assertEquals("Usuario excluido", gustavo.getName());
+        assertTrue(gustavo.getEmail().startsWith("excluido+" + gustavo.getId()));
+        assertTrue(gustavo.getContaExcluida());
+        assertFalse(gustavo.getIsActive());
+        assertFalse(gustavo.getBanido());
     }
 
     private Usuario usuario(String nome, String email, String cpf) {
