@@ -3,7 +3,9 @@ package com.reusehub.admin.controller;
 import com.reusehub.admin.dto.AdminCriarModeradorDTO;
 import com.reusehub.admin.dto.AdminDashboardDTO;
 import com.reusehub.admin.dto.AdminUsuarioDTO;
+import com.reusehub.admin.dto.RecalculoRelevanciaRespostaDTO;
 import com.reusehub.admin.service.AdminService;
+import com.reusehub.anuncio.destaque.service.RelevanciaAnuncioService;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
@@ -28,6 +30,13 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
+    private final RelevanciaAnuncioService relevanciaAnuncioService;
+
+    @PostMapping("/relevancia/recalcular")
+    public ResponseEntity<RecalculoRelevanciaRespostaDTO> recalcularRelevancia() {
+        int recalculados = relevanciaAnuncioService.recalcularTodosAtivos();
+        return ResponseEntity.ok(new RecalculoRelevanciaRespostaDTO(recalculados));
+    }
 
     @PostMapping("/moderadores")
     public ResponseEntity<AdminUsuarioDTO> criarModerador(@Valid @RequestBody AdminCriarModeradorDTO dto) {

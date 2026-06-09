@@ -232,6 +232,14 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             "AND a.expiraEm <= CURRENT_TIMESTAMP")
     List<Anuncio> findAnunciosExpirados();
 
+    @Query("""
+            select a from Anuncio a
+            join fetch a.usuario
+            where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
+              and (a.expiraEm is null or a.expiraEm > CURRENT_TIMESTAMP)
+            """)
+    List<Anuncio> findAtivosNaoExpiradosParaRelevancia();
+
     // ====================================================================
     // Queries do modulo de destaque da home (PR D)
     // ====================================================================
