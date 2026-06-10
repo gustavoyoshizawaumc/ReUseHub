@@ -147,10 +147,10 @@ public class InteresseTrocaService {
         }
 
         interesse.setStatus(InteresseTroca.StatusInteresse.ACEITO);
-        interesseTrocaRepository.rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+        // Item passa a estar em negociacao: recusa as demais propostas pendentes do anuncio.
+        interesseTrocaRepository.rejeitarOutrosPendentesDoAnuncio(
                 interesse.getId(),
-                interesse.getAnuncioDesejado().getId(),
-                interesse.getInteressado().getId()
+                interesse.getAnuncioDesejado().getId()
         );
 
         ConversaRespostaDTO conversa = chatService.iniciarOuRecuperarConversaComOferta(

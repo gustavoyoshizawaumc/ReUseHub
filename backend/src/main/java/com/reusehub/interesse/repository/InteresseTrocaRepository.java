@@ -53,6 +53,12 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             InteresseTroca.StatusInteresse status
     );
 
+    /**
+     * Ao aceitar uma proposta, recusa todas as outras pendentes do mesmo anuncio
+     * (de qualquer interessado): o item passa a estar em negociacao, entao as demais
+     * propostas nao devem continuar acionaveis (evita aceitar uma proposta de um item
+     * que ja foi negociado/dado). A propria proposta aceita e preservada por id.
+     */
     @Modifying
     @Query(value = """
             update interesses_troca
@@ -60,12 +66,10 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             where status = 'PENDENTE'
               and id <> :interesseAceitoId
               and anuncio_id = :anuncioId
-              and usuario_interessado_id = :interessadoId
             """, nativeQuery = true)
-    int rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+    int rejeitarOutrosPendentesDoAnuncio(
             @Param("interesseAceitoId") UUID interesseAceitoId,
-            @Param("anuncioId") UUID anuncioId,
-            @Param("interessadoId") UUID interessadoId
+            @Param("anuncioId") UUID anuncioId
     );
 
     Optional<InteresseTroca> findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusOrderByCriadoEmDesc(

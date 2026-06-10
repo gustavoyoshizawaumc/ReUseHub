@@ -224,8 +224,8 @@ class InteresseTrocaServiceTest {
     }
 
     @Test
-    @DisplayName("aceitar proposta rejeita outras pendentes do mesmo interessado no anuncio")
-    void aceitarRejeitaOutrasPendentesDoMesmoInteressadoNoAnuncio() {
+    @DisplayName("aceitar proposta rejeita todas as outras pendentes do anuncio")
+    void aceitarRejeitaTodasOutrasPendentesDoAnuncio() {
         Anuncio anuncioOferecido = anuncioDoInteressado(Anuncio.TipoAnuncio.TROCA, Anuncio.StatusAnuncio.ATIVO);
         interesse.setStatus(InteresseTroca.StatusInteresse.PENDENTE);
         interesse.setAnuncioOferecido(anuncioOferecido);
@@ -271,10 +271,9 @@ class InteresseTrocaServiceTest {
         interesseTrocaService.aceitarInteresse(interesse.getId(), dono.getEmail());
 
         assertEquals(InteresseTroca.StatusInteresse.ACEITO, interesse.getStatus());
-        Mockito.verify(interesseTrocaRepository).rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+        Mockito.verify(interesseTrocaRepository).rejeitarOutrosPendentesDoAnuncio(
                 interesse.getId(),
-                anuncio.getId(),
-                interessado.getId()
+                anuncio.getId()
         );
         Mockito.verify(interesseTrocaRepository).save(interesse);
     }
