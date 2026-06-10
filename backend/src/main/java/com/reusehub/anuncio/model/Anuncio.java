@@ -99,6 +99,7 @@ public class Anuncio {
         REPROVADO,
         SUSPENSO,
         CONCLUIDO,
-        CANCELADO
+        CANCELADO,
+        EXPIRADO
     }
 }

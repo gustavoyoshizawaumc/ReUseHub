@@ -3,9 +3,11 @@ package com.reusehub.admin.controller;
 import com.reusehub.admin.dto.AdminCriarModeradorDTO;
 import com.reusehub.admin.dto.AdminDashboardDTO;
 import com.reusehub.admin.dto.AdminUsuarioDTO;
+import com.reusehub.admin.dto.ExpiracaoRespostaDTO;
 import com.reusehub.admin.dto.RecalculoRelevanciaRespostaDTO;
 import com.reusehub.admin.service.AdminService;
 import com.reusehub.anuncio.destaque.service.RelevanciaAnuncioService;
+import com.reusehub.anuncio.expiracao.service.ExpiracaoAnuncioService;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
@@ -31,11 +33,18 @@ public class AdminController {
 
     private final AdminService adminService;
     private final RelevanciaAnuncioService relevanciaAnuncioService;
+    private final ExpiracaoAnuncioService expiracaoAnuncioService;
 
     @PostMapping("/relevancia/recalcular")
     public ResponseEntity<RecalculoRelevanciaRespostaDTO> recalcularRelevancia() {
         int recalculados = relevanciaAnuncioService.recalcularTodosAtivos();
         return ResponseEntity.ok(new RecalculoRelevanciaRespostaDTO(recalculados));
+    }
+
+    @PostMapping("/anuncios/expirar-vencidos")
+    public ResponseEntity<ExpiracaoRespostaDTO> expirarVencidos() {
+        int expirados = expiracaoAnuncioService.expirarVencidos();
+        return ResponseEntity.ok(new ExpiracaoRespostaDTO(expirados));
     }
 
     @PostMapping("/moderadores")
