@@ -211,7 +211,7 @@ class InteresseTrocaServiceTest {
                 new InteresseCriacaoDTO(anuncio.getId(), outroItemOferecido.getId(), "Tenho outra proposta")
         ));
 
-        assertTrue(excecao.getMessage().contains("negociacao aceita"));
+        assertTrue(excecao.getMessage().contains("negociando este anúncio"));
         Mockito.verify(interesseTrocaRepository, Mockito.never()).existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
                 anuncio.getId(),
                 interessado.getId(),

@@ -16,6 +16,38 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+async function obterMensagemErro(response: Response, fallback: string): Promise<string> {
+  const texto = await response.text().catch(() => "");
+
+  if (!texto) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(texto) as {
+      mensagem?: string;
+      message?: string;
+      erro?: string;
+      error?: string;
+      erros?: Record<string, string | string[]>;
+    };
+
+    if (payload.erros && typeof payload.erros === "object") {
+      const mensagens = Object.values(payload.erros)
+        .flat()
+        .filter(Boolean);
+
+      if (mensagens.length > 0) {
+        return mensagens.join("\n");
+      }
+    }
+
+    return payload.mensagem || payload.message || payload.erro || payload.error || fallback;
+  } catch {
+    return texto;
+  }
+}
+
 export async function criarInteresse(
   payload: InteresseCriacaoPayload
 ): Promise<InteresseResposta> {
@@ -26,8 +58,7 @@ export async function criarInteresse(
   });
 
   if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(erro || "Erro ao enviar interesse");
+    throw new Error(await obterMensagemErro(response, "Erro ao enviar interesse"));
   }
 
   return response.json();
@@ -76,8 +107,7 @@ export async function aceitarInteresse(id: string): Promise<InteresseResposta> {
   });
 
   if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(erro || "Erro ao aceitar interesse");
+    throw new Error(await obterMensagemErro(response, "Erro ao aceitar interesse"));
   }
 
   return response.json();
@@ -90,8 +120,7 @@ export async function recusarInteresse(id: string): Promise<InteresseResposta> {
   });
 
   if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(erro || "Erro ao recusar interesse");
+    throw new Error(await obterMensagemErro(response, "Erro ao recusar interesse"));
   }
 
   return response.json();
@@ -104,8 +133,7 @@ export async function marcarInteresseComoEntregue(id: string): Promise<Interesse
   });
 
   if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(erro || "Erro ao marcar como entregue");
+    throw new Error(await obterMensagemErro(response, "Erro ao marcar como entregue"));
   }
 
   return response.json();
@@ -118,8 +146,7 @@ export async function confirmarRecebimentoInteresse(id: string): Promise<Interes
   });
 
   if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(erro || "Erro ao confirmar recebimento");
+    throw new Error(await obterMensagemErro(response, "Erro ao confirmar recebimento"));
   }
 
   return response.json();
@@ -132,8 +159,7 @@ export async function cancelarNegociacaoInteresse(id: string): Promise<Interesse
   });
 
   if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(erro || "Erro ao cancelar negociacao");
+    throw new Error(await obterMensagemErro(response, "Erro ao cancelar negociacao"));
   }
 
   return response.json();
