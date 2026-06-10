@@ -60,6 +60,7 @@ public class Anuncio {
     private Integer totalVisualizacoes = 0;
 
     @Column(name = "nota_relevancia", precision = 8, scale = 4)
+    @Builder.Default
     private BigDecimal notaRelevancia = BigDecimal.ZERO;
 
     @Column(name = "expira_em")
