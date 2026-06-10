@@ -20,7 +20,7 @@ import {
 import { AUTH_USER_UPDATED_EVENT, authService } from "../services/authService";
 import { listarConversas } from "../services/chatService";
 import { listarInteressesRecebidos } from "../services/interesseService";
-import type { UsuarioRespostaDTO } from "../types/auth.types";
+import type { SessaoUsuario } from "../types/auth.types";
 import { OperationalHeader } from "./OperationalHeader";
 import { isUsuarioOperacional } from "../utils/perfil";
 import { API_BASE_URL } from "../config/api";
@@ -77,7 +77,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { categorias } = useCategorias();
-  const [user, setUser] = useState<UsuarioRespostaDTO | null>(() => authService.getUser());
+  const [user, setUser] = useState<SessaoUsuario | null>(() => authService.getUser());
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
