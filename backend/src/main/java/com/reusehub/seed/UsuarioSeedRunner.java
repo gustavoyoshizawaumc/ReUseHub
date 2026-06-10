@@ -20,21 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Peca 1 do seed: cria a massa de usuarios direto pelo backend (via {@code saveAll}),
- * para que o converter de campos sensiveis e o {@code @PrePersist} dos hashes (email/cpf)
- * rodem com a MESMA chave de criptografia do app. Por isso NAO usamos SQL puro aqui.
- *
- * <p>Ativado apenas com o profile {@code seed} ({@code -Dspring.profiles.active=seed} ou
- * {@code SPRING_PROFILES_ACTIVE=seed}). Em producao/dev normal o bean nem e registrado.
- *
- * <p>Convencao de anunciantes: NAO existe flag de "anunciante" no modelo. Os primeiros
- * {@code seed.usuarios.anunciantes} usuarios sao, por convencao, os
- * que o script de criacao de anuncios (peca 2) vai logar para publicar. Os demais sao
- * massa de navegacao/favoritos/carga.
- *
- * <p>Idempotente: se o primeiro email de seed ja existir, nao faz nada.
- */
 @Slf4j
 @Component
 @Profile("seed")
@@ -43,7 +28,6 @@ public class UsuarioSeedRunner implements ApplicationRunner {
 
     private static final int TAMANHO_LOTE = 200;
 
-    /** Base de 9 digitos para gerar CPFs validos e unicos por indice (700000001..). */
     private static final long BASE_CPF_USUARIOS = 700_000_000L;
     private static final long BASE_CPF_MODERADOR = 999_000_000L;
     private static final String[] NOMES = {
@@ -95,7 +79,6 @@ public class UsuarioSeedRunner implements ApplicationRunner {
             return;
         }
 
-        // BCrypt e caro de proposito: geramos UMA vez e reutilizamos o mesmo hash em todos.
         String hashSenha = passwordEncoder.encode(senha);
 
         log.info("[seed] Criando {} usuarios USUARIO (dominio @{}, {} marcados como anunciantes por convencao)...",
@@ -197,15 +180,9 @@ public class UsuarioSeedRunner implements ApplicationRunner {
     }
 
     private String telefoneDoIndice(int indice) {
-        // 11 digitos: DDD 11 + 9 + 8 digitos derivados do indice.
         return "119" + String.format("%08d", indice);
     }
 
-    /**
-     * Gera um CPF com digitos verificadores validos a partir de uma base de 9 digitos.
-     * Replica exatamente o algoritmo de {@code com.reusehub.auth.validation.CpfValidator}
-     * para garantir que a base nasca consistente com a regra do projeto.
-     */
     static String gerarCpfValido(long base9Digitos) {
         String base = String.format("%09d", Math.floorMod(base9Digitos, 1_000_000_000L));
         int d1 = digitoVerificador(base, 10);

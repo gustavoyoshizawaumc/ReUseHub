@@ -1,11 +1,3 @@
-/**
- * Helpers tipados para acesso ao localStorage. Cobrem o caso de ambientes
- * sem `window` (SSR, testes), quotas estouradas e payload corrompido.
- *
- * Analogo ao utils/sessionStorage.ts, mas para dados persistentes
- * (sobrevivem ao fechamento do browser).
- */
-
 export function readLocalStorage<T>(chave: string): T | null {
   if (typeof window === "undefined") {
     return null;
@@ -25,8 +17,7 @@ export function writeLocalStorage<T>(chave: string, valor: T): void {
   try {
     window.localStorage.setItem(chave, JSON.stringify(valor));
   } catch {
-    // Storage cheio, modo privado ou desabilitado pelo usuario.
-    // Falha silenciosa: cache e otimizacao, nao requisito.
+    // ignora indisponibilidade do storage
   }
 }
 
@@ -37,6 +28,6 @@ export function removeLocalStorage(chave: string): void {
   try {
     window.localStorage.removeItem(chave);
   } catch {
-    // Falha silenciosa: mesma motivacao das funcoes acima.
+    // ignora indisponibilidade do storage
   }
 }

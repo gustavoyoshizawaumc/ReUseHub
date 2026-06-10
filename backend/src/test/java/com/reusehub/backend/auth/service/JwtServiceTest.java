@@ -46,7 +46,7 @@ class JwtServiceTest {
 
             String emailExtraido = jwtService.extrairEmail(token);
             assertEquals("gustavo@reusehub.com", emailExtraido);
-            
+
             assertTrue(jwtService.tokenValido(token, userDetails));
         }
     }
@@ -69,9 +69,9 @@ class JwtServiceTest {
         @DisplayName("deve retornar falso se validar o token contra um UserDetails com username diferente")
         void erroUsuarioDiferente() {
             String token = jwtService.gerarToken(userDetails);
-            
+
             UserDetails outroUsuario = new User("invasor@reusehub.com", "senha", Collections.emptyList());
-            
+
             assertFalse(jwtService.tokenValido(token, outroUsuario));
         }
 
@@ -79,7 +79,7 @@ class JwtServiceTest {
         @DisplayName("deve estourar OperacaoInvalidaException se o token enviado estiver com tempo expirado")
         void erroTokenExpirado() {
             ReflectionTestUtils.setField(jwtService, "expiration", -5000L);
-            
+
             String tokenExpirado = jwtService.gerarToken(userDetails);
 
             assertThrows(OperacaoInvalidaException.class, () -> {

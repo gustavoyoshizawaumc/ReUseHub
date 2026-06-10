@@ -124,7 +124,6 @@ export const InteressesRecebidosPage: React.FC = () => {
   }, [notify]);
 
   useEffect(() => {
-    // Sincroniza o historico do usuario com a API.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, [carregar]);
@@ -148,6 +147,7 @@ export const InteressesRecebidosPage: React.FC = () => {
         title: "Erro ao aceitar interesse",
         message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
       });
+      await carregar();
     } finally {
       setProcessingId(null);
     }
@@ -244,7 +244,8 @@ export const InteressesRecebidosPage: React.FC = () => {
             const ehDono = item.anuncianteId === usuarioId;
             const status = obterStatusVisual(item);
             const StatusIcon = status.icon;
-            const podeResponder = ehDono && item.status === "PENDENTE";
+            const podeResponder =
+              ehDono && item.status === "PENDENTE" && item.anuncioDesejadoStatus === "ATIVO";
             const podeAvaliar =
               item.status === "ACEITO" &&
               item.anuncioDesejadoStatus === "CONCLUIDO" &&

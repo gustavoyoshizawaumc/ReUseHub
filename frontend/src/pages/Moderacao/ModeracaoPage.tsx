@@ -231,8 +231,6 @@ interface GrupoDenuncia {
   totalAbertas: number;
 }
 
-// Agrupa as denuncias por anuncio (1 entrada por anuncio) e ordena pelos mais
-// denunciados primeiro. O agrupamento e feito no cliente sobre a lista carregada.
 const agruparDenunciasPorAnuncio = (denuncias: DenunciaModeracao[]): GrupoDenuncia[] => {
   const porAnuncio = new Map<string, GrupoDenuncia>();
   for (const denuncia of denuncias) {
@@ -582,6 +580,86 @@ const ReprovarAnuncioModal = ({
   );
 };
 
+const RemoverAvaliacaoModal = ({
+  avaliacao,
+  onClose,
+  onConfirm,
+  processando,
+}: {
+  avaliacao: AvaliacaoModeracao;
+  onClose: () => void;
+  onConfirm: (justificativa: string) => void;
+  processando: boolean;
+}) => {
+  const [justificativa, setJustificativa] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <article className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-widest text-rose-600">Remover avaliacao</p>
+            <h3 className="mt-1 truncate text-xl font-black text-slate-950">{avaliacao.anuncioTitulo}</h3>
+            <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+              {avaliacao.avaliadorNome} avaliou {avaliacao.avaliadoNome}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            aria-label="Fechar"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="space-y-4 p-5">
+          {avaliacao.comentario && (
+            <p className="rounded-md border border-slate-100 bg-slate-50 p-3 text-sm italic text-slate-600">
+              &ldquo;{avaliacao.comentario}&rdquo;
+            </p>
+          )}
+          <label className="block">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Justificativa (opcional)</span>
+            <textarea
+              value={justificativa}
+              autoFocus
+              onChange={(event) => setJustificativa(event.target.value)}
+              rows={4}
+              placeholder="Explique por que esta avaliacao esta sendo removida (opcional)."
+              className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
+            />
+          </label>
+          <p className="flex items-start gap-2 rounded-md border border-orange-100 bg-orange-50 p-3 text-xs font-semibold text-orange-800">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            A avaliacao sera removida em definitivo.
+          </p>
+        </div>
+
+        <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={processando}
+            className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(justificativa.trim())}
+            disabled={processando}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+          >
+            <Trash2 size={16} /> Remover avaliacao
+          </button>
+        </footer>
+      </article>
+    </div>
+  );
+};
+
 const DenunciaAnaliseModal = ({
   grupo,
   onClose,
@@ -789,6 +867,7 @@ export const ModeracaoPage: React.FC = () => {
   const [anuncioDetalhado, setAnuncioDetalhado] = useState<Anuncio | null>(null);
   const [anuncioParaReprovar, setAnuncioParaReprovar] = useState<Anuncio | null>(null);
   const [grupoEmAnalise, setGrupoEmAnalise] = useState<GrupoDenuncia | null>(null);
+  const [avaliacaoParaRemover, setAvaliacaoParaRemover] = useState<AvaliacaoModeracao | null>(null);
   const [fotoDetalheAtual, setFotoDetalheAtual] = useState(0);
   const filtrosUsuariosInicializadosRef = useRef(false);
   const filtrosDashboardInicializadosRef = useRef(false);
@@ -908,9 +987,6 @@ export const ModeracaoPage: React.FC = () => {
   }, [isAdmin]);
 
   useEffect(() => {
-    // Carregamento inicial dos dados do painel: fetch unico no mount.
-    // A regra set-state-in-effect e overly strict para este padrao;
-    // refator futuro: migrar para TanStack Query ou useEffectEvent.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, [carregar]);
@@ -1022,12 +1098,16 @@ export const ModeracaoPage: React.FC = () => {
     void executar(id, () => reprovarAnuncio(id, motivo));
   };
 
-  const removerAvaliacao = async (avaliacao: AvaliacaoModeracao) => {
-    const justificativa = window.prompt('Informe a justificativa para remover esta avaliacao:');
-    if (justificativa === null) return;
+  const removerAvaliacao = (avaliacao: AvaliacaoModeracao) => {
+    setAvaliacaoParaRemover(avaliacao);
+  };
 
-    await executar(avaliacao.id, () =>
-      removerAvaliacaoModeracao(avaliacao.id, justificativa.trim() || 'Avaliacao removida pela moderacao.')
+  const confirmarRemocaoAvaliacao = (justificativa: string) => {
+    if (!avaliacaoParaRemover) return;
+    const id = avaliacaoParaRemover.id;
+    setAvaliacaoParaRemover(null);
+    void executar(id, () =>
+      removerAvaliacaoModeracao(id, justificativa.trim() || 'Avaliacao removida pela moderacao.')
     );
   };
 
@@ -1048,9 +1128,6 @@ export const ModeracaoPage: React.FC = () => {
     void executar(anuncioId, acao);
   };
 
-  // Acoes por anuncio: o backend resolve todas as denuncias abertas do anuncio.
-  // descartar/suspender usam um relato representativo (por denunciaId);
-  // reativar/reprovar agem direto no anuncio (acoes herdadas da antiga aba Suspeitos).
   const descartarGrupoEmAnalise = () => {
     if (!grupoEmAnalise) return;
     const { anuncioId, relatos } = grupoEmAnalise;
@@ -1243,6 +1320,15 @@ export const ModeracaoPage: React.FC = () => {
           onReactivate={reativarGrupoEmAnalise}
           onReprove={reprovarGrupoEmAnalise}
           processando={processando === grupoEmAnalise.anuncioId}
+        />
+      )}
+
+      {avaliacaoParaRemover && (
+        <RemoverAvaliacaoModal
+          avaliacao={avaliacaoParaRemover}
+          onClose={() => setAvaliacaoParaRemover(null)}
+          onConfirm={confirmarRemocaoAvaliacao}
+          processando={processando === avaliacaoParaRemover.id}
         />
       )}
 

@@ -3,20 +3,18 @@ package com.reusehub.anuncio.dto;
 import com.reusehub.anuncio.model.Anuncio;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;              
-import lombok.NoArgsConstructor; 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnuncioCriacaoComEnderecoDTO {
 
-    
     @NotBlank(message = "CEP é obrigatório")
     @Pattern(regexp = "\\d{5}-?\\d{3}", message = "CEP deve estar no formato XXXXX-XXX ou XXXXXXXX")
     private String cep;
 
-    
     @NotBlank(message = "Título é obrigatório")
     @Size(min = 5, max = 150, message = "Título deve ter entre 5 e 150 caracteres")
     private String titulo;

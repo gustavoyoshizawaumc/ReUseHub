@@ -2,12 +2,14 @@ package com.reusehub.backend.chat.service;
 
 import com.reusehub.anuncio.exception.AcessoNegadoException;
 import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
+import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.chat.document.Conversa;
+import com.reusehub.chat.dto.ConversaRespostaDTO;
 import com.reusehub.chat.dto.MensagemCriacaoDTO;
 import com.reusehub.chat.repository.ChatRepository;
 import com.reusehub.chat.service.ChatService;
@@ -22,6 +24,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -133,5 +137,58 @@ class ChatServiceTest {
         Mockito.when(chatRepository.findById("id-fantasma")).thenReturn(Optional.empty());
 
         assertThrows(RecursoNaoEncontradoException.class, () -> chatService.marcarComoLido("id-fantasma", "destinatario@reusehub.com"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar apenas mensagens da conversa selecionada")
+    void recuperarConversaPorIdNaoMisturaHistoricosDeOutrosAnuncios() {
+        Usuario usuarioAtual = new Usuario();
+        usuarioAtual.setId(remetente.getId());
+        usuarioAtual.setEmail(remetente.getEmail());
+
+        Conversa.Mensagem mensagemConversaSelecionada = Conversa.Mensagem.builder()
+                .conteudo("Mensagem do anuncio correto")
+                .remetente(remetente.getId().toString())
+                .timestamp(LocalDateTime.now().minusMinutes(2))
+                .build();
+        conversaModelo.setHistoricoMensagens(new ArrayList<>(List.of(mensagemConversaSelecionada)));
+
+        Mockito.when(usuarioRepository.findByEmail(remetente.getEmail())).thenReturn(Optional.of(usuarioAtual));
+        Mockito.when(chatRepository.findById("conversa-123")).thenReturn(Optional.of(conversaModelo));
+
+        ConversaRespostaDTO resposta = chatService.recuperarConversaPorId("conversa-123", remetente.getEmail());
+
+        assertEquals(1, resposta.mensagens().size());
+        assertEquals("Mensagem do anuncio correto", resposta.mensagens().get(0).conteudo());
+        Mockito.verify(chatRepository, Mockito.never())
+                .findByUsuarios(remetente.getId().toString(), destinatario.getId().toString());
+    }
+
+    @Test
+    @DisplayName("Deve falhar ao recuperar historico legado quando houver mais de uma conversa entre os mesmos usuarios")
+    void recuperarHistoricoConversaFalhaQuandoHaAmbiguidadeEntreUsuarios() {
+        Mockito.when(usuarioRepository.findByEmail(remetente.getEmail())).thenReturn(Optional.of(remetente));
+        Mockito.when(chatRepository.findByUsuarios(remetente.getId().toString(), destinatario.getId().toString()))
+                .thenReturn(List.of(
+                        conversaModelo,
+                        Conversa.builder()
+                                .id("conversa-456")
+                                .anuncioId(UUID.randomUUID().toString())
+                                .remetente(remetente.getId().toString())
+                                .destinatario(destinatario.getId().toString())
+                                .historicoMensagens(new ArrayList<>())
+                                .lido(false)
+                                .build()
+                ));
+
+        RegraNegocioException excecao = assertThrows(
+                RegraNegocioException.class,
+                () -> chatService.recuperarHistoricoConversa(remetente.getEmail(), destinatario.getId().toString())
+        );
+
+        assertEquals(
+                "Existe mais de uma conversa com este usuario. Abra a conversa pela lista de conversas.",
+                excecao.getMessage()
+        );
     }
 }

@@ -20,12 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Endpoints da home dinamica.
- *
- * <p>Caminho principal usado pela home: {@link #bootstrapHome(Authentication)}.
- * <br>Endpoint complementar para refresh granular: {@link #obterDestaquesPorContexto}.
- */
 @RestController
 @RequestMapping("/api/anuncios/destaques")
 @RequiredArgsConstructor
@@ -35,10 +29,6 @@ public class AnuncioDestaqueController {
     private final AnuncioDestaqueService anuncioDestaqueService;
     private final UsuarioRepository usuarioRepository;
 
-    /**
-     * Receita completa da home: cenario, categoria em destaque, secoes
-     * (ja populadas com dados) e metadados de rotacao. 1 request, sem waterfall.
-     */
     @GetMapping("/bootstrap-home")
     public ResponseEntity<BootstrapHomeDTO> bootstrapHome(Authentication authentication) {
         String emailAutenticado = extrairEmailAutenticado(authentication);
@@ -46,18 +36,6 @@ public class AnuncioDestaqueController {
         return ResponseEntity.ok(receita);
     }
 
-    /**
-     * Endpoint complementar - devolve dados de UMA secao isolada.
-     *
-     * <p><strong>NOTA:</strong> a home (PR D) usa exclusivamente
-     * {@code /bootstrap-home}. Este endpoint serve para:
-     * <ul>
-     *   <li>Paginas que carregam so uma secao</li>
-     *   <li>Refresh granular de uma secao sem recarregar a home</li>
-     *   <li>Testes diretos por contexto</li>
-     *   <li>Casos futuros (paginacao dentro da secao, infinite scroll)</li>
-     * </ul>
-     */
     @GetMapping
     public ResponseEntity<List<AnuncioDestaqueDTO>> obterDestaquesPorContexto(
             @RequestParam("contexto") ContextoDestaque contexto,
@@ -72,8 +50,6 @@ public class AnuncioDestaqueController {
         );
         return ResponseEntity.ok(destaques);
     }
-
-    // -- Helpers --------------------------------------------------------------
 
     private String extrairEmailAutenticado(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {

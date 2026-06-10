@@ -26,8 +26,8 @@ public class ChatController {
     public ResponseEntity<Void> enviarMensagem(
             @Valid @RequestBody MensagemCriacaoDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
-        chatService.enviarMensagem(userDetails.getUsername(), dto.conversaId(), dto); 
+
+        chatService.enviarMensagem(userDetails.getUsername(), dto.conversaId(), dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -35,7 +35,7 @@ public class ChatController {
     public ResponseEntity<ConversaRespostaDTO> iniciarConversa(
             @Valid @RequestBody IniciarConversaDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         ConversaRespostaDTO conversa = chatService.iniciarOuRecuperarConversa(
                 userDetails.getUsername(),
                 dto
@@ -47,7 +47,7 @@ public class ChatController {
     public ResponseEntity<ConversaRespostaDTO> obterConversa(
             @PathVariable String destinatario,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         ConversaRespostaDTO conversa = chatService.recuperarHistoricoConversa(userDetails.getUsername(), destinatario);
         return ResponseEntity.ok(conversa);
     }
@@ -56,7 +56,7 @@ public class ChatController {
     public ResponseEntity<ConversaRespostaDTO> obterConversaPorId(
             @PathVariable String conversaId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         ConversaRespostaDTO conversa = chatService.recuperarConversaPorId(conversaId, userDetails.getUsername());
         return ResponseEntity.ok(conversa);
     }
@@ -64,7 +64,7 @@ public class ChatController {
     @GetMapping("/minhas-conversas")
     public ResponseEntity<ListaConversasDTO> obterMinhasConversas(
             @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         ListaConversasDTO conversas = chatService.listarConversasUsuario(userDetails.getUsername());
         return ResponseEntity.ok(conversas);
     }
@@ -73,7 +73,7 @@ public class ChatController {
     public ResponseEntity<Void> marcarComoLido(
             @PathVariable String conversaId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         chatService.marcarComoLido(conversaId, userDetails.getUsername());
         return ResponseEntity.ok().build();
     }

@@ -38,7 +38,6 @@ export const ForgotPasswordPage: React.FC = () => {
       await authService.forgotPassword(email);
       setEnviado(true);
     } catch {
-      // Mesmo em caso de erro inesperado, mostramos a mensagem genérica
       setEnviado(true);
     } finally {
       setIsLoading(false);
@@ -48,7 +47,7 @@ export const ForgotPasswordPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4">
       <div className="w-[calc(100vw-2rem)] min-w-0 max-w-md rounded-lg border border-slate-100 bg-white p-6 shadow-sm animate-fade-in sm:p-10 md:p-12">
-        {/* Header */}
+        {}
         <div className="mb-8 text-center sm:mb-10">
           <div className="mb-4 flex justify-center">
             <h2 className="text-3xl font-bold">
@@ -66,7 +65,6 @@ export const ForgotPasswordPage: React.FC = () => {
         </div>
 
         {enviado ? (
-          /* Estado de sucesso — resposta genérica */
           <div className="text-center space-y-6">
             <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-50">
               <svg
@@ -103,7 +101,6 @@ export const ForgotPasswordPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          /* Formulário */
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label

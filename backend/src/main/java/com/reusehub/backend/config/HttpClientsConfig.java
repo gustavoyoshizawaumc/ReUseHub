@@ -9,13 +9,6 @@ import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 
-/**
- * Configuracao centralizada dos clientes HTTP usados pela aplicacao.
- *
- * Cada bean aqui registrado representa um cliente dedicado a um servico
- * externo, permitindo configurar URLs base, timeouts e headers padrao
- * em um unico lugar.
- */
 @Configuration
 public class HttpClientsConfig {
 

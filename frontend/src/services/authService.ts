@@ -3,6 +3,7 @@
   LoginRequest,
   AuthResponse,
   UsuarioRespostaDTO,
+  SessaoUsuario,
   UpdateProfileRequest,
 } from "../types/auth.types";
 import { apiUrl } from "../config/api";
@@ -34,25 +35,15 @@ const limparSessaoLocal = () => {
   emitirAtualizacaoUsuario();
 };
 
-const normalizarUsuarioSessao = (user: AuthResponse | UsuarioRespostaDTO): UsuarioRespostaDTO => {
+const normalizarUsuarioSessao = (user: AuthResponse | UsuarioRespostaDTO): SessaoUsuario => {
   const dados = user as AuthResponse & UsuarioRespostaDTO;
 
   return {
     id: dados.id,
     name: dados.name,
-    email: dados.email,
-    cpf: dados.cpf,
-    phone: dados.phone || undefined,
     avatarUrl: dados.avatarUrl ?? dados.avatar_url ?? undefined,
-    bio: dados.bio ?? undefined,
     perfil: dados.perfil,
     reputationScore: dados.reputationScore ?? dados.reputation_score,
-    isActive: dados.isActive ?? dados.is_active,
-    isVerified: dados.isVerified ?? dados.is_verified,
-    lgpdConsent: dados.lgpdConsent ?? dados.lgpd_consent,
-    lgpdConsentAt: dados.lgpdConsentAt ?? dados.lgpd_consent_at,
-    createdAt: dados.createdAt ?? dados.created_at,
-    updatedAt: dados.updatedAt ?? dados.updated_at,
   };
 };
 
@@ -258,7 +249,7 @@ export const authService = {
     return localStorage.getItem("token");
   },
 
-  getUser: () => {
+  getUser: (): SessaoUsuario | null => {
     const user = localStorage.getItem("user");
     return user ? normalizarUsuarioSessao(JSON.parse(user)) : null;
   },

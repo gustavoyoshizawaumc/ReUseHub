@@ -70,7 +70,6 @@ class BootstrapHomeServiceTest {
 
         categoriaRotativa = new CategoriaEmDestaqueDTO(21, "Moveis", "moveis", TipoSelecaoCategoria.ROTATIVA);
 
-        // Por padrao, rotativa do dia retorna algo (cada teste pode sobrescrever)
         Mockito.lenient().when(categoriaEmDestaqueService.obterRotativaDoDia(any(LocalDate.class)))
                 .thenReturn(Optional.of(categoriaRotativa));
     }
@@ -191,7 +190,7 @@ class BootstrapHomeServiceTest {
             Mockito.when(anuncioDestaqueService.obterDestaques(eq(ContextoDestaque.MAIS_PROCURADOS), any(), anyInt(), any()))
                     .thenReturn(List.of(anuncioDeExemplo()));
             Mockito.when(anuncioDestaqueService.obterDestaques(eq(ContextoDestaque.POPULARES), any(), anyInt(), any()))
-                    .thenReturn(List.of()); // vazia
+                    .thenReturn(List.of());
             Mockito.when(anuncioDestaqueService.obterDestaques(eq(ContextoDestaque.RECENTES), any(), anyInt(), any()))
                     .thenReturn(List.of(anuncioDeExemplo()));
 

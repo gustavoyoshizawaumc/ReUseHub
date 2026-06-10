@@ -24,24 +24,37 @@ const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 export const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(() => {
-    const usuario = authService.getUser();
-    return {
-      name: usuario?.name || "",
-      phone: usuario?.phone || "",
-      bio: usuario?.bio || "",
-      avatarFile: null as File | null,
-      avatarPreview: usuario?.avatarUrl || "",
-    };
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    bio: "",
+    avatarFile: null as File | null,
+    avatarPreview: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!authService.getUser()) {
-      navigate("/login");
-    }
+    const carregarDados = async () => {
+      if (!authService.isLoggedIn()) {
+        navigate("/login");
+        return;
+      }
+      try {
+        const usuario = await authService.getProfile();
+        setFormData((prev) => ({
+          ...prev,
+          name: usuario.name ?? "",
+          phone: usuario.phone ?? "",
+          bio: usuario.bio ?? "",
+          avatarPreview: usuario.avatarUrl ?? "",
+        }));
+      } catch {
+        navigate("/login");
+      }
+    };
+    carregarDados();
   }, [navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -239,7 +252,7 @@ export const EditProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Botões */}
+            {}
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
               <button
                 type="button"

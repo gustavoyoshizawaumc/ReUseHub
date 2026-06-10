@@ -40,9 +40,6 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Quem chega via card preenche state.origem (CARD_HOME, BUSCA_RESULTADO,
-  // FAVORITO, etc). Sem state = entrada direta (URL, refresh, bookmark, link
-  // compartilhado): cai no LINK_DIRETO.
   const origemVisualizacao: OrigemVisualizacao =
     (location.state as { origem?: OrigemVisualizacao } | null)?.origem ?? "LINK_DIRETO";
 
@@ -59,8 +56,6 @@ export const DetalhesAnuncioPage: React.FC = () => {
   const [iniciandoChat, setIniciandoChat] = useState(false);
   const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
   const { notify } = useFeedback();
-
-
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -247,7 +242,7 @@ export const DetalhesAnuncioPage: React.FC = () => {
             <div className="lg:col-span-8 space-y-6">
               <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
 
-                {/* CARROSSEL */}
+                {}
                 {imagens.length > 0 ? (
                   <div className="relative">
                     <div className={`grid gap-2 bg-white ${imagensLaterais.length > 0 ? "md:grid-cols-[minmax(0,2fr)_minmax(220px,0.85fr)]" : ""}`}>

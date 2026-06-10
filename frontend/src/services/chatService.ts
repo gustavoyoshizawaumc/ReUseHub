@@ -62,23 +62,6 @@ async function listarConversas(): Promise<Conversa[]> {
   }));
 }
 
-async function obterMensagensPorDestinatario(destinatario: string): Promise<Mensagem[]> {
-  if (!destinatario) {
-    throw new Error('Destinatário não informado');
-  }
-
-  console.log('Obtendo mensagens para destinatário:', destinatario);
-
-  const response = await fetch(`${BASE_URL}/conversa/${destinatario}`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
-
-  const data = await parseJsonSafely<ConversaDetalhe>(response);
-
-  return Array.isArray(data?.mensagens) ? data.mensagens : [];
-}
-
 async function obterConversaPorId(conversaId: string): Promise<ConversaDetalhe> {
   if (!conversaId) {
     throw new Error('ID da conversa não informado');
@@ -154,7 +137,6 @@ async function marcarComoLido(conversaId: string): Promise<void> {
 export {
   listarConversas,
   obterMensagens,
-  obterMensagensPorDestinatario,
   obterConversaPorId,
   iniciarConversa,
   enviarMensagem,

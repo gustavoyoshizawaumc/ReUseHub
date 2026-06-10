@@ -3,23 +3,6 @@ import { lerUltimasBuscas } from "../utils/ultimasBuscas";
 import { buscarAnuncios, listarDestaques } from "../services/anuncioService";
 import type { AnuncioDestaque } from "../types/anuncio.types";
 
-/**
- * Hook que monta o conteudo da secao "Baseado em suas ultimas buscas" da home.
- *
- * Combina as 5 ultimas buscas do localStorage com chamadas paralelas ao backend:
- *  - Buscas com categoria definida usam o ranqueamento de destaques
- *    (mesmo motor de MAIS_PROCURADOS, sem afinidade).
- *  - Buscas apenas com termo usam o full-text search padrao de anuncios.
- *
- * Apos receber as listas, deduplica por anuncio.id (anuncio pode aparecer em
- * mais de uma busca) e limita a 6 itens (mesma densidade visual da home).
- *
- * Estado:
- *  - dados: lista pronta pra renderizar (ou [] enquanto carrega/sem buscas)
- *  - carregando: true ate todas as requisicoes resolverem
- *  - existemBuscas: false quando o localStorage esta vazio (UI esconde a secao)
- */
-
 const QUANTIDADE_POR_BUSCA = 3;
 const TOTAL_MAXIMO_NA_SECAO = 6;
 
@@ -30,9 +13,6 @@ export interface EstadoUltimasBuscasComAnuncios {
 }
 
 export function useUltimasBuscasComAnuncios(): EstadoUltimasBuscasComAnuncios {
-  // Snapshot do localStorage no momento do mount via lazy initializer.
-  // Mantemos imutavel: o hook nao reage a mudancas posteriores (uma nova busca
-  // so aparece no proximo carregamento da home), evitando re-fetches em loop.
   const [buscasIniciais] = useState(() => lerUltimasBuscas());
 
   const [dados, setDados] = useState<AnuncioDestaque[]>([]);
@@ -51,7 +31,6 @@ export function useUltimasBuscasComAnuncios(): EstadoUltimasBuscasComAnuncios {
         setDados(deduplicarELimitar(listas.flat()));
       })
       .catch(() => {
-        // Se alguma busca falhar, deixamos a secao vazia (esconde no render).
         if (ativo) setDados([]);
       })
       .finally(() => {

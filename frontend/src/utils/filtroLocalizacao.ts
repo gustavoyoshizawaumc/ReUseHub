@@ -32,7 +32,6 @@ export function obterBuscaLocalizacaoSessao(): BuscaFiltro {
   return {
     cep: filtro.cep,
     raioKm: filtro.raioKm,
-    ordenacao: "DISTANCIA",
   };
 }
 

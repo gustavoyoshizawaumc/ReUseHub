@@ -37,13 +37,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * Testes unitarios de {@link RegistroVisualizacaoService}.
- *
- * <p>Cobertura focada em comportamento observavel: descarte do dono,
- * dedupe nas tres camadas, persistencia da origem e incremento atomico
- * do contador no Anuncio.
- */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes Unitarios de RegistroVisualizacaoService")
 class RegistroVisualizacaoServiceTest {
@@ -171,7 +164,6 @@ class RegistroVisualizacaoServiceTest {
 
             service.registrarSeValido(comando(null, ANON_ID, IP));
 
-            // confirma que NAO consultou camada 1 (sem usuario)
             verify(visualizacaoRepository, never())
                     .existeVisualizacaoRecenteDeUsuario(any(), any(), any());
             verify(visualizacaoRepository, times(1)).save(any());

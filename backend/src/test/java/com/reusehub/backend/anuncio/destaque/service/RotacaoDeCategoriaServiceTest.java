@@ -78,7 +78,6 @@ class RotacaoDeCategoriaServiceTest {
                             new Object[]{20, 50L}
                     ));
 
-            // 2 categorias no pool → indices alternam entre 0 e 1 conforme paridade do epoch day
             LocalDate dia1 = LocalDate.of(2026, 6, 1);
             LocalDate dia2 = LocalDate.of(2026, 6, 2);
             Optional<Categoria> escolha1 = rotacaoDeCategoriaService.obterCategoriaDoDia(dia1);

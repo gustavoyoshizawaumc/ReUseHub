@@ -69,6 +69,14 @@ export interface UsuarioRespostaDTO {
   perfil?: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }
 
+export interface SessaoUsuario {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  perfil?: 'USUARIO' | 'MODERADOR' | 'ADMIN';
+  reputationScore?: number;
+}
+
 export interface UpdateProfileRequest {
   name: string;
   phone?: string;

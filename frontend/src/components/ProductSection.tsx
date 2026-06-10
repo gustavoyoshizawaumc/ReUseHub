@@ -10,10 +10,6 @@ interface ProductSectionProps {
   titulo: string;
   anuncios: AnuncioDestaque[];
   linkVerTodos: string | null;
-  /**
-   * Origem registrada quando o usuario clicar num card desta secao
-   * (tracking de visualizacao - PR D.2). Default: {@code CARD_HOME}.
-   */
   origem?: OrigemVisualizacao;
 }
 

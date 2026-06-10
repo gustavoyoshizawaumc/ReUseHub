@@ -112,17 +112,6 @@ export const atualizarAnuncio = async (
   return response.data;
 };
 
-/**
- * Atualiza o conjunto de imagens do anuncio.
- *
- * @param idsParaManter ids das imagens existentes que devem permanecer,
- *                      na ordem desejada. Imagens nao listadas sao removidas.
- * @param novasImagens  novos arquivos a serem anexados ao final da lista.
- *
- * O backend valida que o total final (idsParaManter.length + novasImagens.length)
- * fique entre 3 e 5 e devolve o anuncio com o status forcado para PENDENTE
- * para passar novamente pela moderacao.
- */
 export const atualizarImagensDoAnuncio = async (
   id: string,
   idsParaManter: string[],
@@ -171,19 +160,11 @@ export const desfavoritarAnuncio = async (id: string): Promise<void> => {
   await api.delete(`/${id}/favoritos`);
 };
 
-/**
- * Endpoint principal da home: devolve cenario, categoria em destaque e
- * todas as secoes ja populadas com seus anuncios. 1 request, sem waterfall.
- */
 export const bootstrapHome = async (): Promise<BootstrapHome> => {
   const response = await api.get<BootstrapHome>("/destaques/bootstrap-home");
   return response.data;
 };
 
-/**
- * Endpoint complementar. NAO usado pela home (que usa bootstrapHome).
- * Util para paginas que querem apenas uma secao isolada ou refresh granular.
- */
 export const listarDestaques = async (
   contexto: ContextoDestaque,
   size?: number,

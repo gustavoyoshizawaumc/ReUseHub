@@ -67,7 +67,11 @@ public class ViaCepService {
             String bairro,
             String cidade,
             String uf
-    ) {}
+    ) {
+        public String paraEnderecoCompleto() {
+            return String.format("%s, %s, %s, %s, Brasil", rua, bairro, cidade, uf);
+        }
+    }
 
     private record ViaCepResposta(
             String cep,

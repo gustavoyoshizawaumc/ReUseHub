@@ -30,11 +30,6 @@ interface CardAnuncioProps {
   variant?: "list" | "grid";
   isFavorito?: boolean;
   onToggleFavorito?: (id: string) => void | Promise<void>;
-  /**
-   * Origem registrada quando o usuario clicar pra abrir o anuncio
-   * (tracking de visualizacao - PR D.2). Quando indefinida, a navegacao
-   * nao envia origem e o destino cai em LINK_DIRETO.
-   */
   origem?: OrigemVisualizacao;
 }
 
@@ -72,6 +67,8 @@ const getStatusConfig = (status: string) => {
       return { label: "Concluido", className: "bg-slate-50 text-slate-700 border-slate-200", icon: CheckCircle2 };
     case "CANCELADO":
       return { label: "Cancelado", className: "bg-slate-50 text-slate-700 border-slate-200", icon: Ban };
+    case "EXPIRADO":
+      return { label: "Expirado", className: "bg-slate-50 text-slate-700 border-slate-200", icon: Clock3 };
     default:
       return { label: status, className: "bg-slate-50 text-slate-700 border-slate-200", icon: Tag };
   }

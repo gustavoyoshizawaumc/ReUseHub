@@ -15,10 +15,6 @@ public interface TokenUsuarioRepository extends JpaRepository<TokenUsuario, UUID
 
     Optional<TokenUsuario> findByTokenAndTipo(String token, TipoToken tipo);
 
-    /**
-     * Marca como usados todos os tokens ativos do usuário para um dado tipo,
-     * evitando que tokens antigos de recuperação de senha continuem válidos.
-     */
     @Modifying
     @Query("""
             UPDATE TokenUsuario t

@@ -7,15 +7,9 @@ type RegisterFormData = RegisterRequest & {
   confirmPassword: string;
 };
 
-/**
- * Regra de senha forte: mínimo 8 caracteres, com pelo menos uma letra
- * maiúscula, uma minúscula, um número e um caractere especial.
- * Deve espelhar o @Pattern do RegisterRequest no backend.
- */
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
-/** Requisitos individuais, usados na dica visual abaixo do campo. */
 const passwordRequisitos = (senha: string) => [
   { label: "Mínimo 8 caracteres", ok: senha.length >= 8 },
   { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
@@ -24,14 +18,9 @@ const passwordRequisitos = (senha: string) => [
   { label: "Um caractere especial (!, ?, @...)", ok: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(senha) },
 ];
 
-/**
- * Validação matemática do CPF (dígitos verificadores).
- * Equivalente ao que o backend faz com @ValidCpf.
- */
 function validarCpf(cpf: string): boolean {
   const clean = cpf.replace(/[^\d]/g, "");
   if (clean.length !== 11) return false;
-  // Rejeita sequências com todos os dígitos iguais
   if (/^(\d)\1{10}$/.test(clean)) return false;
 
   const calcDigito = (base: string, pesoInicial: number): number => {
@@ -172,7 +161,7 @@ export const RegisterPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-start justify-center p-4 sm:items-center sm:p-8">
       <div className="my-2 w-[calc(100vw-2rem)] min-w-0 max-w-lg rounded-lg border border-slate-100 bg-white p-5 shadow-sm sm:my-8 sm:p-8 md:p-10">
-        {/* Header */}
+        {}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight font-plus-jakarta-sans m-0">
             Criar sua Conta

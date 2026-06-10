@@ -19,8 +19,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e) {
-        // Mensagem unica e generica para senha errada OU e-mail inexistente,
-        // evitando revelar se um e-mail esta cadastrado (user enumeration).
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(construirErro("Falha na autenticacao", MENSAGEM_CREDENCIAIS_INVALIDAS, HttpStatus.UNAUTHORIZED));
     }
@@ -36,7 +34,7 @@ public class GlobalExceptionHandler {
         Map<String, String> erros = new HashMap<>();
         e.getBindingResult().getFieldErrors()
                 .forEach(error -> erros.put(error.getField(), error.getDefaultMessage()));
-        
+
         Map<String, Object> response = construirErro("Validação falhou", null, HttpStatus.BAD_REQUEST);
         response.put("erros", erros);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

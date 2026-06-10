@@ -276,11 +276,10 @@ public class ChatService {
         }
     }
 
-    private List<ConversaRespostaDTO.MensagemDto> mapearMensagens(List<Conversa> conversas) {
-        return conversas.stream()
-                .flatMap(conversa -> Optional.ofNullable(conversa.getHistoricoMensagens())
-                        .orElse(Collections.emptyList())
-                        .stream())
+    private List<ConversaRespostaDTO.MensagemDto> mapearMensagens(Conversa conversa) {
+        return Optional.ofNullable(conversa.getHistoricoMensagens())
+                .orElse(Collections.emptyList())
+                .stream()
                 .sorted(Comparator.comparing(Conversa.Mensagem::getTimestamp))
                 .map(m -> new ConversaRespostaDTO.MensagemDto(
                         m.getConteudo(),
@@ -290,8 +289,20 @@ public class ChatService {
                 .toList();
     }
 
-    private List<ConversaRespostaDTO.MensagemDto> mapearHistoricoEntreUsuarios(String usuarioA, String usuarioB) {
-        return mapearMensagens(chatRepository.findByUsuarios(usuarioA, usuarioB));
+    private Conversa buscarConversaEntreUsuariosSemAmbiguidade(String usuarioA, String usuarioB) {
+        List<Conversa> conversas = chatRepository.findByUsuarios(usuarioA, usuarioB);
+
+        if (conversas.isEmpty()) {
+            throw new RecursoNaoEncontradoException("Historico de conversa", usuarioA + " e " + usuarioB);
+        }
+
+        if (conversas.size() > 1) {
+            throw new RegraNegocioException(
+                    "Existe mais de uma conversa com este usuario. Abra a conversa pela lista de conversas."
+            );
+        }
+
+        return conversas.get(0);
     }
 
     private record FechamentoNegociacao(
@@ -390,7 +401,7 @@ public class ChatService {
 
         garantirInteresseAceitoParaDoacao(anuncio, remetenteId, dto.destinatarioId());
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearHistoricoEntreUsuarios(remetenteId, dto.destinatarioId());
+        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearMensagens(conversa);
 
         FechamentoNegociacao fechamento = resolverFechamento(conversa, remetenteId);
 
@@ -443,13 +454,11 @@ public class ChatService {
         Usuario remetenteUsuario = buscarUsuarioPorEmail(emailRemetente);
         String remetenteId = remetenteUsuario.getId().toString();
 
-        Conversa conversa = chatRepository.findByRemetenteAndDestinatario(remetenteId, destinatarioId)
-                .or(() -> chatRepository.findByRemetenteAndDestinatario(destinatarioId, remetenteId))
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Histórico de conversa", remetenteId + " e " + destinatarioId));
+        Conversa conversa = buscarConversaEntreUsuariosSemAmbiguidade(remetenteId, destinatarioId);
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearHistoricoEntreUsuarios(remetenteId, destinatarioId);
+        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearMensagens(conversa);
 
-        log.debug("Histórico unificado recuperado para conversa entre {} e {}", remetenteId, destinatarioId);
+        log.debug("Histórico recuperado para conversa entre {} e {}", remetenteId, destinatarioId);
 
         FechamentoNegociacao fechamento = resolverFechamento(conversa, remetenteId);
 
@@ -496,7 +505,7 @@ public class ChatService {
                 ? conversa.getDestinatario()
                 : conversa.getRemetente();
 
-        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearHistoricoEntreUsuarios(usuarioId, outroUsuarioId);
+        List<ConversaRespostaDTO.MensagemDto> mensagens = mapearMensagens(conversa);
 
         FechamentoNegociacao fechamento = resolverFechamento(conversa, usuarioId);
 

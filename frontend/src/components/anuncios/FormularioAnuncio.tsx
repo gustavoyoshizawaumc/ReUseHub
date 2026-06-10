@@ -102,7 +102,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
 
-      {/* CAMPOS PRINCIPAIS */}
+      {}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="space-y-2">
           <label className={labelClass}>Título</label>
@@ -178,7 +178,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
 
       </div>
 
-      {/* ENDEREÇO */}
+      {}
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
           <MapPin size={18} className="text-blue-600" />
@@ -221,7 +221,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
         </div>
       </div>
 
-      {/* UPLOAD DE FOTOS */}
+      {}
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
@@ -287,7 +287,7 @@ export const FormularioAnuncio: React.FC<FormularioAnuncioProps> = ({
         </p>
       </div>
 
-      {/* BOTÃO PUBLICAR */}
+      {}
       <button
         type="submit"
         disabled={loading || !quantidadeImagensValida}

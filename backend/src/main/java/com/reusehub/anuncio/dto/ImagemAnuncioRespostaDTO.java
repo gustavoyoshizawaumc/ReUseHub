@@ -4,11 +4,6 @@ import com.reusehub.anuncio.model.ImagemAnuncio;
 
 import java.util.UUID;
 
-/**
- * Representacao de uma imagem do anuncio na camada de resposta da API.
- * Expor o id e necessario para o frontend distinguir imagens existentes
- * (que podem ser mantidas/removidas) das novas (enviadas como Multipart).
- */
 public record ImagemAnuncioRespostaDTO(
         UUID id,
         String urlImagem,

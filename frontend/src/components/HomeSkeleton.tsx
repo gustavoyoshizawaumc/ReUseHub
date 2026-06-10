@@ -3,11 +3,6 @@ import React from "react";
 const QUANTIDADE_SECOES_SKELETON = 2;
 const QUANTIDADE_CARDS_POR_SECAO = 6;
 
-/**
- * Placeholder exibido apenas no primeiro carregamento da home, quando
- * nao ha cache em sessionStorage. Em visitas seguintes o cache renderiza
- * direto (padrao stale-while-revalidate).
- */
 export const HomeSkeleton: React.FC = () => (
   <>
     {Array.from({ length: QUANTIDADE_SECOES_SKELETON }).map((_, indiceSecao) => (

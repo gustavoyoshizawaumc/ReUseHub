@@ -44,10 +44,17 @@ public class Avaliacao {
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;
 
+    @Column(name = "removido_em")
+    private LocalDateTime removidoEm;
+
     @PrePersist
     void prePersist() {
         if (criadoEm == null) {
             criadoEm = LocalDateTime.now();
         }
+    }
+
+    public boolean estaRemovida() {
+        return removidoEm != null;
     }
 }

@@ -91,7 +91,6 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   }, [mensagens]);
 
   useEffect(() => {
-    // Sincroniza a conversa selecionada com o historico salvo na API.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarMensagens();
   }, [carregarMensagens]);
@@ -450,7 +449,7 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
         </div>
       </div>
 
-      {/* Input flutuante moderno */}
+      {}
       <div className="border-t border-zinc-200 bg-white px-4 py-4 sm:px-5 lg:px-6">
         <div className="mx-auto w-full max-w-4xl">
           {conversaInfo.chatFechado ? (

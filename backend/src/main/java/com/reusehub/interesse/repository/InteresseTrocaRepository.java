@@ -60,12 +60,10 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             where status = 'PENDENTE'
               and id <> :interesseAceitoId
               and anuncio_id = :anuncioId
-              and usuario_interessado_id = :interessadoId
             """, nativeQuery = true)
-    int rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+    int rejeitarOutrosPendentesDoAnuncio(
             @Param("interesseAceitoId") UUID interesseAceitoId,
-            @Param("anuncioId") UUID anuncioId,
-            @Param("interessadoId") UUID interessadoId
+            @Param("anuncioId") UUID anuncioId
     );
 
     Optional<InteresseTroca> findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusOrderByCriadoEmDesc(
@@ -80,11 +78,6 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             List<InteresseTroca.StatusInteresse> statuses
     );
 
-    /**
-     * Conta interesses enviados pelo usuario agrupados pela categoria do anuncio desejado.
-     * Cada linha retornada e um par {@code [categoriaId (Integer), quantidade (Long)]}.
-     * Usado para calcular afinidade do usuario por categoria no score de destaque.
-     */
     @Query("""
             select interesse.anuncioDesejado.categoria.id, count(interesse)
             from InteresseTroca interesse

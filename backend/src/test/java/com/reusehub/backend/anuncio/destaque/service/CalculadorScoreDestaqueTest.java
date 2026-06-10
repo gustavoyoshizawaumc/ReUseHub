@@ -52,7 +52,6 @@ class CalculadorScoreDestaqueTest {
         @DisplayName("anuncio recem publicado tem recencia proxima de 1.0")
         void recenciaProximaDeUmRecemPublicado() {
             BigDecimal score = calcularMaisProcurados(AGORA.minusMinutes(1), 0, BigDecimal.ZERO);
-            // peso 0.25 * recencia ~ 1.0 + restante 0
             assertTrue(score.compareTo(new BigDecimal("0.24")) >= 0,
                     "score deveria ser proximo de 0.25 (peso da recencia), foi " + score);
         }
@@ -61,7 +60,6 @@ class CalculadorScoreDestaqueTest {
         @DisplayName("anuncio com 14 dias tem recencia 0.50 (meia-vida)")
         void recenciaCaiPelaMetadeNaMeiaVida() {
             BigDecimal score = calcularMaisProcurados(AGORA.minusDays(14), 0, BigDecimal.ZERO);
-            // peso 0.25 * 0.50 = 0.125
             assertTrue(estaDentroDe(score, 0.125),
                     "score deveria ser ~0.125 em 14 dias, foi " + score);
         }
@@ -70,7 +68,6 @@ class CalculadorScoreDestaqueTest {
         @DisplayName("anuncio com 28 dias tem recencia 0.25")
         void recenciaCaiAUmQuartoEmDuasMeiasVidas() {
             BigDecimal score = calcularMaisProcurados(AGORA.minusDays(28), 0, BigDecimal.ZERO);
-            // peso 0.25 * 0.25 = 0.0625
             assertTrue(estaDentroDe(score, 0.0625),
                     "score deveria ser ~0.0625 em 28 dias, foi " + score);
         }
@@ -84,7 +81,6 @@ class CalculadorScoreDestaqueTest {
         @DisplayName("zero visualizacoes contribuem zero")
         void zeroVisualizacoesNaoContribuem() {
             BigDecimal score = calcularMaisProcurados(AGORA, 0, BigDecimal.ZERO);
-            // recencia ~ 1.0 (peso 0.25), popularidade 0 (peso 0.50) = 0.25
             assertTrue(estaDentroDe(score, 0.25),
                     "score sem views deveria ser ~0.25 (so recencia), foi " + score);
         }
@@ -93,7 +89,6 @@ class CalculadorScoreDestaqueTest {
         @DisplayName("anuncio no teto de views tem popularidade 1.0")
         void atingeTeto() {
             BigDecimal score = calcularMaisProcurados(AGORA, 1000, BigDecimal.ZERO);
-            // recencia ~ 1.0 * 0.25 + popularidade 1.0 * 0.50 = 0.75
             assertTrue(estaDentroDe(score, 0.75),
                     "score com views no teto deveria ser ~0.75, foi " + score);
         }
@@ -116,7 +111,6 @@ class CalculadorScoreDestaqueTest {
         @DisplayName("reputacao acima do maximo nao quebra o score (clampa em 1.0)")
         void reputacaoForaDoRangeNaoExcedeUm() {
             BigDecimal score = calcularMaisProcurados(AGORA, 0, new BigDecimal("99"));
-            // recencia 1.0 * 0.25 + reputacao clampada em 1.0 * 0.25 = 0.50
             assertTrue(estaDentroDe(score, 0.50),
                     "reputacao deveria ser clampada em 1.0, score esperado ~0.50, foi " + score);
         }

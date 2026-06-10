@@ -38,7 +38,7 @@ export interface Anuncio {
   descricao: string;
   tipo: "DOACAO" | "TROCA";
   condicao: "NOVO" | "BOM" | "REGULAR" | "RUIM";
-  status: "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "CONCLUIDO" | "CANCELADO";
+  status: "PENDENTE" | "ATIVO" | "REPROVADO" | "SUSPENSO" | "CONCLUIDO" | "CANCELADO" | "EXPIRADO";
   totalVisualizacoes: number;
   notaRelevancia: number | null;
   motivoSuspensao?: string | null;
@@ -79,19 +79,12 @@ export interface AnuncioAtualizacao {
   enderecoId: string;
 }
 
-// Tipos do modulo de destaque da home (PR D)
-
 export type ContextoDestaque =
   | "RECOMENDADOS_PARA_VOCE"
   | "MAIS_PROCURADOS"
   | "POPULARES"
   | "RECENTES";
 
-/**
- * Superset de ContextoDestaque que inclui secoes geradas no cliente
- * (nao vem do backend). Use em estruturas que misturam as duas origens
- * — por exemplo, a lista final de secoes renderizada na home.
- */
 export type ContextoSecaoHome = ContextoDestaque | "ULTIMAS_BUSCAS";
 
 export type CenarioHome = "HISTORICO_USUARIO" | "SEM_HISTORICO" | "ANONIMO";
