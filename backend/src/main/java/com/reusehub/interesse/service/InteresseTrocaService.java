@@ -32,6 +32,11 @@ import java.util.UUID;
 @Transactional
 public class InteresseTrocaService {
 
+    private static final List<InteresseTroca.StatusInteresse> STATUS_INTERESSE_ATIVOS = List.of(
+            InteresseTroca.StatusInteresse.PENDENTE,
+            InteresseTroca.StatusInteresse.ACEITO
+    );
+
     private final InteresseTrocaRepository interesseTrocaRepository;
     private final UsuarioRepository usuarioRepository;
     private final AnuncioRepository anuncioRepository;
@@ -60,6 +65,8 @@ public class InteresseTrocaService {
             anuncioOferecido = buscarAnuncio(dto.anuncioOferecidoId());
             validarAnuncioOferecidoParaTroca(anuncioDesejado, anuncioOferecido, interessado);
         }
+
+        validarInteresseDuplicado(interessado, anuncioDesejado, anuncioOferecido);
 
         InteresseTroca interesse = InteresseTroca.builder()
                 .anuncioDesejado(anuncioDesejado)
@@ -352,6 +359,31 @@ public class InteresseTrocaService {
 
         if (anuncioOferecido.getId().equals(anuncioDesejado.getId())) {
             throw new RegraNegocioException("O anuncio oferecido nao pode ser o mesmo anuncio desejado.");
+        }
+    }
+
+    private void validarInteresseDuplicado(
+            Usuario interessado,
+            Anuncio anuncioDesejado,
+            Anuncio anuncioOferecido
+    ) {
+        boolean existeInteresseAtivo = anuncioOferecido == null
+                ? interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIsNullAndStatusIn(
+                        anuncioDesejado.getId(),
+                        interessado.getId(),
+                        STATUS_INTERESSE_ATIVOS
+                )
+                : interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatusIn(
+                        anuncioDesejado.getId(),
+                        interessado.getId(),
+                        anuncioOferecido.getId(),
+                        STATUS_INTERESSE_ATIVOS
+                );
+
+        if (existeInteresseAtivo) {
+            throw new RegraNegocioException(
+                    "Voce ja enviou uma solicitacao ativa para este anuncio usando este item. Aguarde a resposta ou cancele a negociacao atual."
+            );
         }
     }
 
