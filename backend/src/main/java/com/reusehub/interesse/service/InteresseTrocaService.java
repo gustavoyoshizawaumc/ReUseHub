@@ -61,6 +61,8 @@ public class InteresseTrocaService {
             validarAnuncioOferecidoParaTroca(anuncioDesejado, anuncioOferecido, interessado);
         }
 
+        validarInteresseDuplicado(interessado, anuncioDesejado, anuncioOferecido);
+
         InteresseTroca interesse = InteresseTroca.builder()
                 .anuncioDesejado(anuncioDesejado)
                 .interessado(interessado)
@@ -352,6 +354,43 @@ public class InteresseTrocaService {
 
         if (anuncioOferecido.getId().equals(anuncioDesejado.getId())) {
             throw new RegraNegocioException("O anuncio oferecido nao pode ser o mesmo anuncio desejado.");
+        }
+    }
+
+    private void validarInteresseDuplicado(
+            Usuario interessado,
+            Anuncio anuncioDesejado,
+            Anuncio anuncioOferecido
+    ) {
+        boolean jaEstaNegociandoEsteAnuncio = interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
+                anuncioDesejado.getId(),
+                interessado.getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        );
+
+        if (jaEstaNegociandoEsteAnuncio) {
+            throw new RegraNegocioException(
+                    "Voce ja possui uma negociacao aceita para este anuncio. Conclua ou cancele a negociacao atual antes de enviar outra solicitacao."
+            );
+        }
+
+        boolean existeSolicitacaoPendenteComMesmoItem = anuncioOferecido == null
+                ? interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIsNullAndStatus(
+                        anuncioDesejado.getId(),
+                        interessado.getId(),
+                        InteresseTroca.StatusInteresse.PENDENTE
+                )
+                : interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
+                        anuncioDesejado.getId(),
+                        interessado.getId(),
+                        anuncioOferecido.getId(),
+                        InteresseTroca.StatusInteresse.PENDENTE
+                );
+
+        if (existeSolicitacaoPendenteComMesmoItem) {
+            throw new RegraNegocioException(
+                    "Voce ja enviou uma solicitacao pendente para este anuncio usando este item. Aguarde a resposta antes de enviar outra solicitacao."
+            );
         }
     }
 

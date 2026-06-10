@@ -40,6 +40,19 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             InteresseTroca.StatusInteresse status
     );
 
+    boolean existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
+            UUID anuncioId,
+            UUID interessadoId,
+            UUID anuncioOferecidoId,
+            InteresseTroca.StatusInteresse status
+    );
+
+    boolean existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIsNullAndStatus(
+            UUID anuncioId,
+            UUID interessadoId,
+            InteresseTroca.StatusInteresse status
+    );
+
     Optional<InteresseTroca> findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusOrderByCriadoEmDesc(
             UUID anuncioId,
             UUID interessadoId,
