@@ -258,7 +258,12 @@ export const Header: React.FC = () => {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            navegarParaBusca(criarParamsBusca(searchTerm, activeCategory ?? undefined));
+            // Busca por texto e sempre global: ignora a categoria ativa, senao
+            // pesquisar um item de outra categoria nao retornaria nada. A categoria
+            // continua como atalho de navegacao; para filtrar por categoria use a
+            // barra lateral de filtros da pagina de anuncios.
+            setActiveCategory(null);
+            navegarParaBusca(criarParamsBusca(searchTerm));
           }}
           className="hidden md:flex flex-1 max-w-[400px] items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden h-10 focus-within:border-reusehub-blue focus-within:bg-white transition-all"
         >
