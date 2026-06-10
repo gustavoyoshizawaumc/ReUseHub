@@ -78,6 +78,11 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             List<InteresseTroca.StatusInteresse> statuses
     );
 
+    List<InteresseTroca> findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
+            UUID anuncioId,
+            List<InteresseTroca.StatusInteresse> statuses
+    );
+
     @Query("""
             select interesse.anuncioDesejado.categoria.id, count(interesse)
             from InteresseTroca interesse

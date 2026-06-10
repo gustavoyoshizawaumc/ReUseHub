@@ -47,7 +47,6 @@ import {
   listarMeuHistorico,
   listarUsuariosAdmin,
   obterDashboardAdmin,
-  reativarAnuncio,
   reprovarAnuncio,
   reprovarSuspeito,
   removerAvaliacaoModeracao,
@@ -665,7 +664,6 @@ const DenunciaAnaliseModal = ({
   onClose,
   onDismiss,
   onSuspend,
-  onReactivate,
   onReprove,
   processando,
 }: {
@@ -673,7 +671,6 @@ const DenunciaAnaliseModal = ({
   onClose: () => void;
   onDismiss: () => void;
   onSuspend: (mensagem: string) => void;
-  onReactivate: () => void;
   onReprove: () => void;
   processando: boolean;
 }) => {
@@ -681,7 +678,6 @@ const DenunciaAnaliseModal = ({
   const [erroMensagem, setErroMensagem] = useState<string | null>(null);
   const foto = imageUrl(grupo.imagensUrls?.[0]);
   const podeSuspender = grupo.statusAnuncio !== 'SUSPENSO' && grupo.statusAnuncio !== 'REPROVADO';
-  const podeReativar = grupo.statusAnuncio === 'SUSPENSO';
   const podeReprovar = grupo.statusAnuncio !== 'REPROVADO';
 
   const suspender = () => {
@@ -780,7 +776,7 @@ const DenunciaAnaliseModal = ({
                     setErroMensagem(null);
                   }}
                   rows={5}
-                  placeholder="Explique objetivamente por que o anuncio foi suspenso e o que precisa ser corrigido."
+                  placeholder="Explique objetivamente por que o anuncio foi suspenso. O anunciante precisara cadastrar um novo anuncio."
                   className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
                 />
                 {erroMensagem && <span className="mt-1 block text-xs font-bold text-rose-600">{erroMensagem}</span>}
@@ -791,7 +787,7 @@ const DenunciaAnaliseModal = ({
 
         <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-semibold text-slate-400">
-            Descarte quando as denuncias forem improcedentes. Suspender/reprovar notifica o anunciante.
+            Descarte quando as denuncias forem improcedentes. Suspender cancela propostas/negociacoes e notifica os envolvidos.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             {grupo.totalAbertas > 0 && (
@@ -802,16 +798,6 @@ const DenunciaAnaliseModal = ({
                 className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
               >
                 Descartar denuncias
-              </button>
-            )}
-            {podeReativar && (
-              <button
-                type="button"
-                onClick={onReactivate}
-                disabled={processando}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-              >
-                <CheckCircle2 size={16} /> Reativar anuncio
               </button>
             )}
             {podeReprovar && (
@@ -1142,13 +1128,6 @@ export const ModeracaoPage: React.FC = () => {
     void executar(anuncioId, () => suspenderAnuncioPorDenuncia(relatos[0].id, mensagem));
   };
 
-  const reativarGrupoEmAnalise = () => {
-    if (!grupoEmAnalise) return;
-    const { anuncioId } = grupoEmAnalise;
-    setGrupoEmAnalise(null);
-    void executar(anuncioId, () => reativarAnuncio(anuncioId, 'Reativado apos analise.'));
-  };
-
   const reprovarGrupoEmAnalise = () => {
     if (!grupoEmAnalise) return;
     const { anuncioId } = grupoEmAnalise;
@@ -1317,7 +1296,6 @@ export const ModeracaoPage: React.FC = () => {
           onClose={() => setGrupoEmAnalise(null)}
           onDismiss={descartarGrupoEmAnalise}
           onSuspend={suspenderGrupoEmAnalise}
-          onReactivate={reativarGrupoEmAnalise}
           onReprove={reprovarGrupoEmAnalise}
           processando={processando === grupoEmAnalise.anuncioId}
         />

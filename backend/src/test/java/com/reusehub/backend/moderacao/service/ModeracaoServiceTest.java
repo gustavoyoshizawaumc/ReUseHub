@@ -13,6 +13,8 @@ import com.reusehub.denuncia.dto.DenunciaCriacaoDTO;
 import com.reusehub.denuncia.dto.DenunciaRespostaDTO;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
+import com.reusehub.interesse.model.InteresseTroca;
+import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
 import com.reusehub.moderacao.service.ModeracaoService;
 import com.reusehub.notificacao.service.NotificacaoService;
@@ -51,6 +53,7 @@ class ModeracaoServiceTest {
     @Mock private HistoricoModeracaoRepository historicoRepository;
     @Mock private AvaliacaoRepository avaliacaoRepository;
     @Mock private NotificacaoService notificacaoService;
+    @Mock private InteresseTrocaRepository interesseTrocaRepository;
 
     @InjectMocks
     private ModeracaoService moderacaoService;
@@ -160,21 +163,35 @@ class ModeracaoServiceTest {
             Usuario moderador = construirModerador();
             DenunciaAnuncio d1 = construirDenunciaAberta();
             DenunciaAnuncio d2 = construirDenunciaAberta();
+            InteresseTroca pendente = construirInteresse(InteresseTroca.StatusInteresse.PENDENTE);
+            InteresseTroca aceito = construirInteresse(InteresseTroca.StatusInteresse.ACEITO);
 
             Mockito.when(usuarioRepository.findByEmail(moderador.getEmail())).thenReturn(Optional.of(moderador));
             Mockito.when(denunciaRepository.findById(d1.getId())).thenReturn(Optional.of(d1));
             Mockito.when(denunciaRepository.findByAnuncioIdAndStatus(
                     anuncioAlheio.getId(), DenunciaAnuncio.StatusDenuncia.ABERTA
             )).thenReturn(List.of(d1, d2));
+            Mockito.when(interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
+                    Mockito.eq(anuncioAlheio.getId()), Mockito.anyList()
+            )).thenReturn(List.of(pendente, aceito));
 
             moderacaoService.suspenderAnuncioPorDenuncia(d1.getId(), moderador.getEmail(), "Conteudo proibido.");
 
             assertEquals(Anuncio.StatusAnuncio.SUSPENSO, anuncioAlheio.getStatus());
             assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d1.getStatus());
             assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d2.getStatus());
+            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, pendente.getStatus());
+            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, aceito.getStatus());
+            assertNotNull(pendente.getCanceladoEm());
+            assertNotNull(aceito.getCanceladoEm());
+            Mockito.verify(interesseTrocaRepository).saveAll(List.of(pendente, aceito));
             Mockito.verify(notificacaoService).criar(
                     Mockito.any(), Mockito.eq("ANUNCIO_SUSPENSO"), Mockito.anyString(), Mockito.anyString(),
                     Mockito.any(), Mockito.anyString()
+            );
+            Mockito.verify(notificacaoService, Mockito.times(2)).criar(
+                    Mockito.any(), Mockito.eq("NEGOCIACAO_CANCELADA_MODERACAO"), Mockito.anyString(), Mockito.anyString(),
+                    Mockito.any(), Mockito.eq("INTERESSE")
             );
         }
     }
@@ -227,6 +244,15 @@ class ModeracaoServiceTest {
                 .motivo(MOTIVO_PADRAO)
                 .descricao(DESCRICAO_PADRAO)
                 .status(DenunciaAnuncio.StatusDenuncia.ABERTA)
+                .build();
+    }
+
+    private InteresseTroca construirInteresse(InteresseTroca.StatusInteresse status) {
+        return InteresseTroca.builder()
+                .id(UUID.randomUUID())
+                .anuncioDesejado(anuncioAlheio)
+                .interessado(construirUsuario("interessado-" + status + "@reusehub.com"))
+                .status(status)
                 .build();
     }
 

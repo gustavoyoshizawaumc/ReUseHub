@@ -272,7 +272,7 @@ public class ChatService {
 
     private void validarChatAberto(Conversa conversa) {
         if (chatEstaFechado(conversa)) {
-            throw new RegraNegocioException("Este chat foi fechado apos a avaliacao da negociacao.");
+            throw new RegraNegocioException("Este chat foi fechado apos o encerramento da negociacao.");
         }
     }
 

@@ -17,6 +17,8 @@ import com.reusehub.denuncia.dto.DenunciaCriacaoDTO;
 import com.reusehub.denuncia.dto.DenunciaRespostaDTO;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
+import com.reusehub.interesse.model.InteresseTroca;
+import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.moderacao.dto.AnuncioSuspeitoDTO;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
 import com.reusehub.moderacao.model.HistoricoModeracao;
@@ -51,6 +53,7 @@ public class ModeracaoService {
     private final HistoricoModeracaoRepository historicoRepository;
     private final AvaliacaoRepository avaliacaoRepository;
     private final NotificacaoService notificacaoService;
+    private final InteresseTrocaRepository interesseTrocaRepository;
 
     public DenunciaRespostaDTO criarDenuncia(String emailUsuario, DenunciaCriacaoDTO dto) {
         Usuario denunciante = buscarUsuarioPorEmail(emailUsuario);
@@ -114,6 +117,7 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
+        cancelarNegociacoesDoAnuncioSuspenso(anuncio, moderador, motivoSuspensao);
         fecharDenunciasAbertas(anuncio.getId(), DenunciaAnuncio.StatusDenuncia.ANALISADA);
 
         registrar(moderador, "DENUNCIA_ANALISADA_COM_SUSPENSAO", "DENUNCIA", denunciaId, motivoSuspensao);
@@ -158,6 +162,7 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
+        cancelarNegociacoesDoAnuncioSuspenso(anuncio, moderador, motivoSuspensao);
         registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncioId, motivoSuspensao);
         notificarSuspensao(anuncio, motivoSuspensao);
         return mapearSuspeito(anuncio);
@@ -166,6 +171,9 @@ public class ModeracaoService {
     public AnuncioSuspeitoDTO reativarAnuncio(UUID anuncioId, String emailModerador, String justificativa) {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncio(anuncioId);
+        if (anuncio.getStatus() == Anuncio.StatusAnuncio.SUSPENSO) {
+            throw new RegraNegocioException("Anuncios suspensos por moderacao nao podem ser reativados. O item precisa ser cadastrado novamente.");
+        }
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
@@ -367,9 +375,57 @@ public class ModeracaoService {
                 anuncio.getUsuario(),
                 "ANUNCIO_SUSPENSO",
                 "Anuncio suspenso",
-                "Seu anuncio \"" + anuncio.getTitulo() + "\" foi suspenso pela moderacao. Motivo: " + motivoSuspensao,
+                "Seu anuncio \"" + anuncio.getTitulo() + "\" foi suspenso pela moderacao. Motivo: " + motivoSuspensao
+                        + ". Para anunciar novamente, cadastre um novo anuncio.",
                 anuncio.getId(),
                 "ANUNCIO"
+        );
+    }
+
+    private void cancelarNegociacoesDoAnuncioSuspenso(Anuncio anuncio, Usuario moderador, String motivoSuspensao) {
+        List<InteresseTroca> interessesAtivos = interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
+                anuncio.getId(),
+                List.of(
+                        InteresseTroca.StatusInteresse.PENDENTE,
+                        InteresseTroca.StatusInteresse.ACEITO
+                )
+        );
+
+        if (interessesAtivos.isEmpty()) {
+            return;
+        }
+
+        LocalDateTime canceladoEm = LocalDateTime.now();
+        for (InteresseTroca interesse : interessesAtivos) {
+            InteresseTroca.StatusInteresse statusAnterior = interesse.getStatus();
+            interesse.setStatus(InteresseTroca.StatusInteresse.CANCELADO);
+            interesse.setCanceladoEm(canceladoEm);
+            interesse.setCanceladoPor(moderador);
+            notificarInteressadoSobreCancelamentoPorSuspensao(interesse, statusAnterior, motivoSuspensao);
+        }
+
+        interesseTrocaRepository.saveAll(interessesAtivos);
+    }
+
+    private void notificarInteressadoSobreCancelamentoPorSuspensao(
+            InteresseTroca interesse,
+            InteresseTroca.StatusInteresse statusAnterior,
+            String motivoSuspensao
+    ) {
+        String titulo = statusAnterior == InteresseTroca.StatusInteresse.ACEITO
+                ? "Negociacao cancelada"
+                : "Proposta cancelada";
+        String mensagem = "A negociacao do anuncio \"" + interesse.getAnuncioDesejado().getTitulo()
+                + "\" foi cancelada porque o anuncio foi suspenso pela moderacao. Motivo: "
+                + motivoSuspensao + ".";
+
+        notificacaoService.criar(
+                interesse.getInteressado(),
+                "NEGOCIACAO_CANCELADA_MODERACAO",
+                titulo,
+                mensagem,
+                interesse.getId(),
+                "INTERESSE"
         );
     }
 
