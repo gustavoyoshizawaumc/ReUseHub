@@ -16,10 +16,12 @@ interface FiltrosAnunciosProps {
   onLimpar: () => void;
 }
 
+// Ordem reflete o uso real em marketplaces locais (retirada presencial):
+// proximidade primeiro, depois novidades, relevancia geral e, por fim, prova social.
 const OPCOES_ORDENACAO: { value: TipoOrdenacao; label: string }[] = [
-  { value: "RELEVANCIA", label: "Mais relevantes" },
   { value: "DISTANCIA", label: "Mais próximos" },
   { value: "RECENTES", label: "Mais recentes" },
+  { value: "RELEVANCIA", label: "Mais relevantes" },
   { value: "POPULARES", label: "Mais visualizados" },
 ];
 
