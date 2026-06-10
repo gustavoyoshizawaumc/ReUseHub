@@ -8,16 +8,20 @@ import { useFeedback } from "./feedback/feedbackContext";
 
 interface ProductSectionProps {
   titulo: string;
+  subtitulo?: string;
   anuncios: AnuncioDestaque[];
   linkVerTodos: string | null;
   origem?: OrigemVisualizacao;
+  variante?: "destaque" | "padrao";
 }
 
 export const ProductSection: React.FC<ProductSectionProps> = ({
   titulo,
+  subtitulo,
   anuncios,
   linkVerTodos,
   origem = "CARD_HOME",
+  variante = "padrao",
 }) => {
   const navigate = useNavigate();
   const { ehFavorito, alternarFavorito, possuiUsuarioAutenticado } = useFavoritos();
@@ -37,35 +41,51 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
     } catch (error) {
       notify({
         variant: "error",
-        title: "Nao foi possivel atualizar os favoritos",
+        title: "Não foi possível atualizar os favoritos",
         message: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
       });
     }
   };
 
+  const secaoDestaque = variante === "destaque";
+  const gridClass = secaoDestaque
+    ? "grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+    : "grid auto-rows-fr grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6";
+
   return (
-    <section className="max-w-[1400px] mx-auto px-3 py-7 sm:px-4 sm:py-10">
-      <div className="mb-4 flex items-start justify-between gap-3 sm:mb-6 sm:items-center">
-        <h2 className="m-0 min-w-0 text-[17px] font-extrabold tracking-tight text-reusehub-navy font-plus-jakarta-sans sm:text-[18px]">
-          {titulo}
-        </h2>
+    <section className="mx-auto max-w-[1400px] px-3 py-7 sm:px-4 sm:py-10">
+      <div className="mb-4 flex items-start justify-between gap-4 sm:mb-6 sm:items-end">
+        <div className="min-w-0">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-blue-600">
+            Vitrine
+          </p>
+          <h2 className="m-0 min-w-0 text-[17px] font-extrabold tracking-tight text-reusehub-navy font-plus-jakarta-sans sm:text-[20px]">
+            {titulo}
+          </h2>
+          {subtitulo && (
+            <p className="mt-1 max-w-xl text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+              {subtitulo}
+            </p>
+          )}
+        </div>
 
         {linkVerTodos && (
           <button
             type="button"
             onClick={() => navigate(linkVerTodos)}
-            className="inline-flex shrink-0 items-center gap-1 text-blue-600 font-bold text-xs hover:text-reusehub-navy transition-colors sm:text-sm"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-blue-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-reusehub-navy sm:text-sm"
           >
             Ver todos <ArrowRight size={15} />
           </button>
         )}
       </div>
 
-      <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className={gridClass}>
         {anuncios.map((destaque) => (
           <CardDeAnuncio
             key={destaque.anuncio.id}
             anuncio={destaque.anuncio}
+            destaque={secaoDestaque}
             ehFavorito={ehFavorito(destaque.anuncio.id)}
             onToggleFavorito={() => handleToggleFavorito(destaque.anuncio.id)}
             onClick={() =>
@@ -82,6 +102,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
 
 interface CardDeAnuncioProps {
   anuncio: Anuncio;
+  destaque: boolean;
   ehFavorito: boolean;
   onToggleFavorito: () => void;
   onClick: () => void;
@@ -89,6 +110,7 @@ interface CardDeAnuncioProps {
 
 const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
   anuncio,
+  destaque,
   ehFavorito,
   onToggleFavorito,
   onClick,
@@ -110,9 +132,9 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
           onClick();
         }
       }}
-      className="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left shadow-sm transition-colors hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+      className="group flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-md border border-slate-200 bg-white text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/70 focus:outline-none focus:ring-2 focus:ring-blue-300"
     >
-      <div className="relative h-44 w-full shrink-0 sm:h-48 md:h-44 lg:h-36 xl:h-40">
+      <div className={`relative w-full shrink-0 ${destaque ? "h-56 sm:h-52 lg:h-48 xl:h-56" : "h-44 sm:h-48 md:h-44 lg:h-36 xl:h-40"}`}>
         <div
           className={`relative flex h-full w-full items-center justify-center overflow-hidden transition-colors ${
             ehDoacao ? "bg-green-50" : "bg-blue-50"
@@ -151,7 +173,7 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
         </button>
       </div>
 
-      <div className="flex min-h-[128px] flex-1 flex-col px-3 pb-4 sm:min-h-[138px] sm:px-4 sm:pb-5">
+      <div className={`flex flex-1 flex-col px-3 pb-4 sm:px-4 sm:pb-5 ${destaque ? "min-h-[158px]" : "min-h-[128px] sm:min-h-[138px]"}`}>
         <div className="flex flex-wrap gap-1.5 pt-3">
           <span
             className={`rounded border px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide ${
@@ -167,16 +189,22 @@ const CardDeAnuncio: React.FC<CardDeAnuncioProps> = ({
           </span>
         </div>
 
-        <h3 className="line-clamp-2 min-h-[2.4rem] break-words pt-2 text-[12px] font-semibold leading-snug text-slate-800 sm:text-[13px]">
+        <h3 className={`line-clamp-2 min-h-[2.4rem] break-words pt-2 font-semibold leading-snug text-slate-800 ${destaque ? "text-sm sm:text-[15px]" : "text-[12px] sm:text-[13px]"}`}>
           {anuncio.titulo}
         </h3>
 
+        {destaque && (
+          <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-slate-500">
+            {anuncio.descricao}
+          </p>
+        )}
+
         <div className="mt-1 min-h-[1rem]">
           {localizacao && (
-          <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-slate-400">
-            <MapPin size={10} className="text-slate-300" />
-            <span className="truncate">{localizacao}</span>
-          </p>
+            <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-slate-400">
+              <MapPin size={10} className="text-slate-300" />
+              <span className="truncate">{localizacao}</span>
+            </p>
           )}
         </div>
 
