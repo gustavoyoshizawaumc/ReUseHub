@@ -138,7 +138,7 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
                 )
             END DESC NULLS LAST,
 
-            sub.nota_relevancia DESC,
+            sub.nota_relevancia DESC NULLS LAST,
             sub.criado_em DESC
         """,
         countQuery = """
@@ -188,7 +188,7 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
     );
 
     @Query("SELECT a FROM Anuncio a WHERE a.status = 'ATIVO' " +
-            "ORDER BY a.notaRelevancia DESC, a.criadoEm DESC")
+            "ORDER BY a.notaRelevancia DESC NULLS LAST, a.criadoEm DESC")
     Page<Anuncio> findAnunciosAtivosOrdenadosPorRelevancia(Pageable pageable);
 
     long countByUsuarioIdAndStatus(UUID usuarioId, Anuncio.StatusAnuncio status);
