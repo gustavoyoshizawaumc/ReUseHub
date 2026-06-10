@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight, MessageSquare, Star } from "lucide-react";
 import type { AvaliacaoResposta } from "../../types/avaliacao.types";
 
@@ -11,6 +11,8 @@ type AvaliacoesCarouselProps = {
 };
 
 const ITENS_POR_PAGINA = 2;
+type DirecaoAnimacao = "esquerda" | "direita";
+type FaseAnimacao = "saindo" | "entrando" | null;
 
 const Estrelas: React.FC<{ nota: number }> = ({ nota }) => (
   <div className="flex items-center gap-0.5 text-orange-500">
@@ -32,6 +34,10 @@ export const AvaliacoesCarousel: React.FC<AvaliacoesCarouselProps> = ({
   podeRemover = false,
 }) => {
   const [pagina, setPagina] = useState(0);
+  const [faseAnimacao, setFaseAnimacao] = useState<FaseAnimacao>(null);
+  const [direcaoAnimacao, setDirecaoAnimacao] = useState<DirecaoAnimacao>("esquerda");
+  const timeoutAnimacaoRef = useRef<number | null>(null);
+  const frameAnimacaoRef = useRef<number | null>(null);
   const totalPaginas = Math.max(1, Math.ceil(avaliacoes.length / ITENS_POR_PAGINA));
 
   const avaliacoesVisiveis = useMemo(() => {
@@ -39,8 +45,52 @@ export const AvaliacoesCarousel: React.FC<AvaliacoesCarouselProps> = ({
     return avaliacoes.slice(inicio, inicio + ITENS_POR_PAGINA);
   }, [avaliacoes, pagina]);
 
-  const voltar = () => setPagina((atual) => Math.max(0, atual - 1));
-  const avancar = () => setPagina((atual) => Math.min(totalPaginas - 1, atual + 1));
+  const limparAnimacaoPendente = () => {
+    if (timeoutAnimacaoRef.current !== null) {
+      window.clearTimeout(timeoutAnimacaoRef.current);
+      timeoutAnimacaoRef.current = null;
+    }
+
+    if (frameAnimacaoRef.current !== null) {
+      window.cancelAnimationFrame(frameAnimacaoRef.current);
+      frameAnimacaoRef.current = null;
+    }
+  };
+
+  const trocarPagina = (proximaPagina: number, direcao: DirecaoAnimacao) => {
+    if (proximaPagina === pagina) {
+      return;
+    }
+
+    limparAnimacaoPendente();
+    setDirecaoAnimacao(direcao);
+    setFaseAnimacao("saindo");
+
+    timeoutAnimacaoRef.current = window.setTimeout(() => {
+      setPagina(proximaPagina);
+      frameAnimacaoRef.current = window.requestAnimationFrame(() => {
+        setFaseAnimacao("entrando");
+        frameAnimacaoRef.current = window.requestAnimationFrame(() => {
+          setFaseAnimacao(null);
+        });
+      });
+    }, 140);
+  };
+
+  const voltar = () => trocarPagina(Math.max(0, pagina - 1), "direita");
+  const avancar = () => trocarPagina(Math.min(totalPaginas - 1, pagina + 1), "esquerda");
+
+  useEffect(() => {
+    return () => {
+      if (timeoutAnimacaoRef.current !== null) {
+        window.clearTimeout(timeoutAnimacaoRef.current);
+      }
+
+      if (frameAnimacaoRef.current !== null) {
+        window.cancelAnimationFrame(frameAnimacaoRef.current);
+      }
+    };
+  }, []);
 
   if (avaliacoes.length === 0) {
     return (
@@ -50,9 +100,22 @@ export const AvaliacoesCarousel: React.FC<AvaliacoesCarouselProps> = ({
     );
   }
 
+  const classeAnimacao =
+    faseAnimacao === "saindo"
+      ? direcaoAnimacao === "esquerda"
+        ? "-translate-x-5"
+        : "translate-x-5"
+      : faseAnimacao === "entrando"
+        ? direcaoAnimacao === "esquerda"
+          ? "translate-x-5"
+          : "-translate-x-5"
+        : "translate-x-0";
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-4 motion-safe:transform-gpu motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out md:grid-cols-2 ${classeAnimacao}`}
+      >
         {avaliacoesVisiveis.map((avaliacao) => (
           <article
             key={avaliacao.id}
