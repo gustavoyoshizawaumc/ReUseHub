@@ -10,6 +10,29 @@ import { obterTokenAtivoOuEncerrarSessao } from "../utils/sessao";
 import { limparUltimasBuscas } from "../utils/ultimasBuscas";
 
 const API_URL = apiUrl("/api/auth");
+export const AUTH_USER_UPDATED_EVENT = "reusehub:auth-user-updated";
+
+const emitirAtualizacaoUsuario = () => {
+  window.dispatchEvent(new CustomEvent(AUTH_USER_UPDATED_EVENT));
+};
+
+const salvarSessao = (token: string, user: AuthResponse | UsuarioRespostaDTO) => {
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+  emitirAtualizacaoUsuario();
+};
+
+const salvarUsuario = (user: AuthResponse | UsuarioRespostaDTO) => {
+  localStorage.setItem("user", JSON.stringify(user));
+  emitirAtualizacaoUsuario();
+};
+
+const limparSessaoLocal = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  limparUltimasBuscas();
+  emitirAtualizacaoUsuario();
+};
 
 const lerMensagemErro = async (response: Response, fallback: string): Promise<string> => {
   try {
@@ -43,8 +66,7 @@ export const authService = {
     }
 
     const result: AuthResponse = await response.json();
-    localStorage.setItem("token", result.token);
-    localStorage.setItem("user", JSON.stringify(result));
+    salvarSessao(result.token, result);
     return result;
   },
 
@@ -62,8 +84,7 @@ export const authService = {
     }
 
     const result: AuthResponse = await response.json();
-    localStorage.setItem("token", result.token);
-    localStorage.setItem("user", JSON.stringify(result));
+    salvarSessao(result.token, result);
     return result;
   },
 
@@ -81,8 +102,7 @@ export const authService = {
     }
 
     const result: AuthResponse = await response.json();
-    localStorage.setItem("token", result.token);
-    localStorage.setItem("user", JSON.stringify(result));
+    salvarSessao(result.token, result);
     return result;
   },
 
@@ -140,7 +160,7 @@ export const authService = {
       }
 
       const result = await response.json();
-      localStorage.setItem("user", JSON.stringify(result));
+      salvarUsuario(result);
       return result;
     }
 
@@ -159,7 +179,7 @@ export const authService = {
     }
 
     const result = await response.json();
-    localStorage.setItem("user", JSON.stringify(result));
+    salvarUsuario(result);
     return result;
   },
 
@@ -182,9 +202,7 @@ export const authService = {
       throw new Error(await lerMensagemErro(response, "Erro ao deletar conta"));
     }
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    limparUltimasBuscas();
+    limparSessaoLocal();
   },
 
   deactivateAccount: async (): Promise<void> => {
@@ -205,15 +223,11 @@ export const authService = {
       throw new Error(await lerMensagemErro(response, "Erro ao desativar conta"));
     }
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    limparUltimasBuscas();
+    limparSessaoLocal();
   },
 
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    limparUltimasBuscas();
+    limparSessaoLocal();
   },
 
   getToken: (): string | null => {
