@@ -36,11 +36,6 @@ public interface AnuncioFavoritoRepository extends JpaRepository<AnuncioFavorito
             """)
     List<Anuncio> findAnunciosFavoritosByUsuarioId(@Param("usuarioId") UUID usuarioId);
 
-    /**
-     * Conta favoritos do usuario agrupados por categoria.
-     * Cada linha retornada e um par {@code [categoriaId (Integer), quantidade (Long)]}.
-     * Usado para calcular afinidade do usuario por categoria no score de destaque.
-     */
     @Query("""
             select favorito.anuncio.categoria.id, count(favorito)
             from AnuncioFavorito favorito

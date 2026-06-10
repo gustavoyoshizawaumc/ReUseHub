@@ -17,19 +17,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Decide qual categoria entra em destaque na home, conforme o cenario:
- *
- * <ul>
- *   <li>Usuario com historico: top categoria por afinidade (favoritos + interesses).</li>
- *   <li>Usuario sem historico ou anonimo: categoria rotativa do dia
- *       (via {@link RotacaoDeCategoriaService}).</li>
- * </ul>
- *
- * <p>Em ambos os casos retorna {@link Optional#empty()} se nao houver
- * categoria candidata (base vazia, etc.) - neste caso a secao
- * "Mais procurados em ..." e omitida da receita.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -62,10 +49,6 @@ public class CategoriaEmDestaqueService {
                 ));
     }
 
-    /**
-     * Soma ponderada de favoritos e interesses por categoria.
-     * Visivel ao pacote para reuso na deteccao de cenario.
-     */
     Map<Integer, BigDecimal> calcularAfinidadePorCategoria(UUID usuarioId) {
         Map<Integer, BigDecimal> pontos = new HashMap<>();
 
@@ -88,10 +71,6 @@ public class CategoriaEmDestaqueService {
         return pontos;
     }
 
-    /**
-     * Devolve a afinidade ja normalizada em [0, 1] por categoria.
-     * Util para o {@link CalculadorScoreDestaque} aplicar no score por anuncio.
-     */
     public Map<Integer, BigDecimal> calcularAfinidadeNormalizada(UUID usuarioId) {
         Map<Integer, BigDecimal> pontos = calcularAfinidadePorCategoria(usuarioId);
         if (pontos.isEmpty()) {

@@ -8,15 +8,9 @@ const Spinner: React.FC = () => (
   </div>
 );
 
-/**
- * Regra de senha forte: mínimo 8 caracteres, com pelo menos uma letra
- * maiúscula, uma minúscula, um número e um caractere especial.
- * Deve espelhar o @Pattern do RedefinirSenhaRequest no backend.
- */
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
-/** Requisitos individuais, usados na dica visual abaixo do campo. */
 const passwordRequisitos = (senha: string) => [
   { label: "Mínimo 8 caracteres", ok: senha.length >= 8 },
   { label: "Uma letra maiúscula", ok: /[A-Z]/.test(senha) },
@@ -102,7 +96,7 @@ export const ResetPasswordPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4">
       <div className="w-[calc(100vw-2rem)] min-w-0 max-w-md rounded-lg border border-slate-100 bg-white p-6 shadow-sm animate-fade-in sm:p-10 md:p-12">
-        {/* Header */}
+        {}
         <div className="mb-8 text-center sm:mb-10">
           <div className="mb-4 flex justify-center">
             <h2 className="text-3xl font-bold">
@@ -122,7 +116,6 @@ export const ResetPasswordPage: React.FC = () => {
         </div>
 
         {sucesso ? (
-          /* Estado de sucesso */
           <div className="text-center space-y-6">
             <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-50">
               <svg
@@ -155,7 +148,6 @@ export const ResetPasswordPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          /* Formulário */
           <form onSubmit={handleSubmit} className="space-y-6">
             {formError && (
               <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-sm">

@@ -59,7 +59,6 @@ class AuthControllerTest {
     @MockBean
     private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
 
-    // POST /api/auth/registrar
     @Nested
     @DisplayName("Cenários para /registrar")
     class RegisterCenarios {
@@ -214,7 +213,7 @@ class AuthControllerTest {
         @DisplayName("deve atualizar perfil com imagem de avatar com sucesso")
         void atualizarComArquivoSucesso() throws Exception {
             MockMultipartFile avatar = new MockMultipartFile("avatarFile", "avatar.png", "image/png", "bytes".getBytes());
-            
+
             Mockito.when(storageService.salvarImagens(Mockito.any())).thenReturn(Collections.singletonList("https://reusehub-uploads.s3.us-east-2.amazonaws.com/fake.png"));
             Mockito.when(authService.atualizarPerfilPorEmail(Mockito.anyString(), Mockito.any())).thenReturn(new UsuarioRespostaDTO());
 
@@ -225,7 +224,7 @@ class AuthControllerTest {
                     .with(request -> { request.setMethod("PUT"); return request; }))
                     .andExpect(status().isOk());
         }
-        
+
         @Test
         @DisplayName("deve bloquear atualização se usuário anônimo")
         void atualizarPerfilAnonimo() throws Exception {
@@ -268,10 +267,10 @@ class AuthControllerTest {
         void deletarSucesso() throws Exception {
             mockMvc.perform(delete("/api/auth/minha-conta").with(csrf()))
                     .andExpect(status().isNoContent());
-            
+
             Mockito.verify(authService, Mockito.times(1)).deletarContaPorEmail("usuario@email.com");
         }
-        
+
     }
 
     @Nested

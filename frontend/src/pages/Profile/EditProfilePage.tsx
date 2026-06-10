@@ -36,8 +36,6 @@ export const EditProfilePage: React.FC = () => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Telefone e bio nao ficam no localStorage (por LGPD/seguranca); buscamos do
-    // backend para pre-preencher o formulario de edicao.
     const carregarDados = async () => {
       if (!authService.isLoggedIn()) {
         navigate("/login");
@@ -254,7 +252,7 @@ export const EditProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Botões */}
+            {}
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
               <button
                 type="button"

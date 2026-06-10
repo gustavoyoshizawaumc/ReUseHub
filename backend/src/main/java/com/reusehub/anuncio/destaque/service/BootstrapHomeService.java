@@ -23,15 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Fonte da verdade da home: detecta o cenario do usuario corrente, escolhe a
- * categoria em destaque, monta as secoes apropriadas (ja populadas com dados)
- * e omite as que viriam vazias.
- *
- * <p>O frontend nao precisa de regra de negocio - apenas itera o array
- * {@code secoes} e renderiza cada uma com o {@code titulo} e
- * {@code linkVerTodos} ja calculados aqui.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,15 +34,8 @@ public class BootstrapHomeService {
     private final CategoriaEmDestaqueService categoriaEmDestaqueService;
     private final AnuncioDestaqueService anuncioDestaqueService;
 
-    /**
-     * Sobrescrita do clock para testabilidade do tempo (data da rotacao).
-     * Em producao usa o relogio do sistema na zona padrao.
-     */
     private final Clock clock = Clock.systemDefaultZone();
 
-    /**
-     * @param emailUsuarioAutenticado {@code null} para visitantes anonimos.
-     */
     public BootstrapHomeDTO montarReceita(String emailUsuarioAutenticado) {
         Optional<Usuario> usuarioOpcional = Optional.ofNullable(emailUsuarioAutenticado)
                 .flatMap(usuarioRepository::findByEmail);
@@ -78,8 +62,6 @@ public class BootstrapHomeService {
         );
     }
 
-    // -- Deteccao de cenario -------------------------------------------------
-
     private CenarioHome detectarCenario(Optional<Usuario> usuarioOpcional) {
         if (usuarioOpcional.isEmpty()) {
             return CenarioHome.ANONIMO;
@@ -91,8 +73,6 @@ public class BootstrapHomeService {
                 ? CenarioHome.HISTORICO_USUARIO
                 : CenarioHome.SEM_HISTORICO;
     }
-
-    // -- Categoria em destaque -----------------------------------------------
 
     private Optional<CategoriaEmDestaqueDTO> obterCategoriaEmDestaque(
             CenarioHome cenario,
@@ -109,8 +89,6 @@ public class BootstrapHomeService {
         return categoriaEmDestaqueService.obterRotativaDoDia(dataRotacao);
     }
 
-    // -- Montagem das secoes -------------------------------------------------
-
     private List<SecaoHomeDTO> montarSecoes(
             CenarioHome cenario,
             Optional<CategoriaEmDestaqueDTO> categoriaEmDestaque,
@@ -126,7 +104,6 @@ public class BootstrapHomeService {
             return secoes;
         }
 
-        // SEM_HISTORICO e ANONIMO compartilham a mesma estrutura
         categoriaEmDestaque.ifPresent(cat ->
                 adicionarSeNaoVazia(secoes, montarSecaoMaisProcurados(cat, usuarioId))
         );

@@ -37,9 +37,6 @@ class LocalizacaoServiceTest {
     private static final String CEP = "01001-000";
     private static final Double RAIO_PADRAO_KM = 10.0;
 
-    // Endereco textual que a busca DEVE enviar ao geocoder: completo, com rua, no mesmo
-    // formato da criacao do anuncio (DadosCEP#paraEnderecoCompleto). Garante que o centro
-    // da busca por raio saia do mesmo provider/precisao dos anuncios geocodificados.
     private static final ViaCepService.DadosCEP DADOS_CEP = new ViaCepService.DadosCEP(
             CEP, "Rua A", "Bairro B", "Cidade C", "SP"
     );
@@ -112,7 +109,6 @@ class LocalizacaoServiceTest {
 
             assertNull(filtro.getLatitude(), "latitude deve permanecer null em geocoding INDEFINIDO");
             assertNull(filtro.getLongitude(), "longitude deve permanecer null em geocoding INDEFINIDO");
-            // A busca prossegue sem filtro geografico; o raio padrao ainda e preenchido.
             assertEquals(RAIO_PADRAO_KM, filtro.getRaioKm());
         }
 
@@ -256,8 +252,6 @@ class LocalizacaoServiceTest {
         try {
             usuario.setId(UUID.randomUUID());
         } catch (Exception ignored) {
-            // setId pode ter visibilidade restrita em algumas versoes do modelo; id real
-            // e irrelevante aqui porque o lookup do endereco e mockado com any().
         }
         return usuario;
     }

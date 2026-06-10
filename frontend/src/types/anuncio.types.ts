@@ -79,19 +79,12 @@ export interface AnuncioAtualizacao {
   enderecoId: string;
 }
 
-// Tipos do modulo de destaque da home (PR D)
-
 export type ContextoDestaque =
   | "RECOMENDADOS_PARA_VOCE"
   | "MAIS_PROCURADOS"
   | "POPULARES"
   | "RECENTES";
 
-/**
- * Superset de ContextoDestaque que inclui secoes geradas no cliente
- * (nao vem do backend). Use em estruturas que misturam as duas origens
- * — por exemplo, a lista final de secoes renderizada na home.
- */
 export type ContextoSecaoHome = ContextoDestaque | "ULTIMAS_BUSCAS";
 
 export type CenarioHome = "HISTORICO_USUARIO" | "SEM_HISTORICO" | "ANONIMO";

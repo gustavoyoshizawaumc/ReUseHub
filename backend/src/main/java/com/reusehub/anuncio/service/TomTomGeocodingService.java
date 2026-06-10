@@ -11,27 +11,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Cliente da Geocoding API do TomTom para o caso de uso do ReUseHub.
- *
- * <p>Estrategia:
- * <ul>
- *   <li>Aceita endereco em texto livre (rua + numero + bairro + cidade + UF + Brasil),
- *       montado a partir do ViaCEP no caller.</li>
- *   <li>Restringe resultados a {@code countrySet=BR} para evitar matches em outros paises.</li>
- *   <li>Pede apenas {@code limit=1}: precisamos do melhor match, nao de varios.</li>
- * </ul>
- *
- * <p>Comportamento em falha: <strong>nunca</strong> lanca excecao para fora.
- * Retorna {@link Optional#empty()} quando:
- * <ul>
- *   <li>Chave de API nao configurada (modo dev sem credenciais).</li>
- *   <li>Resposta sem resultados.</li>
- *   <li>Falha de rede / timeout / 5xx / quota excedida.</li>
- * </ul>
- * Isso permite que o orquestrador ({@code GeocodingHibridoService}) decida o que fazer
- * (salvar como INDEFINIDA, tentar outro provider, etc.) sem precisar de try/catch.
- */
 @Slf4j
 @Service
 public class TomTomGeocodingService {

@@ -50,9 +50,7 @@ public class LocalizacaoService {
                 filtro.setLatitude(geocoding.latitude().doubleValue());
                 filtro.setLongitude(geocoding.longitude().doubleValue());
             }
-            // Geocoding INDEFINIDO: busca prossegue sem filtro geográfico (nunca grava (0,0)).
         } catch (OperacaoInvalidaException | RecursoNaoEncontradoException e) {
-            // CEP inexistente/invalido ou ViaCEP indisponivel: busca prossegue sem filtro geográfico.
             log.warn("Geocoding do CEP '{}' falhou; busca seguira sem filtro geografico: {}",
                     filtro.getCep(), e.getMessage());
         }
@@ -94,8 +92,6 @@ public class LocalizacaoService {
 
     public ResultadoGeocoding converterCepEmCoordenadas(String cep) {
         ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(cep);
-        // Mesmo endereco textual usado na criacao do anuncio, para que o centro da
-        // busca por raio saia do mesmo geocoder/precisao dos anuncios geocodificados.
         return geocodingHibridoService.obterCoordenadasPorEndereco(dadosCEP.paraEnderecoCompleto());
     }
 }

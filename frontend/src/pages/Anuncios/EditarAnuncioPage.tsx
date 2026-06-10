@@ -282,7 +282,7 @@ export const EditarAnuncioPage: React.FC = () => {
 
             </div>
 
-            {/* ENDEREÇO */}
+            {}
             <div className="space-y-4 pt-6 border-t border-slate-100">
               <label className="text-sm font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
                 <MapPin size={18} className="text-blue-600" />

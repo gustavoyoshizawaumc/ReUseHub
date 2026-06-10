@@ -260,8 +260,6 @@ class AuthServiceTest {
                     BadCredentialsException.class,
                     () -> authService.login(request)
             );
-            // Nao deve vazar o e-mail na mensagem (anti user-enumeration).
-            // A mensagem amigavel exibida ao usuario e responsabilidade do GlobalExceptionHandler.
             assertFalse(ex.getMessage().contains(request.getEmail()));
         }
 

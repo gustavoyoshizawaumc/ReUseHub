@@ -20,7 +20,6 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("deve traduzir 'Bad credentials' do Spring para mensagem amigavel com status 401")
     void traduzBadCredentials() {
-        // O Spring Security lanca BadCredentialsException com a mensagem crua "Bad credentials".
         ResponseEntity<Map<String, Object>> resposta =
                 handler.handleBadCredentials(new BadCredentialsException("Bad credentials"));
 
@@ -30,7 +29,6 @@ class GlobalExceptionHandlerTest {
         assertNotNull(corpo);
         assertEquals("E-mail ou senha incorretos.", corpo.get("mensagem"));
         assertEquals(401, corpo.get("status"));
-        // Nunca deve vazar a string original em ingles para o usuario.
         assertNotEquals("Bad credentials", corpo.get("mensagem"));
     }
 }

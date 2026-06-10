@@ -5,11 +5,6 @@ interface ErroAoCarregarHomeProps {
   mensagem: string;
 }
 
-/**
- * Exibido quando nao havia cache em sessionStorage e a primeira request
- * falhou. Em SWR com cache existente, o erro e silenciado e a UI antiga
- * permanece visivel.
- */
 export const ErroAoCarregarHome: React.FC<ErroAoCarregarHomeProps> = ({ mensagem }) => (
   <section className="max-w-[700px] mx-auto px-4 py-16 text-center">
     <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-600">

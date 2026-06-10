@@ -2,11 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 
-/**
- * Exibido quando o backend devolve secoes vazias - nenhuma das fontes
- * (favoritos, mais procurados, populares, recentes) gerou conteudo.
- * Acontece em bases novas ou sem anuncios ativos.
- */
 export const EmptyStateHome: React.FC = () => {
   const navigate = useNavigate();
 

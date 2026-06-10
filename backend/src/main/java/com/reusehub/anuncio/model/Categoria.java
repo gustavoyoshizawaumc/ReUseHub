@@ -1,4 +1,4 @@
-package com.reusehub.anuncio.model; 
+package com.reusehub.anuncio.model;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -37,7 +37,6 @@ import {
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-
 const Logo: React.FC = () => (
   <span className="font-bold text-[18px] leading-none select-none tracking-tight font-plus-jakarta-sans sm:text-[20px]">
     <span className="text-reusehub-blue">Re</span>
@@ -99,9 +98,6 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    // Sincroniza estado interno do header com os parametros da URL.
-    // O searchTerm e activeCategory tambem sao atualizados via UI,
-    // entao precisam ser useState (nao podem virar derived state).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchTerm(params.get("termo") ?? "");
     setActiveCategory(params.get("categoriaId") ? Number(params.get("categoriaId")) : null);
@@ -144,7 +140,6 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     if (!user) {
-      // Reset dos indicadores ao deslogar.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTemChatPendente(false);
       setTemTrocaPendente(false);
@@ -217,8 +212,6 @@ export const Header: React.FC = () => {
     const categoriaIdRaw = params.get("categoriaId");
     const categoriaId = categoriaIdRaw ? Number(categoriaIdRaw) : null;
 
-    // Registra apenas buscas significativas (termo nao vazio).
-    // O proprio registrarBusca aplica TAMANHO_MINIMO_TERMO como guarda.
     registrarBusca(termoEfetivo, categoriaId);
 
     const query = params.toString();
@@ -231,8 +224,6 @@ export const Header: React.FC = () => {
       return;
     }
 
-    // CEP vazio: remove o filtro de localizacao. Parcialmente preenchido (1-7 digitos):
-    // nao faz nada e preserva o que o usuario digitou - o aviso abaixo do campo orienta.
     if (cepBusca.length === 0) {
       limparFiltroLocalizacaoSessao();
     }
@@ -262,10 +253,6 @@ export const Header: React.FC = () => {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            // Busca por texto e sempre global: ignora a categoria ativa, senao
-            // pesquisar um item de outra categoria nao retornaria nada. A categoria
-            // continua como atalho de navegacao; para filtrar por categoria use a
-            // barra lateral de filtros da pagina de anuncios.
             setActiveCategory(null);
             navegarParaBusca(criarParamsBusca(searchTerm));
           }}

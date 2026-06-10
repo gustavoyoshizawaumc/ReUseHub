@@ -44,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -69,12 +69,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (OperacaoInvalidaException | UsernameNotFoundException e) {
-            // Token JWT expirado/invalido OU usuario nao mais disponivel
-            // (deletado, desativado, banido). Em ambos os casos a request
-            // segue sem autenticacao: rotas publicas permanecem acessiveis
-            // como anonimo; rotas protegidas recebem 403 do Spring Security
-            // de forma natural. Isso evita que sessao expirada quebre paginas
-            // publicas como a home.
             SecurityContextHolder.clearContext();
             filterChain.doFilter(request, response);
         } catch (Exception e) {

@@ -19,13 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-/**
- * Endpoint publico de tracking de visualizacoes (PR D.2).
- *
- * <p>Aceita usuario logado ou anonimo. Sempre responde {@code 204 No Content}
- * mesmo quando a visualizacao e descartada (dono ou dedupe), para nao revelar
- * a logica anti-fraude ao cliente.
- */
 @RestController
 @RequestMapping("/api/anuncios")
 @RequiredArgsConstructor

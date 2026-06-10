@@ -147,7 +147,6 @@ public class InteresseTrocaService {
         }
 
         interesse.setStatus(InteresseTroca.StatusInteresse.ACEITO);
-        // Item passa a estar em negociacao: recusa as demais propostas pendentes do anuncio.
         interesseTrocaRepository.rejeitarOutrosPendentesDoAnuncio(
                 interesse.getId(),
                 interesse.getAnuncioDesejado().getId()

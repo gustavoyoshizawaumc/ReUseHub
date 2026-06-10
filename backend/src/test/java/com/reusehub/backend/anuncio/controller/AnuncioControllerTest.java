@@ -114,7 +114,7 @@ class AnuncioControllerTest {
         @DisplayName("deve retornar 400 se descrição estiver em branco")
         void c4() throws Exception {
             AnuncioCriacaoComEnderecoDTO dto = criarDtoValido();
-            dto.setDescricao(""); 
+            dto.setDescricao("");
 
             mockMvc.perform(multipart("/api/anuncios").file(criarDadosPart(dto)).file(criarImagemPart()).with(csrf()))
                    .andExpect(status().isBadRequest());
@@ -153,7 +153,6 @@ class AnuncioControllerTest {
         }
     }
 
-    // GET /api/anuncios/meus
     @Nested
     @DisplayName("cenários para listarMeusAnuncios")
     class ListarMeusAnuncios {

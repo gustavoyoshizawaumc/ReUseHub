@@ -83,7 +83,7 @@ class ChatControllerTest {
         @DisplayName("deve iniciar ou recuperar uma conversa com sucesso")
         void iniciarSucesso() throws Exception {
             IniciarConversaDTO dto = new IniciarConversaDTO("anuncio-123", "destinatario-456");
-            
+
             ConversaRespostaDTO mockResposta = Mockito.mock(ConversaRespostaDTO.class);
 
             Mockito.when(chatService.iniciarOuRecuperarConversa(Mockito.anyString(), Mockito.any()))

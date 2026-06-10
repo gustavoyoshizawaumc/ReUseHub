@@ -38,8 +38,6 @@ const limparSessaoLocal = () => {
 const normalizarUsuarioSessao = (user: AuthResponse | UsuarioRespostaDTO): SessaoUsuario => {
   const dados = user as AuthResponse & UsuarioRespostaDTO;
 
-  // So persistimos o minimo. Dados pessoais (cpf/email/telefone) ficam de fora
-  // do storage por LGPD/seguranca — as telas que precisam buscam do backend.
   return {
     id: dados.id,
     name: dados.name,

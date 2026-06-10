@@ -29,10 +29,6 @@ export function obterBuscaLocalizacaoSessao(): BuscaFiltro {
   const filtro = obterFiltroLocalizacaoSessao();
   if (!filtro) return {};
 
-  // Apenas cep + raio. Nao forcamos ordenacao aqui: como este objeto e espalhado por
-  // ultimo na montagem do filtro, forcar "DISTANCIA" sobrescreveria a ordenacao escolhida
-  // na sidebar (Recentes/Relevantes/Populares). Sem ordenacao explicita e com coordenadas,
-  // o backend ja assume DISTANCIA por padrao (AnuncioService#determinarOrdenacaoPadrao).
   return {
     cep: filtro.cep,
     raioKm: filtro.raioKm,

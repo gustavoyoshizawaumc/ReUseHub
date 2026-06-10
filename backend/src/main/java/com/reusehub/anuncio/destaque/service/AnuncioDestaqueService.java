@@ -20,30 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Orquestra a busca e o ranqueamento de anuncios em destaque para cada
- * contexto da home.
- *
- * <p>Estrategia por contexto:
- * <ul>
- *   <li>{@code RECOMENDADOS_PARA_VOCE} - carrega ate
- *       {@link #LIMITE_CANDIDATOS_PARA_RANKING} anuncios elegiveis e ranqueia
- *       por score multi-fator com afinidade do usuario.</li>
- *   <li>{@code MAIS_PROCURADOS} - mesmo fluxo, filtrado por categoria e sem
- *       afinidade (cada secao ja e por categoria).</li>
- *   <li>{@code POPULARES} - ordenacao direta por {@code totalVisualizacoes}.</li>
- *   <li>{@code RECENTES} - ordenacao direta por {@code criadoEm}.</li>
- * </ul>
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AnuncioDestaqueService {
 
-    /**
-     * Quantidade maxima de anuncios carregados para o ranqueamento em memoria.
-     * Mantem o calculo barato em bases medias; ajuste se a base crescer muito.
-     */
     private static final int LIMITE_CANDIDATOS_PARA_RANKING = 200;
 
     private final AnuncioRepository anuncioRepository;
@@ -51,15 +32,6 @@ public class AnuncioDestaqueService {
     private final CategoriaEmDestaqueService categoriaEmDestaqueService;
     private final VisualizacaoAnuncioRepository visualizacaoAnuncioRepository;
 
-    /**
-     * Executa o contexto solicitado e devolve ate {@code size} anuncios ja
-     * ordenados. Sempre aplica clamp em {@code size} para evitar excesso.
-     *
-     * @param contexto    Estrategia de ranqueamento.
-     * @param categoriaId Categoria a filtrar (obrigatorio em MAIS_PROCURADOS; ignorado nos demais).
-     * @param size        Quantidade desejada de anuncios.
-     * @param usuarioId   Id do usuario autenticado (obrigatorio em RECOMENDADOS_PARA_VOCE).
-     */
     public List<AnuncioDestaqueDTO> obterDestaques(
             ContextoDestaque contexto,
             Integer categoriaId,
@@ -75,8 +47,6 @@ public class AnuncioDestaqueService {
             case RECENTES -> obterRecentes(sizeClampado);
         };
     }
-
-    // -- Estrategias por contexto --------------------------------------------
 
     private List<AnuncioDestaqueDTO> obterRecomendadosParaVoce(int size, UUID usuarioId) {
         if (usuarioId == null) {
@@ -104,8 +74,6 @@ public class AnuncioDestaqueService {
                 categoriaId,
                 PageRequest.of(0, LIMITE_CANDIDATOS_PARA_RANKING)
         );
-        // Afinidade nao se aplica a MAIS_PROCURADOS (peso 0 no calculador),
-        // mas mantemos a estrutura por simetria.
         return ranquearPorScore(
                 candidatos,
                 ContextoDestaque.MAIS_PROCURADOS,
@@ -127,8 +95,6 @@ public class AnuncioDestaqueService {
                 .map(anuncio -> AnuncioDestaqueDTO.de(anuncioRespostaMapper.mapear(anuncio), null))
                 .toList();
     }
-
-    // -- Pipeline de ranqueamento por score -----------------------------------
 
     private List<AnuncioDestaqueDTO> ranquearPorScore(
             List<Anuncio> candidatos,
@@ -176,13 +142,6 @@ public class AnuncioDestaqueService {
                 .toList();
     }
 
-    /**
-     * Agrega visualizacoes da janela recente para o conjunto de candidatos
-     * em uma unica query (evita N+1 no ranqueamento).
-     *
-     * <p>Anuncios sem visualizacoes na janela ficam ausentes do map; o caller
-     * usa {@code getOrDefault(0)} ao consultar.
-     */
     private Map<UUID, Integer> carregarVisualizacoesRecentes(List<Anuncio> candidatos, LocalDateTime agora) {
         List<UUID> ids = candidatos.stream().map(Anuncio::getId).toList();
         LocalDateTime limiteInferior = agora.minusDays(ConfiguracaoDestaque.JANELA_VISUALIZACOES_DIAS);

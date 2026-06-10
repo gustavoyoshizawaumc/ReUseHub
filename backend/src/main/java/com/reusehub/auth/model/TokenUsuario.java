@@ -24,10 +24,6 @@ public class TokenUsuario {
     @EqualsAndHashCode.Exclude
     private Usuario usuario;
 
-    /**
-     * Armazena o HASH SHA-256 do token, nunca o token puro.
-     * O token puro só existe no e-mail enviado ao usuário.
-     */
     @Column(name = "token", nullable = false, unique = true, columnDefinition = "TEXT")
     private String token;
 
