@@ -99,6 +99,29 @@ class AvaliacaoServiceTest {
         Mockito.verify(usuarioRepository).save(dono);
     }
 
+    @Test
+    @DisplayName("bloqueia recriar avaliacao quando ja existe uma para o mesmo avaliador+anuncio (inclui removida)")
+    void bloqueiaRecriacaoQuandoJaExisteAvaliacao() {
+        prepararAvaliacaoPermitida();
+        // Soft delete mantem a linha, entao o guard continua retornando true mesmo apos
+        // a moderacao remover a avaliacao -> o usuario nao consegue avaliar de novo.
+        Mockito.when(avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(interessado.getId(), anuncio.getId()))
+                .thenReturn(true);
+
+        AvaliacaoCriacaoDTO dto = new AvaliacaoCriacaoDTO(
+                anuncio.getId(),
+                dono.getId(),
+                (short) 5,
+                "Entrega correta e combinacao tranquila."
+        );
+
+        RegraNegocioException erro = assertThrows(RegraNegocioException.class,
+                () -> avaliacaoService.criar(interessado.getEmail(), dto));
+
+        assertEquals("Você já avaliou esta negociação.", erro.getMessage());
+        Mockito.verify(avaliacaoRepository, Mockito.never()).save(Mockito.any(Avaliacao.class));
+    }
+
     private void prepararAvaliacaoPermitida() {
         Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
         Mockito.when(usuarioRepository.findById(dono.getId())).thenReturn(Optional.of(dono));

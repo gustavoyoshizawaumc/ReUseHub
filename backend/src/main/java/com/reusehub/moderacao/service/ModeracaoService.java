@@ -194,7 +194,14 @@ public class ModeracaoService {
         Avaliacao avaliacao = avaliacaoRepository.findById(avaliacaoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Avaliacao", avaliacaoId));
         Usuario avaliado = avaliacao.getAvaliado();
-        avaliacaoRepository.delete(avaliacao);
+
+        // Soft delete: mantem a linha (bloqueia o avaliador de recriar a mesma avaliacao),
+        // mas a marca como removida para sair da reputacao, do perfil publico e da fila.
+        if (!avaliacao.estaRemovida()) {
+            avaliacao.setRemovidoEm(LocalDateTime.now());
+            avaliacaoRepository.save(avaliacao);
+        }
+
         Double media = avaliacaoRepository.calcularMediaDoAvaliado(avaliado.getId());
         avaliado.setReputationScore(media == null
                 ? BigDecimal.ZERO
