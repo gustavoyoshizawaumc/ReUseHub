@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, ShieldCheck, UserCog } from "lucide-react";
-import { authService } from "../services/authService";
+import { AUTH_USER_UPDATED_EVENT, authService } from "../services/authService";
 import type { UsuarioRespostaDTO } from "../types/auth.types";
 
 const Logo: React.FC = () => (
@@ -14,8 +14,20 @@ const Logo: React.FC = () => (
 
 export const OperationalHeader: React.FC = () => {
   const navigate = useNavigate();
-  const user = authService.getUser() as UsuarioRespostaDTO | null;
+  const [user, setUser] = useState<UsuarioRespostaDTO | null>(() => authService.getUser());
   const perfil = user?.perfil === "ADMIN" ? "Admin" : "Moderador";
+
+  useEffect(() => {
+    const atualizarUsuario = () => setUser(authService.getUser());
+
+    window.addEventListener(AUTH_USER_UPDATED_EVENT, atualizarUsuario);
+    window.addEventListener("storage", atualizarUsuario);
+
+    return () => {
+      window.removeEventListener(AUTH_USER_UPDATED_EVENT, atualizarUsuario);
+      window.removeEventListener("storage", atualizarUsuario);
+    };
+  }, []);
 
   const handleLogout = () => {
     authService.logout();

@@ -17,7 +17,7 @@ import {
   User,
   UserPlus,
 } from "lucide-react";
-import { authService } from "../services/authService";
+import { AUTH_USER_UPDATED_EVENT, authService } from "../services/authService";
 import { listarConversas } from "../services/chatService";
 import { listarInteressesRecebidos } from "../services/interesseService";
 import type { UsuarioRespostaDTO } from "../types/auth.types";
@@ -127,6 +127,18 @@ export const Header: React.FC = () => {
     return () => {
       window.removeEventListener(EVENTO_FILTRO_LOCALIZACAO, sincronizarFiltroLocalizacao);
       window.removeEventListener("storage", sincronizarFiltroLocalizacao);
+    };
+  }, []);
+
+  useEffect(() => {
+    const atualizarUsuario = () => setUser(authService.getUser());
+
+    window.addEventListener(AUTH_USER_UPDATED_EVENT, atualizarUsuario);
+    window.addEventListener("storage", atualizarUsuario);
+
+    return () => {
+      window.removeEventListener(AUTH_USER_UPDATED_EVENT, atualizarUsuario);
+      window.removeEventListener("storage", atualizarUsuario);
     };
   }, []);
 
