@@ -32,11 +32,6 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
-    /**
-     * Inicia o fluxo de recuperação de senha.
-     * A resposta é sempre genérica para evitar user enumeration — nunca revelamos
-     * se o e-mail está cadastrado ou o status da conta.
-     */
     @Transactional
     public void solicitarRecuperacao(String email) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);

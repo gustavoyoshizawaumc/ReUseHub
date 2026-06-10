@@ -43,10 +43,6 @@ interface AnunciosPageBaseProps {
   modo: "publico" | "privado";
 }
 
-// Em "Meus Anuncios" carregamos todos os anuncios do usuario de uma vez e
-// filtramos/paginamos no client (escala pequena). LIMITE e o teto de itens
-// buscados - alto o suficiente para qualquer usuario real; em escala maior o
-// ideal seria filtrar/paginar no backend e ter um endpoint de COUNT.
 const LIMITE_MEUS_ANUNCIOS = 2000;
 const TAMANHO_PAGINA_MEUS_ANUNCIOS = 10;
 
@@ -115,9 +111,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     };
   }, []);
 
-  // Modo publico: busca/lista reagindo aos filtros da URL.
-  // O modo privado tem carregamento proprio (efeito abaixo), pois termo e status
-  // sao filtrados no client e nao devem cair na busca publica /filtrar.
   useEffect(() => {
     if (exibindoMeusAnuncios) return;
 
@@ -129,11 +122,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     listar();
   }, [buscarComFiltros, exibindoMeusAnuncios, filtroPublicoAtual, listar]);
 
-  // Modo privado: carrega TODOS os anuncios do usuario de uma vez (sem paginar
-  // no servidor) para servir de fonte unica de contadores, filtro de status,
-  // busca por texto e paginacao - tudo resolvido no client. `gatilhoMeusAnuncios`
-  // permite recarregar sob demanda (apos excluir ou ao voltar o foco) sem reagir
-  // a cada tecla da busca/filtro.
   const [gatilhoMeusAnuncios, setGatilhoMeusAnuncios] = useState(0);
   const [paginaMeusAnuncios, setPaginaMeusAnuncios] = useState(0);
   const recarregarMeusAnuncios = useCallback(
@@ -146,9 +134,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     listarMeus(0, LIMITE_MEUS_ANUNCIOS);
   }, [exibindoMeusAnuncios, gatilhoMeusAnuncios, listarMeus]);
 
-  // Reatividade ao vivo: ao voltar o foco para a aba, recarrega a lista. Cobre o
-  // caso de a moderacao aprovar/reprovar/suspender enquanto a pagina esta aberta
-  // - contadores e lista se ajustam sozinhos.
   useEffect(() => {
     if (!exibindoMeusAnuncios) return;
 
@@ -247,8 +232,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     { value: "CANCELADO", label: "Cancelados" },
   ];
 
-  // Modo privado: filtra a lista COMPLETA por status + termo (client-side).
-  // Antes o filtro/busca so atuava sobre os 10 da pagina; agora cobre tudo.
   const anunciosPrivadosFiltrados = useMemo(() => {
     return anuncios.filter((anuncio) => {
       const combinaStatus =
@@ -262,14 +245,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     });
   }, [anuncios, statusSelecionado, termoMeusAnuncios]);
 
-  // Paginacao client-side do modo privado sobre a lista ja filtrada.
   const totalPaginasMeusAnuncios = Math.max(
     1,
     Math.ceil(anunciosPrivadosFiltrados.length / TAMANHO_PAGINA_MEUS_ANUNCIOS)
   );
 
-  // Pagina segura: evita pagina vazia quando o filtro encolhe a lista (ex.: apos
-  // excluir ou ao trocar para um status com menos itens).
   const paginaMeusAnunciosSegura = Math.min(
     paginaMeusAnuncios,
     totalPaginasMeusAnuncios - 1
@@ -283,8 +263,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       )
     : anuncios;
 
-  // Distingue "ainda nao tem anuncios" de "o filtro nao retornou nada", para o
-  // estado vazio mostrar a mensagem certa (e o botao de criar so no 1o caso).
   const semAnunciosCadastrados = exibindoMeusAnuncios && anuncios.length === 0;
   const filtroPrivadoSemResultados =
     exibindoMeusAnuncios && anuncios.length > 0 && anunciosVisiveis.length === 0;
@@ -341,9 +319,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     });
   };
 
-  // Chama o motor de busca com todos os filtros selecionados.
-  // Mescla a busca ativa da URL (termo/categoria) com os filtros da sidebar,
-  // para que aplicar uma ordenacao nao descarte o termo pesquisado.
   const handleFiltrar = async (filtro: BuscaFiltro) => {
     if (exibindoMeusAnuncios) return;
     preservarScroll();
@@ -385,8 +360,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     setPaginaMeusAnuncios(0);
   };
 
-  // Paginacao do modo publico (no servidor): busca ativa -> paginarFiltros;
-  // caso contrario, lista padrao. O modo privado pagina no client (estado local).
   const paginarPaginaPublica = (page: number) => {
     if (possuiBuscaAtiva(filtroPublicoAtual)) {
       paginarFiltros(page);
@@ -417,7 +390,6 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
     }
   };
 
-  // Valores de paginacao exibidos no rodape: client-side no privado, servidor no publico.
   const paginaAtualExibida = exibindoMeusAnuncios
     ? paginaMeusAnunciosSegura
     : paginacao.currentPage;
@@ -455,7 +427,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       >
         <div className={`${exibindoMeusAnuncios ? "max-w-6xl" : "max-w-[1480px]"} mx-auto px-4 sm:px-6`}>
 
-          {/* HEADER MODO PRIVADO */}
+          {}
           {exibindoMeusAnuncios && (
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
               <div>
@@ -480,7 +452,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
             </div>
           )}
 
-          {/* FEEDBACKS */}
+          {}
           {exibindoMeusAnuncios && (anuncioCriado || anuncioAtualizado || anuncioExcluido) && (
             <div className="mb-8">
               {anuncioCriado && (
@@ -528,7 +500,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
             </div>
           )}
 
-          {/* CARDS DE STATUS */}
+          {}
           {exibindoMeusAnuncios && (
             <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
               {statusCards.map((item) => {
@@ -551,7 +523,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
             </div>
           )}
 
-          {/* BARRA DE BUSCA MODO PRIVADO */}
+          {}
           {exibindoMeusAnuncios && (
             <div className="mb-5 rounded-lg border border-slate-100 bg-white p-3 shadow-sm sm:p-4">
               <div className="flex items-center gap-2">
@@ -617,7 +589,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               : "lg:grid-cols-[300px_minmax(0,1fr)] gap-6 xl:gap-8"
           } items-start`}>
 
-            {/* SIDEBAR */}
+            {}
             {!exibindoMeusAnuncios && (
               <aside className={`${!filtrosMoveisAbertos ? "hidden lg:block" : ""} lg:sticky lg:top-24`}>
                 <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
@@ -645,7 +617,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               </aside>
             )}
 
-            {/* CONTEUDO PRINCIPAL */}
+            {}
             <div className="min-h-[420px] space-y-4 sm:min-h-[720px]">
               {loading && (
                 <div className="flex flex-col items-center justify-center rounded-md border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/70 sm:p-16">

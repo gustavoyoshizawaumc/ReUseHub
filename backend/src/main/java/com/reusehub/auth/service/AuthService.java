@@ -76,8 +76,6 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         String emailNormalizado = SensitiveDataCrypto.normalizarEmail(request.getEmail());
-        // Mesma excecao do erro de senha: a mensagem exibida ao usuario e padronizada
-        // no GlobalExceptionHandler, evitando revelar se o e-mail esta cadastrado.
         var usuario = usuarioRepository.findByEmail(emailNormalizado)
                 .orElseThrow(() -> new BadCredentialsException("Credenciais invalidas"));
         validarUsuarioAtivo(usuario);

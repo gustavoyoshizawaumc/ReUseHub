@@ -12,11 +12,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Converte entidades {@link Anuncio} no DTO de resposta da API.
- * Centraliza o mapeamento e a busca de imagens associadas para evitar
- * duplicacao entre {@code AnuncioService} e o novo modulo de destaque.
- */
 @Component
 @RequiredArgsConstructor
 public class AnuncioRespostaMapper {
@@ -62,9 +57,6 @@ public class AnuncioRespostaMapper {
                 .build();
     }
 
-    /**
-     * Helper: descobre o id do dono sem carregar o anuncio completo.
-     */
     public UUID idDoDono(Anuncio anuncio) {
         return anuncio.getUsuario().getId();
     }

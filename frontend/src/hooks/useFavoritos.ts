@@ -34,9 +34,6 @@ export const useFavoritos = () => {
   }, [usuarioId]);
 
   useEffect(() => {
-    // Fetch inicial dos favoritos do usuario logado.
-    // setState dentro do effect e aceitavel aqui: sincronizacao com
-    // fonte externa (API).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarFavoritos();
   }, [carregarFavoritos]);

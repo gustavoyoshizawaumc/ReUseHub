@@ -124,7 +124,6 @@ export const InteressesRecebidosPage: React.FC = () => {
   }, [notify]);
 
   useEffect(() => {
-    // Sincroniza o historico do usuario com a API.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, [carregar]);
@@ -148,8 +147,6 @@ export const InteressesRecebidosPage: React.FC = () => {
         title: "Erro ao aceitar interesse",
         message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
       });
-      // Recarrega para refletir o estado real (ex.: anuncio ja negociado), removendo
-      // botoes obsoletos que causaram o erro.
       await carregar();
     } finally {
       setProcessingId(null);
@@ -247,9 +244,6 @@ export const InteressesRecebidosPage: React.FC = () => {
             const ehDono = item.anuncianteId === usuarioId;
             const status = obterStatusVisual(item);
             const StatusIcon = status.icon;
-            // So permite responder se o anuncio ainda estiver ATIVO. Quando ele ja foi
-            // negociado/concluido, propostas pendentes remanescentes deixam de ser
-            // acionaveis (evita o "Erro ao aceitar interesse" em item ja indisponivel).
             const podeResponder =
               ehDono && item.status === "PENDENTE" && item.anuncioDesejadoStatus === "ATIVO";
             const podeAvaliar =

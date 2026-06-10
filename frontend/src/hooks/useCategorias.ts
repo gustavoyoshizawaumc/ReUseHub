@@ -2,11 +2,6 @@ import { useEffect, useState } from "react";
 import { listarCategorias } from "../services/categoriaService";
 import type { Categoria } from "../types/categoria.types";
 
-/**
- * Cache em memoria para evitar buscas redundantes ao backend.
- * Categorias mudam raramente, entao manter em memoria durante a
- * sessao reduz latencia e trafego.
- */
 let categoriasEmCache: Categoria[] | null = null;
 let promessaEmAndamento: Promise<Categoria[]> | null = null;
 

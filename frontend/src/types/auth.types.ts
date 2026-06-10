@@ -69,12 +69,6 @@ export interface UsuarioRespostaDTO {
   perfil?: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }
 
-/**
- * Subconjunto minimo de dados do usuario que fica persistido no localStorage.
- * Mantemos apenas o necessario para roteamento e exibicao no header. Dados
- * pessoais (CPF, e-mail, telefone) NUNCA sao guardados no storage: sao buscados
- * do backend via authService.getProfile() quando a tela precisa exibi-los.
- */
 export interface SessaoUsuario {
   id: string;
   name: string;

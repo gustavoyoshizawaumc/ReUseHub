@@ -18,33 +18,11 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Persiste eventos de visualizacao de anuncio com regras anti-fraude.
- *
- * <p>Pipeline (em ordem):
- * <ol>
- *   <li>Carrega o anuncio (404 se nao existe).</li>
- *   <li>Resolve o {@link Usuario} a partir do email autenticado, se houver.</li>
- *   <li>Se o solicitante e o dono do anuncio, descarta silenciosamente.</li>
- *   <li>Aplica dedupe de 1h usando a chave mais especifica disponivel
- *       (usuario_id &gt; anon_id &gt; ip_address).</li>
- *   <li>Persiste o evento e incrementa atomicamente
- *       {@code Anuncio.totalVisualizacoes} na mesma transacao.</li>
- * </ol>
- *
- * <p>O service nunca lanca exceção a partir do passo 3: descartar (dono ou dedupe)
- * e {@code return} silencioso. Quem chama (controller) sempre responde 204,
- * para nao revelar a logica anti-fraude ao cliente.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RegistroVisualizacaoService {
 
-    /**
-     * Janela de tempo dentro da qual visualizacoes repetidas do mesmo
-     * usuario/anon/IP no mesmo anuncio contam como uma so.
-     */
     static final Duration JANELA_DEDUPE = Duration.ofHours(1);
 
     private static final String RECURSO_ANUNCIO = "anuncio";
@@ -73,10 +51,6 @@ public class RegistroVisualizacaoService {
         anuncioRepository.incrementarTotalVisualizacoes(anuncio.getId());
     }
 
-    // ------------------------------------------------------------------------
-    // Etapas internas (cada metodo com uma responsabilidade)
-    // ------------------------------------------------------------------------
-
     private Anuncio carregarAnuncio(UUID anuncioId) {
         return anuncioRepository.findById(anuncioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
@@ -103,7 +77,6 @@ public class RegistroVisualizacaoService {
     ) {
         LocalDateTime limiteInferior = LocalDateTime.now().minus(JANELA_DEDUPE);
 
-        // Prioridade: usuario logado > anon_id > IP
         if (usuarioLogado.isPresent()) {
             return visualizacaoRepository.existeVisualizacaoRecenteDeUsuario(
                     usuarioLogado.get().getId(), comando.anuncioId(), limiteInferior
@@ -119,8 +92,6 @@ public class RegistroVisualizacaoService {
                     comando.ipAddress(), comando.anuncioId(), limiteInferior
             );
         }
-        // Nenhum identificador valido: a constraint da V15 vai barrar o insert.
-        // Nao deveria acontecer porque o controller sempre extrai pelo menos o IP.
         return false;
     }
 

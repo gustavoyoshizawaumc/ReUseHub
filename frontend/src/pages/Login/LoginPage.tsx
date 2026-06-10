@@ -1,4 +1,3 @@
-//. frontend/src/pages/login/LoginPage.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
@@ -103,9 +102,9 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4">
-      {/* Card Branco com rounded-lg */}
+      {}
       <div className="w-[calc(100vw-2rem)] min-w-0 max-w-md rounded-lg border border-slate-100 bg-white p-6 shadow-sm animate-fade-in sm:p-10 md:p-12">
-        {/* Header com a Logo Estilizada */}
+        {}
         <div className="mb-8 text-center sm:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 font-plus-jakarta-sans sm:text-3xl">
             Faça login na sua conta
@@ -136,7 +135,7 @@ export const LoginPage: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Campo E-mail */}
+          {}
           <div className="space-y-2">
             <label
               htmlFor="email"
@@ -177,7 +176,7 @@ export const LoginPage: React.FC = () => {
             )}
           </div>
 
-          {/* Campo Senha */}
+          {}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label
@@ -226,7 +225,7 @@ export const LoginPage: React.FC = () => {
             )}
           </div>
 
-          {/* Botão Entrar com Orange vibrante */}
+          {}
           <button
             type="submit"
             disabled={isLoading}
@@ -236,7 +235,7 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Rodapé - Link para Cadastro */}
+        {}
         <div className="mt-8 text-center text-sm sm:mt-12">
           <p className="text-slate-500">
             Não tem conta?{" "}

@@ -79,11 +79,6 @@ class NominatimServiceTest {
                 () -> nominatimService.buscarCoordenadasPorEndereco(ENDERECO_VALIDO));
     }
 
-    /**
-     * Valida que a requisicao foi feita ao endpoint correto do Nominatim
-     * com os parametros estaveis (format e limit), independente da
-     * codificacao do parametro de busca aplicada pelo cliente HTTP.
-     */
     private org.hamcrest.Matcher<String> matcherDeRequisicaoNominatim() {
         return Matchers.allOf(
                 Matchers.startsWith(CAMINHO_BUSCA),

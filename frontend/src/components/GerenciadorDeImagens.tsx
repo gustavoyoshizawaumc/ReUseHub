@@ -24,12 +24,9 @@ const QUANTIDADE_MAXIMA_IMAGENS = 5;
 const PREFIXO_NOVA_IMAGEM = "nova:";
 
 interface ItemDeImagem {
-  /** Chave estavel para o dnd-kit. Para existentes e o id; para novas, `nova:<indice>`. */
   chave: string;
   url: string;
-  /** id da imagem existente (UUID) ou null caso seja uma nova imagem ainda nao salva. */
   idExistente: string | null;
-  /** Arquivo a ser enviado quando se tratar de uma nova imagem. */
   arquivoNovo: File | null;
 }
 
@@ -41,7 +38,6 @@ export interface SelecaoDeImagens {
 
 interface GerenciadorDeImagensProps {
   imagensExistentes: ImagemAnuncio[];
-  /** Chamado a cada mudanca (drag, add, remove) com a selecao atualizada. */
   onSelecaoMudou: (selecao: SelecaoDeImagens) => void;
 }
 
@@ -63,18 +59,15 @@ export const GerenciadorDeImagens: React.FC<GerenciadorDeImagensProps> = ({
 
   useEffect(() => {
     onSelecaoMudou(construirSelecao(itens));
-    // onSelecaoMudou deve ser estabilizada via useCallback no consumidor.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itens]);
 
-  // Libera as object URLs criadas localmente quando o componente sai de tela.
   useEffect(() => {
     return () => {
       itens
         .filter((item) => item.arquivoNovo !== null)
         .forEach((item) => URL.revokeObjectURL(item.url));
     };
-    // Apenas no unmount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

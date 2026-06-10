@@ -37,12 +37,6 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
 
     Page<Anuncio> findByStatusOrderByCriadoEmDesc(Anuncio.StatusAnuncio status, Pageable pageable);
 
-    /**
-     * Lista anuncios para a fila de moderacao.
-     * Ordena por atualizadoEm (e nao criadoEm) para que anuncios editados, que
-     * voltam ao status PENDENTE, subam ao topo da fila em vez de permanecerem na
-     * posicao original de criacao. criadoEm e usado apenas como desempate.
-     */
     @Query("""
             select a from Anuncio a
             where (:status = '' or cast(a.status as string) = :status)
@@ -207,16 +201,6 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             @Param("statuses") Collection<Anuncio.StatusAnuncio> statuses
     );
 
-    /**
-     * Incrementa atomicamente o contador rapido {@code totalVisualizacoes}.
-     * Usado pelo RegistroVisualizacaoService apos persistir um evento valido.
-     *
-     * <p>Operacao de uma unica UPDATE: evita race condition de "ler + somar + salvar"
-     * que apareceria caso usassemos {@code anuncio.setTotalVisualizacoes(n + 1)} em
-     * dois requests simultaneos.
-     *
-     * @return numero de linhas atualizadas (1 quando o anuncio existe, 0 caso contrario)
-     */
     @Modifying
     @Query("""
             update Anuncio a
@@ -240,15 +224,6 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             """)
     List<Anuncio> findAtivosNaoExpiradosParaRelevancia();
 
-    // ====================================================================
-    // Queries do modulo de destaque da home (PR D)
-    // ====================================================================
-
-    /**
-     * Anuncios elegiveis para destaque: ATIVOS e nao expirados.
-     * Retorna ate {@code Pageable.size} candidatos ordenados por data desc;
-     * o ranking final por score acontece em memoria no service.
-     */
     @Query("""
             select a from Anuncio a
             where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
@@ -257,9 +232,6 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             """)
     List<Anuncio> findElegiveisParaDestaque(Pageable pageable);
 
-    /**
-     * Variante por categoria; mesmos filtros de elegibilidade.
-     */
     @Query("""
             select a from Anuncio a
             where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
@@ -272,11 +244,6 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             Pageable pageable
     );
 
-    /**
-     * Anuncios elegiveis ordenados diretamente por popularidade
-     * (totalVisualizacoes desc, criadoEm desc como tiebreaker).
-     * Usado pelo contexto POPULARES, que nao aplica score multi-fator.
-     */
     @Query("""
             select a from Anuncio a
             where a.status = com.reusehub.anuncio.model.Anuncio.StatusAnuncio.ATIVO
@@ -285,11 +252,6 @@ public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
             """)
     List<Anuncio> findElegiveisOrdenadosPorPopularidade(Pageable pageable);
 
-    /**
-     * Top categorias com pelo menos {@code minimoAnuncios} anuncios ATIVOS,
-     * ordenadas pela soma de visualizacoes (DESC).
-     * Cada linha retornada e um par {@code [categoriaId (Integer), totalVisualizacoes (Long)]}.
-     */
     @Query("""
             select a.categoria.id, sum(coalesce(a.totalVisualizacoes, 0))
             from Anuncio a

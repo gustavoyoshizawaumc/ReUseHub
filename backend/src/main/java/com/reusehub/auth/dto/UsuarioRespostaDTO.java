@@ -10,16 +10,16 @@ import java.util.UUID;
 @Setter
 public class UsuarioRespostaDTO {
     private UUID id;
-    private String name;  
+    private String name;
     private String email;
-    private String phone;  
+    private String phone;
     private String cpf;
-    private String avatarUrl;  
-    private String bio;  
-    private BigDecimal reputationScore;  
-    private Boolean isActive;  
+    private String avatarUrl;
+    private String bio;
+    private BigDecimal reputationScore;
+    private Boolean isActive;
     private Boolean banido;
-    private Boolean isVerified;  
-    private LocalDateTime createdAt; 
-    private LocalDateTime updatedAt;  
+    private Boolean isVerified;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

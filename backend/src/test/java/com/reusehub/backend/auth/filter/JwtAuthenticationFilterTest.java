@@ -93,10 +93,6 @@ class JwtAuthenticationFilterTest {
 
             filter.doFilter(request, response, filterChain);
 
-            // Comportamento esperado: nao autentica, mas segue a chain.
-            // Em rota publica isso permite anonimo; em rota protegida o
-            // Spring Security devolve 403 naturalmente. Resolver NAO e
-            // acionado - rota publica nao pode ser quebrada por sessao expirada.
             assertNull(SecurityContextHolder.getContext().getAuthentication());
             Mockito.verify(filterChain, Mockito.times(1)).doFilter(request, response);
             Mockito.verify(resolver, Mockito.never())

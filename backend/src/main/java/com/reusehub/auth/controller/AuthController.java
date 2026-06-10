@@ -58,19 +58,19 @@ public class AuthController {
             @RequestParam(required = false) String bio,
             @RequestParam(required = false) MultipartFile avatarFile,
             Authentication authentication) {
-        
+
         UsuarioAtualizacaoDTO dto = new UsuarioAtualizacaoDTO();
         dto.setName(name);
         dto.setPhone(phone);
         dto.setBio(bio);
-        
+
         if (avatarFile != null && !avatarFile.isEmpty()) {
             List<String> urls = storageService.salvarImagens(Collections.singletonList(avatarFile));
             if (!urls.isEmpty()) {
                 dto.setAvatarUrl(urls.get(0));
             }
         }
-        
+
         return ResponseEntity.ok(authService.atualizarPerfilPorEmail(authentication.getName(), dto));
     }
 
@@ -79,7 +79,7 @@ public class AuthController {
     public ResponseEntity<UsuarioRespostaDTO> atualizarPerfilSemArquivo(
             @Valid @RequestBody UsuarioAtualizacaoDTO dto,
             Authentication authentication) {
-        
+
         return ResponseEntity.ok(authService.atualizarPerfilPorEmail(authentication.getName(), dto));
     }
 
@@ -97,10 +97,6 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Inicia o fluxo de recuperação de senha.
-     * Resposta sempre genérica para evitar user enumeration.
-     */
     @PostMapping("/esqueci-senha")
     public ResponseEntity<Map<String, String>> esqueciSenha(@Valid @RequestBody EsqueciSenhaRequest request) {
         passwordResetService.solicitarRecuperacao(request.getEmail());
@@ -109,9 +105,6 @@ public class AuthController {
         ));
     }
 
-    /**
-     * Redefine a senha usando o token recebido por e-mail.
-     */
     @PostMapping("/redefinir-senha")
     public ResponseEntity<Map<String, String>> redefinirSenha(@Valid @RequestBody RedefinirSenhaRequest request) {
         passwordResetService.redefinirSenha(request);

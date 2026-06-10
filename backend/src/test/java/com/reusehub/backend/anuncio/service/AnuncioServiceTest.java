@@ -113,7 +113,7 @@ class AnuncioServiceTest {
         usuarioDono = new Usuario();
         usuarioDono.setEmail(EMAIL_DONO);
         usuarioDono.setName("Dono");
-  
+
         try { usuarioDono.setId(idDono); } catch (Exception e) {}
 
         usuarioInvasor = new Usuario();
@@ -136,8 +136,6 @@ class AnuncioServiceTest {
                 .categoria(Categoria.builder().id(1).nome("Móveis").build())
                 .build();
 
-        // O mapper foi extraido pra um @Component dedicado; aqui simulamos
-        // o comportamento copiando os campos relevantes do anuncio mockado.
         Mockito.lenient().when(anuncioRespostaMapper.mapear(Mockito.any(Anuncio.class)))
                 .thenAnswer(invocacao -> {
                     Anuncio entrada = invocacao.getArgument(0);
@@ -150,7 +148,6 @@ class AnuncioServiceTest {
                             .build();
                 });
 
-        // Categoria padrao usada pelos testes de edicao que nao focam nesse fator.
         Mockito.lenient().when(categoriaRepository.findById(Mockito.anyInt()))
                 .thenAnswer(invocacao -> {
                     Integer idCategoria = invocacao.getArgument(0);
@@ -174,11 +171,6 @@ class AnuncioServiceTest {
         return dto;
     }
 
-    /**
-     * Gera uma lista de imagens mockadas com a quantidade pedida.
-     * Permite testar tanto cenarios validos quanto bordas da regra
-     * de quantidade minima/maxima de imagens por anuncio.
-     */
     private List<MultipartFile> criarListaDeImagens(int quantidade) {
         return IntStream.rangeClosed(1, quantidade)
                 .<MultipartFile>mapToObj(indice -> new MockMultipartFile(
@@ -190,11 +182,6 @@ class AnuncioServiceTest {
                 .toList();
     }
 
-    /**
-     * Retorna uma lista com a quantidade minima de imagens validas exigida
-     * pelo AnuncioService. Util para testes que precisam passar pela
-     * validacao inicial sem que esse seja o foco do cenario testado.
-     */
     private List<MultipartFile> imagensValidasParaCriacao() {
         return criarListaDeImagens(QUANTIDADE_MINIMA_IMAGENS);
     }
@@ -296,7 +283,7 @@ class AnuncioServiceTest {
             );
         }
     }
-    
+
     @Nested
     @DisplayName("Cenários para obterAnuncioPorId")
     class ObterAnuncioCenarios {
@@ -623,7 +610,7 @@ class AnuncioServiceTest {
             Mockito.when(anuncioRepository.save(Mockito.any(Anuncio.class))).thenAnswer(i -> i.getArgument(0));
 
             AnuncioRespostaDTO resultado = anuncioService.alterarStatus(validId, "dono@reusehub.com", Anuncio.StatusAnuncio.CANCELADO);
-            
+
             assertNotNull(resultado);
             assertEquals(Anuncio.StatusAnuncio.CANCELADO, anuncioPendente.getStatus());
         }
@@ -722,9 +709,7 @@ class AnuncioServiceTest {
 
             assertNotNull(resultado);
             assertEquals(Anuncio.StatusAnuncio.REPROVADO, resultado.getStatus());
-            // O motivo deve ser persistido (trimado) e exibido ao anunciante.
             assertEquals("Fotos fora do padrao.", resultado.getMotivoReprovacao());
-            // O anunciante deve ser notificado da reprovacao com o motivo.
             Mockito.verify(moderacaoService).notificarReprovacao(anuncioPendente, "Fotos fora do padrao.");
         }
 
@@ -740,7 +725,6 @@ class AnuncioServiceTest {
             assertThrows(RegraNegocioException.class, () -> {
                 anuncioService.reprovarAnuncio(validId, "moderador@reusehub.com", "   ");
             });
-            // Sem motivo valido, nada deve ser persistido nem notificado.
             Mockito.verify(anuncioRepository, Mockito.never()).save(Mockito.any());
             Mockito.verify(moderacaoService, Mockito.never()).notificarReprovacao(Mockito.any(), Mockito.any());
         }

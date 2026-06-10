@@ -192,18 +192,6 @@ const ConteudoHome: React.FC<ConteudoHomeProps> = ({
   );
 };
 
-/**
- * Combina secoes server-driven (bootstrap-home) com a secao client-driven
- * de ultimas buscas. A ordem desejada e:
- *
- *  1. Baseado nos seus favoritos (RECOMENDADOS_PARA_VOCE) — quando existir
- *  2. Baseado em suas ultimas buscas — quando o usuario tiver historico local
- *  3. Demais secoes do backend (MAIS_PROCURADOS, POPULARES, RECENTES)
- *
- * Quando RECOMENDADOS_PARA_VOCE nao estiver presente (anonimo / sem historico
- * de favoritos), a secao de ultimas buscas vai pro topo. Secoes vazias nao
- * sao incluidas (mesma regra do backend).
- */
 function mesclarSecoes(
   bootstrap: BootstrapHome | null,
   anunciosDeUltimasBuscas: AnuncioDestaque[]
@@ -280,4 +268,3 @@ function obterMensagemErro(err: unknown): string {
 
   return err instanceof Error ? err.message : "Não foi possível filtrar anúncios por localização.";
 }
-

@@ -30,11 +30,6 @@ interface CardAnuncioProps {
   variant?: "list" | "grid";
   isFavorito?: boolean;
   onToggleFavorito?: (id: string) => void | Promise<void>;
-  /**
-   * Origem registrada quando o usuario clicar pra abrir o anuncio
-   * (tracking de visualizacao - PR D.2). Quando indefinida, a navegacao
-   * nao envia origem e o destino cai em LINK_DIRETO.
-   */
   origem?: OrigemVisualizacao;
 }
 

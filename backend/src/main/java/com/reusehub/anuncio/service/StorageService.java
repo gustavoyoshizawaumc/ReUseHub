@@ -63,11 +63,6 @@ public class StorageService {
         return urls;
     }
 
-    /**
-     * Remove uma imagem do S3 a partir da URL publica armazenada no banco.
-     * Falhas de remocao sao toleradas (defesa em profundidade): a imagem ja
-     * foi desreferenciada no banco, entao um orfao no S3 nao quebra o usuario.
-     */
     public void excluirImagem(String urlImagem) {
         if (urlImagem == null || urlImagem.isBlank()) {
             return;
@@ -84,7 +79,6 @@ public class StorageService {
                     .key(chaveDoObjeto)
                     .build());
         } catch (RuntimeException ignored) {
-            // Orfaos no S3 sao aceitaveis; nao bloqueamos a operacao do usuario.
         }
     }
 

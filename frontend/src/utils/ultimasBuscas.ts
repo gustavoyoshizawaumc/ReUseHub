@@ -1,12 +1,3 @@
-/**
- * Persistencia local das ultimas buscas do usuario.
- *
- * Os dados ficam exclusivamente no device (localStorage). Nao vao para o
- * servidor; trocar de browser/device zera o historico. Quando o usuario
- * faz logout, encerrarSessao() chama limparUltimasBuscas() para evitar
- * vazamento entre contas no mesmo browser.
- */
-
 import { readLocalStorage, writeLocalStorage, removeLocalStorage } from "./localStorage";
 
 const CHAVE_ULTIMAS_BUSCAS = "reusehub:ultimas-buscas";
@@ -22,10 +13,6 @@ export interface BuscaSalva {
   buscadoEm: number;
 }
 
-/**
- * Devolve as buscas validas (nao expiradas) ordenadas da mais recente para a mais antiga.
- * Buscas com TTL vencido sao descartadas tanto da resposta quanto do storage.
- */
 export function lerUltimasBuscas(): BuscaSalva[] {
   const todas = readLocalStorage<BuscaSalva[]>(CHAVE_ULTIMAS_BUSCAS) ?? [];
   if (!Array.isArray(todas)) {
@@ -36,17 +23,12 @@ export function lerUltimasBuscas(): BuscaSalva[] {
   const validas = todas.filter((busca) => agora - busca.buscadoEm <= TTL_MS);
 
   if (validas.length !== todas.length) {
-    // Auto-limpeza: persiste apenas o que ainda e valido.
     writeLocalStorage(CHAVE_ULTIMAS_BUSCAS, validas);
   }
 
   return validas.sort((a, b) => b.buscadoEm - a.buscadoEm);
 }
 
-/**
- * Registra uma nova busca, deduplicando por termo (case-insensitive, trim)
- * e mantendo no maximo QUANTIDADE_MAXIMA_BUSCAS entradas (mais recentes).
- */
 export function registrarBusca(termo: string, categoriaId: number | null = null): void {
   const termoNormalizado = termo.trim();
   if (termoNormalizado.length < TAMANHO_MINIMO_TERMO) {

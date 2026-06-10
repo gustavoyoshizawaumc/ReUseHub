@@ -231,8 +231,6 @@ interface GrupoDenuncia {
   totalAbertas: number;
 }
 
-// Agrupa as denuncias por anuncio (1 entrada por anuncio) e ordena pelos mais
-// denunciados primeiro. O agrupamento e feito no cliente sobre a lista carregada.
 const agruparDenunciasPorAnuncio = (denuncias: DenunciaModeracao[]): GrupoDenuncia[] => {
   const porAnuncio = new Map<string, GrupoDenuncia>();
   for (const denuncia of denuncias) {
@@ -989,9 +987,6 @@ export const ModeracaoPage: React.FC = () => {
   }, [isAdmin]);
 
   useEffect(() => {
-    // Carregamento inicial dos dados do painel: fetch unico no mount.
-    // A regra set-state-in-effect e overly strict para este padrao;
-    // refator futuro: migrar para TanStack Query ou useEffectEvent.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregar();
   }, [carregar]);
@@ -1133,9 +1128,6 @@ export const ModeracaoPage: React.FC = () => {
     void executar(anuncioId, acao);
   };
 
-  // Acoes por anuncio: o backend resolve todas as denuncias abertas do anuncio.
-  // descartar/suspender usam um relato representativo (por denunciaId);
-  // reativar/reprovar agem direto no anuncio (acoes herdadas da antiga aba Suspeitos).
   const descartarGrupoEmAnalise = () => {
     if (!grupoEmAnalise) return;
     const { anuncioId, relatos } = grupoEmAnalise;

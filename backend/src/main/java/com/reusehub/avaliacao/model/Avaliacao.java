@@ -44,11 +44,6 @@ public class Avaliacao {
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;
 
-    /**
-     * Quando preenchido, a avaliacao foi removida pela moderacao (soft delete).
-     * A linha permanece para bloquear a recriacao pelo mesmo avaliador no mesmo
-     * anuncio; leituras (media, perfil publico, fila de moderacao) a ignoram.
-     */
     @Column(name = "removido_em")
     private LocalDateTime removidoEm;
 
@@ -59,7 +54,6 @@ public class Avaliacao {
         }
     }
 
-    /** True quando a avaliacao foi removida pela moderacao (soft delete). */
     public boolean estaRemovida() {
         return removidoEm != null;
     }

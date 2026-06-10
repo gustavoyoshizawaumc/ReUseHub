@@ -100,7 +100,6 @@ public class ModeracaoService {
     public DenunciaRespostaDTO descartarDenuncia(UUID denunciaId, String emailModerador, String justificativa) {
         Usuario moderador = validarModerador(emailModerador);
         DenunciaAnuncio denuncia = buscarDenuncia(denunciaId);
-        // Decisao por anuncio: descartar fecha todas as denuncias abertas do mesmo anuncio.
         fecharDenunciasAbertas(denuncia.getAnuncio().getId(), DenunciaAnuncio.StatusDenuncia.DESCARTADA);
         registrar(moderador, "DENUNCIA_DESCARTADA", "DENUNCIA", denunciaId, justificativa);
         return mapearDenuncia(denuncia);
@@ -115,7 +114,6 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
-        // Suspender resolve todas as denuncias abertas do anuncio de uma vez.
         fecharDenunciasAbertas(anuncio.getId(), DenunciaAnuncio.StatusDenuncia.ANALISADA);
 
         registrar(moderador, "DENUNCIA_ANALISADA_COM_SUSPENSAO", "DENUNCIA", denunciaId, motivoSuspensao);
@@ -171,7 +169,6 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.ATIVO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
-        // Reativar = denuncias eram improcedentes: descarta as abertas do anuncio.
         fecharDenunciasAbertas(anuncioId, DenunciaAnuncio.StatusDenuncia.DESCARTADA);
         registrar(moderador, "ANUNCIO_REATIVADO", "ANUNCIO", anuncioId, justificativa);
         return mapearSuspeito(anuncio);
@@ -183,7 +180,6 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
-        // Reprovar definitivo resolve todas as denuncias abertas do anuncio.
         fecharDenunciasAbertas(anuncioId, DenunciaAnuncio.StatusDenuncia.ANALISADA);
         registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", anuncioId, justificativa);
         return mapearSuspeito(anuncio);
@@ -195,8 +191,6 @@ public class ModeracaoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Avaliacao", avaliacaoId));
         Usuario avaliado = avaliacao.getAvaliado();
 
-        // Soft delete: mantem a linha (bloqueia o avaliador de recriar a mesma avaliacao),
-        // mas a marca como removida para sair da reputacao, do perfil publico e da fila.
         if (!avaliacao.estaRemovida()) {
             avaliacao.setRemovidoEm(LocalDateTime.now());
             avaliacaoRepository.save(avaliacao);

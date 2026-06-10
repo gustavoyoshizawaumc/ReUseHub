@@ -103,8 +103,6 @@ class AvaliacaoServiceTest {
     @DisplayName("bloqueia recriar avaliacao quando ja existe uma para o mesmo avaliador+anuncio (inclui removida)")
     void bloqueiaRecriacaoQuandoJaExisteAvaliacao() {
         prepararAvaliacaoPermitida();
-        // Soft delete mantem a linha, entao o guard continua retornando true mesmo apos
-        // a moderacao remover a avaliacao -> o usuario nao consegue avaliar de novo.
         Mockito.when(avaliacaoRepository.existsByAvaliadorIdAndAnuncioId(interessado.getId(), anuncio.getId()))
                 .thenReturn(true);
 
