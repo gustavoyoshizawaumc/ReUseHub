@@ -45,7 +45,7 @@ interface AnunciosPageBaseProps {
 
 // Em "Meus Anuncios" carregamos todos os anuncios do usuario de uma vez e
 // filtramos/paginamos no client (escala pequena). LIMITE e o teto de itens
-// buscados — alto o suficiente para qualquer usuario real; em escala maior o
+// buscados - alto o suficiente para qualquer usuario real; em escala maior o
 // ideal seria filtrar/paginar no backend e ter um endpoint de COUNT.
 const LIMITE_MEUS_ANUNCIOS = 2000;
 const TAMANHO_PAGINA_MEUS_ANUNCIOS = 10;
@@ -131,7 +131,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
   // Modo privado: carrega TODOS os anuncios do usuario de uma vez (sem paginar
   // no servidor) para servir de fonte unica de contadores, filtro de status,
-  // busca por texto e paginacao — tudo resolvido no client. `gatilhoMeusAnuncios`
+  // busca por texto e paginacao - tudo resolvido no client. `gatilhoMeusAnuncios`
   // permite recarregar sob demanda (apos excluir ou ao voltar o foco) sem reagir
   // a cada tecla da busca/filtro.
   const [gatilhoMeusAnuncios, setGatilhoMeusAnuncios] = useState(0);
@@ -148,7 +148,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
 
   // Reatividade ao vivo: ao voltar o foco para a aba, recarrega a lista. Cobre o
   // caso de a moderacao aprovar/reprovar/suspender enquanto a pagina esta aberta
-  // — contadores e lista se ajustam sozinhos.
+  // - contadores e lista se ajustam sozinhos.
   useEffect(() => {
     if (!exibindoMeusAnuncios) return;
 
@@ -447,11 +447,13 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
       <Header />
 
       <main
-        className={`flex-grow bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmc+')] ${
-          exibindoMeusAnuncios ? "py-10 md:py-12" : "py-5 md:py-6"
+        className={`flex-grow ${
+          exibindoMeusAnuncios
+            ? "bg-[#f1f5f9] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNlMmU4ZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMCAwaDQwdjE4SDBWMHptMCAyMGg0MHYxOEgwVjIwek0xOSAwaDJ2NDBoLTJWME05IDBoMnY0MEg5VjBteTIwIDBoMnY0MGgtMlYwek0wIDloNDB2MkgwVjl6bTAgMjBoNDB2MkgwVjI5eiIvPjwvZz48L2c+PC9zdmc+')] py-10 md:py-12"
+            : "bg-[#f8fafc] py-6 md:py-8"
         }`}
       >
-        <div className="max-w-6xl mx-auto px-4">
+        <div className={`${exibindoMeusAnuncios ? "max-w-6xl" : "max-w-[1480px]"} mx-auto px-4 sm:px-6`}>
 
           {/* HEADER MODO PRIVADO */}
           {exibindoMeusAnuncios && (
@@ -612,17 +614,18 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
           <div className={`grid grid-cols-1 ${
             exibindoMeusAnuncios
               ? ""
-              : "lg:grid-cols-[260px_minmax(0,1fr)] gap-5"
+              : "lg:grid-cols-[300px_minmax(0,1fr)] gap-6 xl:gap-8"
           } items-start`}>
 
             {/* SIDEBAR */}
             {!exibindoMeusAnuncios && (
               <aside className={`${!filtrosMoveisAbertos ? "hidden lg:block" : ""} lg:sticky lg:top-24`}>
-                <div className="rounded-[24px] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50">
+                <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                   <>
-                    <div className="mb-4">
-                      <h2 className="text-lg font-extrabold text-slate-900">Filtros</h2>
-                      <p className="text-sm text-slate-500 mt-1">Encontre rapidamente um anúncio específico.</p>
+                    <div className="mb-5 border-b border-slate-100 pb-5">
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Busca</p>
+                      <h2 className="mt-2 text-xl font-black text-slate-950">Filtros</h2>
+                      <p className="mt-1 text-sm font-medium leading-relaxed text-slate-500">Refine os anúncios sem perder o contexto da busca.</p>
                     </div>
                     <FiltrosAnuncios
                       onFiltrar={async (filtro) => {
@@ -642,10 +645,10 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               </aside>
             )}
 
-            {/* CONTEÚDO PRINCIPAL */}
+            {/* CONTEUDO PRINCIPAL */}
             <div className="min-h-[420px] space-y-4 sm:min-h-[720px]">
               {loading && (
-                <div className="flex flex-col items-center justify-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
+                <div className="flex flex-col items-center justify-center rounded-md border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/70 sm:p-16">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />
                   <p className="text-slate-700 font-bold">
                     {exibindoMeusAnuncios ? "Carregando seus anúncios..." : "Buscando anúncios..."}
@@ -655,8 +658,8 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               )}
 
               {erro && (
-                <div className="bg-red-50 border border-red-200 p-4 rounded-[24px] flex items-start gap-3 text-red-700 shadow-sm">
-                  <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-600">
                     <AlertCircle size={18} />
                   </div>
                   <div>
@@ -667,8 +670,8 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               )}
 
               {!loading && !erro && anunciosVisiveis.length === 0 && (
-                <div className="flex flex-col items-center rounded-[32px] border border-slate-100 bg-white p-8 text-center shadow-md sm:p-16">
-                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+                <div className="flex flex-col items-center rounded-md border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/70 sm:p-16">
+                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-md bg-slate-50 text-slate-300">
                     <Package size={40} />
                   </div>
                   <h3 className="text-xl font-extrabold text-slate-800">
@@ -680,7 +683,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                   {semAnunciosCadastrados && (
                     <button
                       onClick={() => navigate("/create-listing")}
-                      className="mt-6 bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-2xl font-bold transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-2 active:scale-95"
+                      className="mt-6 flex items-center justify-center gap-2 rounded-md bg-orange-600 px-6 py-3 font-bold text-white shadow-sm transition-colors hover:bg-orange-700 active:scale-[0.99]"
                     >
                       <PlusCircle size={18} />
                       Criar meu primeiro anúncio
@@ -690,19 +693,29 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               )}
 
               {!loading && anunciosVisiveis.length > 0 && (
-                <div className="bg-white border border-slate-100 rounded-[20px] px-5 py-3 shadow-sm">
-                  <p className="text-sm text-slate-500">
-                    Exibindo{" "}
-                    <span className="font-extrabold text-slate-800">{anunciosVisiveis.length}</span>{" "}
-                    anúncio{anunciosVisiveis.length > 1 ? "s" : ""} nesta página.
-                  </p>
+                <div className="rounded-md border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-200/60">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
+                        Resultados
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">
+                        Exibindo{" "}
+                        <span className="font-black text-slate-950">{anunciosVisiveis.length}</span>{" "}
+                        anúncio{anunciosVisiveis.length > 1 ? "s" : ""} nesta página.
+                      </p>
+                    </div>
+                    <p className="text-xs font-bold text-slate-400">
+                      {possuiBuscaAtiva(filtroPublicoAtual) ? "Filtros aplicados" : "Listagem geral"}
+                    </p>
+                  </div>
                 </div>
               )}
 
               <div className={
                 exibindoMeusAnuncios
                   ? "grid grid-cols-1 gap-4"
-                  : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                  : "grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3"
               }>
                 {anunciosVisiveis.map((anuncio) => (
                   <div
@@ -722,11 +735,11 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
               </div>
 
               {!loading && totalPaginasExibidas > 1 && (
-                <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mt-8">
+                <div className="mt-8 flex items-center justify-between rounded-md border border-slate-200 bg-white p-4 shadow-sm">
                   <button
                     onClick={handleAnterior}
                     disabled={paginaAtualExibida === 0}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all"
+                    className="flex items-center gap-2 rounded-md px-4 py-2 font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-30"
                   >
                     <ChevronLeft size={20} />
                     Anterior
@@ -737,7 +750,7 @@ export const AnunciosPageBase: React.FC<AnunciosPageBaseProps> = ({ modo }) => {
                   <button
                     onClick={handleProxima}
                     disabled={paginaAtualExibida >= totalPaginasExibidas - 1}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-30 transition-all"
+                    className="flex items-center gap-2 rounded-md px-4 py-2 font-bold text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-30"
                   >
                     Próxima
                     <ChevronRight size={20} />
