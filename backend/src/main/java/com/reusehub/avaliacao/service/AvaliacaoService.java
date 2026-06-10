@@ -170,7 +170,7 @@ public class AvaliacaoService {
 
     @Transactional(readOnly = true)
     public List<AvaliacaoRespostaDTO> listarRecebidas(UUID usuarioId) {
-        return avaliacaoRepository.findByAvaliadoIdOrderByCriadoEmDesc(usuarioId)
+        return avaliacaoRepository.findByAvaliadoIdAndRemovidoEmIsNullOrderByCriadoEmDesc(usuarioId)
                 .stream()
                 .map(this::mapear)
                 .toList();

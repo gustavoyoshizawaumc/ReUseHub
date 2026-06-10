@@ -7,6 +7,7 @@ import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.avaliacao.model.Avaliacao;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.denuncia.dto.DenunciaCriacaoDTO;
 import com.reusehub.denuncia.dto.DenunciaRespostaDTO;
@@ -32,6 +33,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes Unitarios de ModeracaoService")
@@ -175,6 +177,40 @@ class ModeracaoServiceTest {
                     Mockito.any(), Mockito.anyString()
             );
         }
+    }
+
+    @Nested
+    @DisplayName("Cenarios para removerAvaliacao")
+    class RemoverAvaliacaoCenarios {
+
+        @Test
+        @DisplayName("deve marcar a avaliacao como removida (soft delete) sem apaga-la do banco")
+        void removerFazSoftDelete() {
+            Usuario moderador = construirModerador();
+            Avaliacao avaliacao = construirAvaliacao();
+
+            Mockito.when(usuarioRepository.findByEmail(moderador.getEmail())).thenReturn(Optional.of(moderador));
+            Mockito.when(avaliacaoRepository.findById(avaliacao.getId())).thenReturn(Optional.of(avaliacao));
+            Mockito.when(avaliacaoRepository.calcularMediaDoAvaliado(donoAnuncio.getId())).thenReturn(null);
+
+            moderacaoService.removerAvaliacao(avaliacao.getId(), moderador.getEmail(), "Conteudo ofensivo.");
+
+            assertTrue(avaliacao.estaRemovida(), "avaliacao deve ficar marcada como removida (soft delete)");
+            Mockito.verify(avaliacaoRepository).save(avaliacao);
+            Mockito.verify(avaliacaoRepository, Mockito.never()).delete(Mockito.any(Avaliacao.class));
+            Mockito.verify(historicoRepository).save(Mockito.any());
+        }
+    }
+
+    private Avaliacao construirAvaliacao() {
+        return Avaliacao.builder()
+                .id(UUID.randomUUID())
+                .avaliador(denunciante)
+                .avaliado(donoAnuncio)
+                .anuncio(anuncioAlheio)
+                .nota((short) 1)
+                .comentario("comentario qualquer")
+                .build();
     }
 
     private Usuario construirModerador() {

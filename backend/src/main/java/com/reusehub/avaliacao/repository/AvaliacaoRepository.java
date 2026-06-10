@@ -23,7 +23,8 @@ public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
 
     @Query("""
             select a from Avaliacao a
-            where (:termo = ''
+            where a.removidoEm is null
+              and (:termo = ''
                 or lower(a.anuncio.titulo) like lower(concat('%', :termo, '%'))
                 or lower(a.avaliador.name) like lower(concat('%', :termo, '%'))
                 or lower(a.avaliado.name) like lower(concat('%', :termo, '%'))
@@ -42,8 +43,8 @@ public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
             Pageable pageable
     );
 
-    List<Avaliacao> findByAvaliadoIdOrderByCriadoEmDesc(UUID avaliadoId);
+    List<Avaliacao> findByAvaliadoIdAndRemovidoEmIsNullOrderByCriadoEmDesc(UUID avaliadoId);
 
-    @Query("select avg(a.nota) from Avaliacao a where a.avaliado.id = :avaliadoId")
+    @Query("select avg(a.nota) from Avaliacao a where a.avaliado.id = :avaliadoId and a.removidoEm is null")
     Double calcularMediaDoAvaliado(UUID avaliadoId);
 }
