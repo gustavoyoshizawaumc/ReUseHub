@@ -67,7 +67,16 @@ public class ViaCepService {
             String bairro,
             String cidade,
             String uf
-    ) {}
+    ) {
+        /**
+         * Endereco textual completo no formato esperado pelo geocoder (TomTom).
+         * Fonte unica compartilhada pela criacao de anuncio e pela busca por raio,
+         * para garantir que o mesmo CEP produza sempre o mesmo ponto.
+         */
+        public String paraEnderecoCompleto() {
+            return String.format("%s, %s, %s, %s, Brasil", rua, bairro, cidade, uf);
+        }
+    }
 
     private record ViaCepResposta(
             String cep,
