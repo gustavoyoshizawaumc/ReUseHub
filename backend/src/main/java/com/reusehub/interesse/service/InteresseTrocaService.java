@@ -370,7 +370,7 @@ public class InteresseTrocaService {
 
         if (jaEstaNegociandoEsteAnuncio) {
             throw new RegraNegocioException(
-                    "Voce ja possui uma negociacao aceita para este anuncio. Conclua ou cancele a negociacao atual antes de enviar outra solicitacao."
+                    "Você já está negociando este anúncio. Conclua ou cancele a negociação atual antes de enviar outra proposta."
             );
         }
 
@@ -389,7 +389,7 @@ public class InteresseTrocaService {
 
         if (existeSolicitacaoPendenteComMesmoItem) {
             throw new RegraNegocioException(
-                    "Voce ja enviou uma solicitacao pendente para este anuncio usando este item. Aguarde a resposta antes de enviar outra solicitacao."
+                    "Você já enviou uma proposta pendente com esse item. Aguarde o anunciante responder antes de enviar outra."
             );
         }
     }

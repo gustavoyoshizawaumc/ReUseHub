@@ -26,6 +26,20 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
 
   const isTroca = anuncio.tipo === "TROCA";
 
+  const obterTituloErro = (mensagemErro: string) => {
+    const mensagemNormalizada = mensagemErro.toLowerCase();
+
+    if (
+      mensagemNormalizada.includes("proposta pendente") ||
+      mensagemNormalizada.includes("negociando este anúncio") ||
+      mensagemNormalizada.includes("negociando este anuncio")
+    ) {
+      return "Proposta já registrada";
+    }
+
+    return "Não foi possível enviar";
+  };
+
   useEffect(() => {
     const carregarMeusAnuncios = async () => {
       if (!open || !isTroca) return;
@@ -96,10 +110,14 @@ export const InteresseModal: React.FC<InteresseModalProps> = ({
       onClose();
       onSuccess?.();
     } catch (err) {
+      const mensagemErro = err instanceof Error
+        ? err.message
+        : "Tente novamente em alguns instantes.";
+
       notify({
         variant: "error",
-        title: "Erro ao enviar interesse",
-        message: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+        title: obterTituloErro(mensagemErro),
+        message: mensagemErro,
       });
     } finally {
       setSubmitting(false);
