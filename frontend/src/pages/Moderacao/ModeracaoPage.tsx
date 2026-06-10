@@ -20,7 +20,6 @@ import {
   Eye,
   FileText,
   Search,
-  ShieldOff,
   Star,
   Trash2,
   UserCog,
@@ -50,7 +49,6 @@ import {
   reprovarAnuncio,
   reprovarSuspeito,
   removerAvaliacaoModeracao,
-  suspenderAnuncioPorDenuncia,
   type AdminDashboard,
   type AdminUsuario,
   type AnuncioModeracaoFiltros,
@@ -663,31 +661,17 @@ const DenunciaAnaliseModal = ({
   grupo,
   onClose,
   onDismiss,
-  onSuspend,
   onReprove,
   processando,
 }: {
   grupo: GrupoDenuncia;
   onClose: () => void;
   onDismiss: () => void;
-  onSuspend: (mensagem: string) => void;
   onReprove: () => void;
   processando: boolean;
 }) => {
-  const [mensagemSuspensao, setMensagemSuspensao] = useState('');
-  const [erroMensagem, setErroMensagem] = useState<string | null>(null);
   const foto = imageUrl(grupo.imagensUrls?.[0]);
-  const podeSuspender = grupo.statusAnuncio !== 'SUSPENSO' && grupo.statusAnuncio !== 'REPROVADO';
   const podeReprovar = grupo.statusAnuncio !== 'REPROVADO';
-
-  const suspender = () => {
-    const mensagem = mensagemSuspensao.trim();
-    if (!mensagem) {
-      setErroMensagem('Informe a mensagem que sera exibida ao anunciante.');
-      return;
-    }
-    onSuspend(mensagem);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
@@ -766,28 +750,16 @@ const DenunciaAnaliseModal = ({
               </div>
             </div>
 
-            {podeSuspender && (
-              <label className="block">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Mensagem ao anunciante em caso de suspensao</span>
-                <textarea
-                  value={mensagemSuspensao}
-                  onChange={(event) => {
-                    setMensagemSuspensao(event.target.value);
-                    setErroMensagem(null);
-                  }}
-                  rows={5}
-                  placeholder="Explique objetivamente por que o anuncio foi suspenso. O anunciante precisara cadastrar um novo anuncio."
-                  className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500"
-                />
-                {erroMensagem && <span className="mt-1 block text-xs font-bold text-rose-600">{erroMensagem}</span>}
-              </label>
-            )}
+            <div className="rounded-md border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+              Revise os relatos antes de decidir. Ao descartar, todas as denuncias abertas deste anuncio sao encerradas como improcedentes.
+              Ao reprovar definitivamente, o anuncio sai do ar e as negociacoes ativas vinculadas a ele sao canceladas.
+            </div>
           </section>
         </div>
 
         <footer className="flex flex-col gap-2 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-semibold text-slate-400">
-            Descarte quando as denuncias forem improcedentes. Suspender cancela propostas/negociacoes e notifica os envolvidos.
+            Use reprovar somente quando o conteudo realmente deve sair do ar em definitivo.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             {grupo.totalAbertas > 0 && (
@@ -808,16 +780,6 @@ const DenunciaAnaliseModal = ({
                 className="inline-flex items-center justify-center gap-1.5 rounded-md bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
               >
                 <XCircle size={16} /> Reprovar definitivo
-              </button>
-            )}
-            {podeSuspender && (
-              <button
-                type="button"
-                onClick={suspender}
-                disabled={processando}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-orange-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
-              >
-                <ShieldOff size={16} /> Suspender anuncio
               </button>
             )}
           </div>
@@ -1121,13 +1083,6 @@ export const ModeracaoPage: React.FC = () => {
     void executar(anuncioId, () => descartarDenuncia(relatos[0].id, 'Denuncia improcedente.'));
   };
 
-  const suspenderGrupoEmAnalise = (mensagem: string) => {
-    if (!grupoEmAnalise) return;
-    const { anuncioId, relatos } = grupoEmAnalise;
-    setGrupoEmAnalise(null);
-    void executar(anuncioId, () => suspenderAnuncioPorDenuncia(relatos[0].id, mensagem));
-  };
-
   const reprovarGrupoEmAnalise = () => {
     if (!grupoEmAnalise) return;
     const { anuncioId } = grupoEmAnalise;
@@ -1295,7 +1250,6 @@ export const ModeracaoPage: React.FC = () => {
           grupo={grupoEmAnalise}
           onClose={() => setGrupoEmAnalise(null)}
           onDismiss={descartarGrupoEmAnalise}
-          onSuspend={suspenderGrupoEmAnalise}
           onReprove={reprovarGrupoEmAnalise}
           processando={processando === grupoEmAnalise.anuncioId}
         />

@@ -204,24 +204,48 @@ export const InteressesRecebidosPage: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc]">
       <Header />
 
-      <main className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Negociacoes</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Acompanhe propostas recebidas, enviadas, concluidas e canceladas.
-          </p>
+      <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:py-8">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">Central de negociacoes</p>
+              <h1 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">Interesses e propostas</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Acompanhe o que voce recebeu, enviou e concluiu. As conversas continuam preservadas no chat quando a negociacao termina.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[420px]">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recebidas</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.recebidas}</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Enviadas</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.enviadas}</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Concluidas</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.concluidas}</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Encerradas</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.canceladas}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+        <div className="flex gap-2 overflow-x-auto rounded-md border border-slate-200 bg-white p-2 shadow-sm">
           {filtros.map((opcao) => (
             <button
               key={opcao.value}
               type="button"
               onClick={() => setFiltro(opcao.value)}
-              className={`shrink-0 rounded-md px-3 py-2 text-xs font-bold transition-colors ${
+              className={`shrink-0 rounded-md px-4 py-2 text-xs font-black uppercase tracking-wide transition-colors ${
                 filtro === opcao.value
                   ? "bg-blue-600 text-white"
-                  : "bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                  : "bg-white text-slate-500 hover:bg-blue-50 hover:text-blue-700"
               }`}
             >
               {opcao.label}
@@ -231,11 +255,11 @@ export const InteressesRecebidosPage: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-500 shadow-sm">
+          <div className="rounded-md border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-bold text-slate-500 shadow-sm">
             Carregando negociacoes...
           </div>
         ) : interessesFiltrados.length === 0 ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-500 shadow-sm">
+          <div className="rounded-md border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-bold text-slate-500 shadow-sm">
             Nenhuma negociacao encontrada para este filtro.
           </div>
         ) : (
@@ -259,8 +283,8 @@ export const InteressesRecebidosPage: React.FC = () => {
             const tipoTexto = item.anuncioDesejadoTipo === "DOACAO" ? "Doacao" : "Troca";
 
             return (
-              <div key={item.id} className="space-y-5 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+              <article key={item.id} className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition-colors hover:border-blue-200">
+                <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_auto]">
                   <div className="flex min-w-0 items-start gap-3 sm:gap-4">
                     <MiniImagem
                       url={item.anuncioDesejadoImagemUrl}
@@ -291,8 +315,8 @@ export const InteressesRecebidosPage: React.FC = () => {
                       </div>
                       <p className="mt-2 text-xs font-semibold text-slate-400">
                         Criada em {dataCurta(item.criadoEm)}
-                        {item.canceladoEm ? ` • Encerrada em ${dataCurta(item.canceladoEm)}` : ""}
-                        {item.recebimentoConfirmadoEm ? ` • Concluida em ${dataCurta(item.recebimentoConfirmadoEm)}` : ""}
+                        {item.canceladoEm ? ` - Encerrada em ${dataCurta(item.canceladoEm)}` : ""}
+                        {item.recebimentoConfirmadoEm ? ` - Concluida em ${dataCurta(item.recebimentoConfirmadoEm)}` : ""}
                       </p>
                     </div>
                   </div>
@@ -303,56 +327,62 @@ export const InteressesRecebidosPage: React.FC = () => {
                   </span>
                 </div>
 
-                {item.anuncioOferecidoTitulo && (
-                  <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:gap-4 sm:p-4">
-                    <MiniImagem
-                      url={item.anuncioOferecidoImagemUrl}
-                      alt={item.anuncioOferecidoTitulo}
-                    />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase text-orange-600">
-                        Item oferecido na troca
-                      </p>
-                      <p className="break-words font-bold text-slate-800">
-                        {item.anuncioOferecidoTitulo}
-                      </p>
+                <div className="space-y-4 border-t border-slate-100 bg-slate-50/70 p-4 sm:p-5">
+                  {item.anuncioOferecidoTitulo && (
+                    <div className="flex items-start gap-3 rounded-md border border-slate-200 bg-white p-3 sm:gap-4 sm:p-4">
+                      <MiniImagem
+                        url={item.anuncioOferecidoImagemUrl}
+                        alt={item.anuncioOferecidoTitulo}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black uppercase tracking-wide text-orange-600">
+                          Item oferecido na troca
+                        </p>
+                        <p className="mt-1 break-words font-bold text-slate-900">
+                          {item.anuncioOferecidoTitulo}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <p className="whitespace-pre-wrap rounded-lg border border-slate-200 p-4 text-slate-700">
-                  {item.mensagem}
-                </p>
+                  <p className="whitespace-pre-wrap rounded-md border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
+                    {item.mensagem}
+                  </p>
 
-                {podeResponder && (
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <button
-                      onClick={() => handleAceitar(item.id)}
-                      disabled={processingId === item.id}
-                      className="w-full rounded-lg bg-emerald-600 px-5 py-3 font-bold text-white disabled:opacity-60 sm:w-auto"
-                    >
-                      {processingId === item.id ? "Processando..." : "Aceitar"}
-                    </button>
+                  {(podeResponder || (podeAvaliar && avaliadoId)) && (
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      {podeResponder && (
+                        <>
+                          <button
+                            onClick={() => handleAceitar(item.id)}
+                            disabled={processingId === item.id}
+                            className="w-full rounded-md bg-emerald-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-60 sm:w-auto"
+                          >
+                            {processingId === item.id ? "Processando..." : "Aceitar"}
+                          </button>
 
-                    <button
-                      onClick={() => handleRecusar(item.id)}
-                      disabled={processingId === item.id}
-                      className="w-full rounded-lg bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-60 sm:w-auto"
-                    >
-                      {processingId === item.id ? "Processando..." : "Recusar"}
-                    </button>
-                  </div>
-                )}
+                          <button
+                            onClick={() => handleRecusar(item.id)}
+                            disabled={processingId === item.id}
+                            className="w-full rounded-md border border-rose-200 bg-white px-5 py-3 text-sm font-black text-rose-700 transition-colors hover:bg-rose-50 disabled:opacity-60 sm:w-auto"
+                          >
+                            {processingId === item.id ? "Processando..." : "Recusar"}
+                          </button>
+                        </>
+                      )}
 
-                {podeAvaliar && avaliadoId && (
-                  <button
-                    onClick={() => setAvaliacao(item)}
-                    className="w-full rounded-lg bg-orange-500 px-5 py-3 font-bold text-white sm:w-auto"
-                  >
-                    Avaliar {avaliadoNome}
-                  </button>
-                )}
-              </div>
+                      {podeAvaliar && avaliadoId && (
+                        <button
+                          onClick={() => setAvaliacao(item)}
+                          className="w-full rounded-md bg-orange-500 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-orange-600 sm:w-auto"
+                        >
+                          Avaliar {avaliadoNome}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </article>
             );
           })
         )}

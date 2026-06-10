@@ -194,6 +194,42 @@ class ModeracaoServiceTest {
                     Mockito.any(), Mockito.eq("INTERESSE")
             );
         }
+
+        @Test
+        @DisplayName("reprovar definitivo deve cancelar negociacoes ativas e notificar envolvidos")
+        void reprovarDefinitivoCancelaNegociacoesAtivas() {
+            Usuario moderador = construirModerador();
+            DenunciaAnuncio d1 = construirDenunciaAberta();
+            InteresseTroca pendente = construirInteresse(InteresseTroca.StatusInteresse.PENDENTE);
+            InteresseTroca aceito = construirInteresse(InteresseTroca.StatusInteresse.ACEITO);
+
+            Mockito.when(usuarioRepository.findByEmail(moderador.getEmail())).thenReturn(Optional.of(moderador));
+            Mockito.when(anuncioRepository.findById(anuncioAlheio.getId())).thenReturn(Optional.of(anuncioAlheio));
+            Mockito.when(denunciaRepository.findByAnuncioIdAndStatus(
+                    anuncioAlheio.getId(), DenunciaAnuncio.StatusDenuncia.ABERTA
+            )).thenReturn(List.of(d1));
+            Mockito.when(interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
+                    Mockito.eq(anuncioAlheio.getId()), Mockito.anyList()
+            )).thenReturn(List.of(pendente, aceito));
+
+            moderacaoService.reprovarDefinitivo(anuncioAlheio.getId(), moderador.getEmail(), "Conteudo proibido.");
+
+            assertEquals(Anuncio.StatusAnuncio.REPROVADO, anuncioAlheio.getStatus());
+            assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d1.getStatus());
+            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, pendente.getStatus());
+            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, aceito.getStatus());
+            assertNotNull(pendente.getCanceladoEm());
+            assertNotNull(aceito.getCanceladoEm());
+            Mockito.verify(interesseTrocaRepository).saveAll(List.of(pendente, aceito));
+            Mockito.verify(notificacaoService).criar(
+                    Mockito.any(), Mockito.eq("ANUNCIO_REPROVADO"), Mockito.anyString(), Mockito.anyString(),
+                    Mockito.any(), Mockito.eq("ANUNCIO")
+            );
+            Mockito.verify(notificacaoService, Mockito.times(2)).criar(
+                    Mockito.any(), Mockito.eq("NEGOCIACAO_CANCELADA_MODERACAO"), Mockito.anyString(), Mockito.anyString(),
+                    Mockito.any(), Mockito.eq("INTERESSE")
+            );
+        }
     }
 
     @Nested

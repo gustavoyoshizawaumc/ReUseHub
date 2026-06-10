@@ -117,7 +117,7 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
-        cancelarNegociacoesDoAnuncioSuspenso(anuncio, moderador, motivoSuspensao);
+        cancelarNegociacoesDoAnuncioModerado(anuncio, moderador, motivoSuspensao, "suspenso");
         fecharDenunciasAbertas(anuncio.getId(), DenunciaAnuncio.StatusDenuncia.ANALISADA);
 
         registrar(moderador, "DENUNCIA_ANALISADA_COM_SUSPENSAO", "DENUNCIA", denunciaId, motivoSuspensao);
@@ -162,7 +162,7 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
-        cancelarNegociacoesDoAnuncioSuspenso(anuncio, moderador, motivoSuspensao);
+        cancelarNegociacoesDoAnuncioModerado(anuncio, moderador, motivoSuspensao, "suspenso");
         registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncioId, motivoSuspensao);
         notificarSuspensao(anuncio, motivoSuspensao);
         return mapearSuspeito(anuncio);
@@ -185,11 +185,14 @@ public class ModeracaoService {
     public AnuncioSuspeitoDTO reprovarDefinitivo(UUID anuncioId, String emailModerador, String justificativa) {
         Usuario moderador = validarModerador(emailModerador);
         Anuncio anuncio = buscarAnuncio(anuncioId);
+        String motivoReprovacao = motivoModeracao(justificativa, "Anuncio reprovado pela moderacao.");
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
+        cancelarNegociacoesDoAnuncioModerado(anuncio, moderador, motivoReprovacao, "reprovado");
         fecharDenunciasAbertas(anuncioId, DenunciaAnuncio.StatusDenuncia.ANALISADA);
-        registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", anuncioId, justificativa);
+        registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", anuncioId, motivoReprovacao);
+        notificarReprovacao(anuncio, motivoReprovacao);
         return mapearSuspeito(anuncio);
     }
 
@@ -363,6 +366,10 @@ public class ModeracaoService {
         return justificativa.trim();
     }
 
+    private String motivoModeracao(String justificativa, String padrao) {
+        return justificativa == null || justificativa.isBlank() ? padrao : justificativa.trim();
+    }
+
     private void fecharDenunciasAbertas(UUID anuncioId, DenunciaAnuncio.StatusDenuncia novoStatus) {
         List<DenunciaAnuncio> abertas = denunciaRepository.findByAnuncioIdAndStatus(
                 anuncioId, DenunciaAnuncio.StatusDenuncia.ABERTA);
@@ -382,7 +389,12 @@ public class ModeracaoService {
         );
     }
 
-    private void cancelarNegociacoesDoAnuncioSuspenso(Anuncio anuncio, Usuario moderador, String motivoSuspensao) {
+    private void cancelarNegociacoesDoAnuncioModerado(
+            Anuncio anuncio,
+            Usuario moderador,
+            String motivoModeracao,
+            String acaoModeracao
+    ) {
         List<InteresseTroca> interessesAtivos = interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
                 anuncio.getId(),
                 List.of(
@@ -401,23 +413,24 @@ public class ModeracaoService {
             interesse.setStatus(InteresseTroca.StatusInteresse.CANCELADO);
             interesse.setCanceladoEm(canceladoEm);
             interesse.setCanceladoPor(moderador);
-            notificarInteressadoSobreCancelamentoPorSuspensao(interesse, statusAnterior, motivoSuspensao);
+            notificarInteressadoSobreCancelamentoPorModeracao(interesse, statusAnterior, motivoModeracao, acaoModeracao);
         }
 
         interesseTrocaRepository.saveAll(interessesAtivos);
     }
 
-    private void notificarInteressadoSobreCancelamentoPorSuspensao(
+    private void notificarInteressadoSobreCancelamentoPorModeracao(
             InteresseTroca interesse,
             InteresseTroca.StatusInteresse statusAnterior,
-            String motivoSuspensao
+            String motivoModeracao,
+            String acaoModeracao
     ) {
         String titulo = statusAnterior == InteresseTroca.StatusInteresse.ACEITO
                 ? "Negociacao cancelada"
                 : "Proposta cancelada";
         String mensagem = "A negociacao do anuncio \"" + interesse.getAnuncioDesejado().getTitulo()
-                + "\" foi cancelada porque o anuncio foi suspenso pela moderacao. Motivo: "
-                + motivoSuspensao + ".";
+                + "\" foi cancelada porque o anuncio foi " + acaoModeracao + " pela moderacao. Motivo: "
+                + motivoModeracao + ".";
 
         notificacaoService.criar(
                 interesse.getInteressado(),
