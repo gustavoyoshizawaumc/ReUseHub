@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight, MessageSquare, Star } from "lucide-react";
 import type { AvaliacaoResposta } from "../../types/avaliacao.types";
 
@@ -32,6 +32,9 @@ export const AvaliacoesCarousel: React.FC<AvaliacoesCarouselProps> = ({
   podeRemover = false,
 }) => {
   const [pagina, setPagina] = useState(0);
+  const [animacaoAtiva, setAnimacaoAtiva] = useState(false);
+  const timeoutAnimacaoRef = useRef<number | null>(null);
+  const frameAnimacaoRef = useRef<number | null>(null);
   const totalPaginas = Math.max(1, Math.ceil(avaliacoes.length / ITENS_POR_PAGINA));
 
   const avaliacoesVisiveis = useMemo(() => {
@@ -39,8 +42,48 @@ export const AvaliacoesCarousel: React.FC<AvaliacoesCarouselProps> = ({
     return avaliacoes.slice(inicio, inicio + ITENS_POR_PAGINA);
   }, [avaliacoes, pagina]);
 
-  const voltar = () => setPagina((atual) => Math.max(0, atual - 1));
-  const avancar = () => setPagina((atual) => Math.min(totalPaginas - 1, atual + 1));
+  const limparAnimacaoPendente = () => {
+    if (timeoutAnimacaoRef.current !== null) {
+      window.clearTimeout(timeoutAnimacaoRef.current);
+      timeoutAnimacaoRef.current = null;
+    }
+
+    if (frameAnimacaoRef.current !== null) {
+      window.cancelAnimationFrame(frameAnimacaoRef.current);
+      frameAnimacaoRef.current = null;
+    }
+  };
+
+  const trocarPagina = (proximaPagina: number) => {
+    if (proximaPagina === pagina) {
+      return;
+    }
+
+    limparAnimacaoPendente();
+    setAnimacaoAtiva(true);
+
+    timeoutAnimacaoRef.current = window.setTimeout(() => {
+      setPagina(proximaPagina);
+      frameAnimacaoRef.current = window.requestAnimationFrame(() => {
+        setAnimacaoAtiva(false);
+      });
+    }, 120);
+  };
+
+  const voltar = () => trocarPagina(Math.max(0, pagina - 1));
+  const avancar = () => trocarPagina(Math.min(totalPaginas - 1, pagina + 1));
+
+  useEffect(() => {
+    return () => {
+      if (timeoutAnimacaoRef.current !== null) {
+        window.clearTimeout(timeoutAnimacaoRef.current);
+      }
+
+      if (frameAnimacaoRef.current !== null) {
+        window.cancelAnimationFrame(frameAnimacaoRef.current);
+      }
+    };
+  }, []);
 
   if (avaliacoes.length === 0) {
     return (
@@ -52,7 +95,13 @@ export const AvaliacoesCarousel: React.FC<AvaliacoesCarouselProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-4 motion-safe:transform-gpu motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out md:grid-cols-2 ${
+          animacaoAtiva
+            ? "opacity-0 translate-y-1"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
         {avaliacoesVisiveis.map((avaliacao) => (
           <article
             key={avaliacao.id}
