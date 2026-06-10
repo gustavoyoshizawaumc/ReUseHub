@@ -7,6 +7,7 @@ import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
+import com.reusehub.chat.dto.ConversaRespostaDTO;
 import com.reusehub.chat.service.ChatService;
 import com.reusehub.interesse.dto.InteresseCriacaoDTO;
 import com.reusehub.interesse.model.InteresseTroca;
@@ -23,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -219,6 +221,62 @@ class InteresseTrocaServiceTest {
                 InteresseTroca.StatusInteresse.PENDENTE
         );
         Mockito.verify(interesseTrocaRepository, Mockito.never()).save(Mockito.any(InteresseTroca.class));
+    }
+
+    @Test
+    @DisplayName("aceitar proposta rejeita outras pendentes do mesmo interessado no anuncio")
+    void aceitarRejeitaOutrasPendentesDoMesmoInteressadoNoAnuncio() {
+        Anuncio anuncioOferecido = anuncioDoInteressado(Anuncio.TipoAnuncio.TROCA, Anuncio.StatusAnuncio.ATIVO);
+        interesse.setStatus(InteresseTroca.StatusInteresse.PENDENTE);
+        interesse.setAnuncioOferecido(anuncioOferecido);
+        Mockito.when(usuarioRepository.findByEmail(dono.getEmail())).thenReturn(Optional.of(dono));
+        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndStatus(
+                anuncio.getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        )).thenReturn(false);
+        Mockito.when(chatService.iniciarOuRecuperarConversaComOferta(
+                Mockito.eq(dono.getEmail()),
+                Mockito.any(),
+                Mockito.eq(anuncioOferecido.getId().toString())
+        )).thenReturn(new ConversaRespostaDTO(
+                "conversa-1",
+                interessado.getId().toString(),
+                interessado.getName(),
+                null,
+                anuncio.getId().toString(),
+                anuncio.getTitulo(),
+                null,
+                anuncioOferecido.getId().toString(),
+                anuncioOferecido.getTitulo(),
+                null,
+                interesse.getId().toString(),
+                anuncio.getStatus().name(),
+                null,
+                null,
+                null,
+                false,
+                false,
+                true,
+                false,
+                false,
+                false,
+                false,
+                List.of()
+        ));
+        Mockito.when(imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(anuncio.getId()))
+                .thenReturn(List.of());
+        Mockito.when(imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(anuncioOferecido.getId()))
+                .thenReturn(List.of());
+
+        interesseTrocaService.aceitarInteresse(interesse.getId(), dono.getEmail());
+
+        assertEquals(InteresseTroca.StatusInteresse.ACEITO, interesse.getStatus());
+        Mockito.verify(interesseTrocaRepository).rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+                interesse.getId(),
+                anuncio.getId(),
+                interessado.getId()
+        );
+        Mockito.verify(interesseTrocaRepository).save(interesse);
     }
 
     @Test

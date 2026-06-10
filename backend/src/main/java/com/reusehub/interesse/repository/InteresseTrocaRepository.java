@@ -53,6 +53,21 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
             InteresseTroca.StatusInteresse status
     );
 
+    @Modifying
+    @Query(value = """
+            update interesses_troca
+            set status = 'REJEITADO'
+            where status = 'PENDENTE'
+              and id <> :interesseAceitoId
+              and anuncio_id = :anuncioId
+              and usuario_interessado_id = :interessadoId
+            """, nativeQuery = true)
+    int rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+            @Param("interesseAceitoId") UUID interesseAceitoId,
+            @Param("anuncioId") UUID anuncioId,
+            @Param("interessadoId") UUID interessadoId
+    );
+
     Optional<InteresseTroca> findFirstByAnuncioDesejadoIdAndInteressadoIdAndStatusOrderByCriadoEmDesc(
             UUID anuncioId,
             UUID interessadoId,

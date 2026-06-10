@@ -147,6 +147,11 @@ public class InteresseTrocaService {
         }
 
         interesse.setStatus(InteresseTroca.StatusInteresse.ACEITO);
+        interesseTrocaRepository.rejeitarPendentesDoMesmoInteressadoNoAnuncio(
+                interesse.getId(),
+                interesse.getAnuncioDesejado().getId(),
+                interesse.getInteressado().getId()
+        );
 
         ConversaRespostaDTO conversa = chatService.iniciarOuRecuperarConversaComOferta(
                 dono.getEmail(),
