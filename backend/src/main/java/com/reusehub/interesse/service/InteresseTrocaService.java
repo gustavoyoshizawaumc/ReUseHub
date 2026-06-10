@@ -32,11 +32,6 @@ import java.util.UUID;
 @Transactional
 public class InteresseTrocaService {
 
-    private static final List<InteresseTroca.StatusInteresse> STATUS_INTERESSE_ATIVOS = List.of(
-            InteresseTroca.StatusInteresse.PENDENTE,
-            InteresseTroca.StatusInteresse.ACEITO
-    );
-
     private final InteresseTrocaRepository interesseTrocaRepository;
     private final UsuarioRepository usuarioRepository;
     private final AnuncioRepository anuncioRepository;
@@ -367,22 +362,34 @@ public class InteresseTrocaService {
             Anuncio anuncioDesejado,
             Anuncio anuncioOferecido
     ) {
-        boolean existeInteresseAtivo = anuncioOferecido == null
-                ? interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIsNullAndStatusIn(
+        boolean jaEstaNegociandoEsteAnuncio = interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
+                anuncioDesejado.getId(),
+                interessado.getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        );
+
+        if (jaEstaNegociandoEsteAnuncio) {
+            throw new RegraNegocioException(
+                    "Voce ja possui uma negociacao aceita para este anuncio. Conclua ou cancele a negociacao atual antes de enviar outra solicitacao."
+            );
+        }
+
+        boolean existeSolicitacaoPendenteComMesmoItem = anuncioOferecido == null
+                ? interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIsNullAndStatus(
                         anuncioDesejado.getId(),
                         interessado.getId(),
-                        STATUS_INTERESSE_ATIVOS
+                        InteresseTroca.StatusInteresse.PENDENTE
                 )
-                : interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatusIn(
+                : interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
                         anuncioDesejado.getId(),
                         interessado.getId(),
                         anuncioOferecido.getId(),
-                        STATUS_INTERESSE_ATIVOS
+                        InteresseTroca.StatusInteresse.PENDENTE
                 );
 
-        if (existeInteresseAtivo) {
+        if (existeSolicitacaoPendenteComMesmoItem) {
             throw new RegraNegocioException(
-                    "Voce ja enviou uma solicitacao ativa para este anuncio usando este item. Aguarde a resposta ou cancele a negociacao atual."
+                    "Voce ja enviou uma solicitacao pendente para este anuncio usando este item. Aguarde a resposta antes de enviar outra solicitacao."
             );
         }
     }

@@ -23,7 +23,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -139,11 +138,16 @@ class InteresseTrocaServiceTest {
         Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
         Mockito.when(anuncioRepository.findById(anuncio.getId())).thenReturn(Optional.of(anuncio));
         Mockito.when(anuncioRepository.findById(anuncioOferecido.getId())).thenReturn(Optional.of(anuncioOferecido));
-        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatusIn(
+        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
+                anuncio.getId(),
+                interessado.getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        )).thenReturn(false);
+        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
                 anuncio.getId(),
                 interessado.getId(),
                 anuncioOferecido.getId(),
-                List.of(InteresseTroca.StatusInteresse.PENDENTE, InteresseTroca.StatusInteresse.ACEITO)
+                InteresseTroca.StatusInteresse.PENDENTE
         )).thenReturn(true);
 
         assertThrows(RegraNegocioException.class, () -> interesseTrocaService.criarInteresse(
@@ -161,11 +165,16 @@ class InteresseTrocaServiceTest {
         Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
         Mockito.when(anuncioRepository.findById(anuncio.getId())).thenReturn(Optional.of(anuncio));
         Mockito.when(anuncioRepository.findById(anuncioOferecido.getId())).thenReturn(Optional.of(anuncioOferecido));
-        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatusIn(
+        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
+                anuncio.getId(),
+                interessado.getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        )).thenReturn(false);
+        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
                 anuncio.getId(),
                 interessado.getId(),
                 anuncioOferecido.getId(),
-                List.of(InteresseTroca.StatusInteresse.PENDENTE, InteresseTroca.StatusInteresse.ACEITO)
+                InteresseTroca.StatusInteresse.PENDENTE
         )).thenReturn(false);
         Mockito.when(interesseTrocaRepository.save(Mockito.any(InteresseTroca.class))).thenAnswer(invocation -> {
             InteresseTroca novoInteresse = invocation.getArgument(0);
@@ -174,7 +183,7 @@ class InteresseTrocaServiceTest {
             return novoInteresse;
         });
         Mockito.when(imagemAnuncioRepository.findByAnuncioIdOrderByOrdemExibicaoAsc(anuncio.getId()))
-                .thenReturn(List.of());
+                .thenReturn(java.util.List.of());
 
         assertDoesNotThrow(() -> interesseTrocaService.criarInteresse(
                 interessado.getEmail(),
@@ -182,6 +191,34 @@ class InteresseTrocaServiceTest {
         ));
 
         Mockito.verify(interesseTrocaRepository).save(Mockito.any(InteresseTroca.class));
+    }
+
+    @Test
+    @DisplayName("bloqueia nova solicitacao para anuncio que o interessado ja esta negociando")
+    void bloqueiaNovaSolicitacaoQuandoInteresseJaFoiAceito() {
+        Anuncio outroItemOferecido = anuncioDoInteressado(Anuncio.TipoAnuncio.TROCA, Anuncio.StatusAnuncio.ATIVO);
+        Mockito.when(usuarioRepository.findByEmail(interessado.getEmail())).thenReturn(Optional.of(interessado));
+        Mockito.when(anuncioRepository.findById(anuncio.getId())).thenReturn(Optional.of(anuncio));
+        Mockito.when(anuncioRepository.findById(outroItemOferecido.getId())).thenReturn(Optional.of(outroItemOferecido));
+        Mockito.when(interesseTrocaRepository.existsByAnuncioDesejadoIdAndInteressadoIdAndStatus(
+                anuncio.getId(),
+                interessado.getId(),
+                InteresseTroca.StatusInteresse.ACEITO
+        )).thenReturn(true);
+
+        RegraNegocioException excecao = assertThrows(RegraNegocioException.class, () -> interesseTrocaService.criarInteresse(
+                interessado.getEmail(),
+                new InteresseCriacaoDTO(anuncio.getId(), outroItemOferecido.getId(), "Tenho outra proposta")
+        ));
+
+        assertTrue(excecao.getMessage().contains("negociacao aceita"));
+        Mockito.verify(interesseTrocaRepository, Mockito.never()).existsByAnuncioDesejadoIdAndInteressadoIdAndAnuncioOferecidoIdAndStatus(
+                anuncio.getId(),
+                interessado.getId(),
+                outroItemOferecido.getId(),
+                InteresseTroca.StatusInteresse.PENDENTE
+        );
+        Mockito.verify(interesseTrocaRepository, Mockito.never()).save(Mockito.any(InteresseTroca.class));
     }
 
     @Test
