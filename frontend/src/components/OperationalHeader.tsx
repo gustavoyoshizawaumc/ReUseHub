@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, ShieldCheck, UserCog } from "lucide-react";
 import { AUTH_USER_UPDATED_EVENT, authService } from "../services/authService";
-import type { UsuarioRespostaDTO } from "../types/auth.types";
+import type { SessaoUsuario } from "../types/auth.types";
 
 const Logo: React.FC = () => (
   <span className="font-bold text-[20px] leading-none tracking-tight font-plus-jakarta-sans">
@@ -14,7 +14,7 @@ const Logo: React.FC = () => (
 
 export const OperationalHeader: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<UsuarioRespostaDTO | null>(() => authService.getUser());
+  const [user, setUser] = useState<SessaoUsuario | null>(() => authService.getUser());
   const perfil = user?.perfil === "ADMIN" ? "Admin" : "Moderador";
 
   useEffect(() => {
