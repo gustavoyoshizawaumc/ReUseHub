@@ -231,7 +231,11 @@ export const Header: React.FC = () => {
       return;
     }
 
-    limparFiltroLocalizacaoSessao();
+    // CEP vazio: remove o filtro de localizacao. Parcialmente preenchido (1-7 digitos):
+    // nao faz nada e preserva o que o usuario digitou - o aviso abaixo do campo orienta.
+    if (cepBusca.length === 0) {
+      limparFiltroLocalizacaoSessao();
+    }
   };
 
   const rolarCategorias = (direcao: "esquerda" | "direita") => {
@@ -279,49 +283,56 @@ export const Header: React.FC = () => {
           </button>
         </form>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            aplicarFiltroCepGlobal();
-          }}
-          className="hidden h-10 w-[245px] items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition-all focus-within:border-reusehub-blue focus-within:bg-white lg:flex xl:w-[270px]"
-        >
-          <MapPin size={16} className="ml-3 shrink-0 text-slate-400" />
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Filtrar por CEP"
-            value={cepBusca}
-            maxLength={8}
-            onChange={(event) => setCepBusca(normalizarCep(event.target.value))}
-            className="min-w-0 flex-1 bg-transparent px-2 text-[13px] font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
-            aria-label="CEP para filtrar anuncios por proximidade"
-          />
-          <select
-            value={raioBuscaKm}
-            onChange={(event) => setRaioBuscaKm(Number(event.target.value))}
-            className="h-full w-[70px] border-l border-slate-200 bg-transparent px-1 text-[12px] font-bold text-slate-600 outline-none"
-            aria-label="Raio de busca por CEP"
+        <div className="relative hidden lg:block">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              aplicarFiltroCepGlobal();
+            }}
+            className="flex h-10 w-[245px] items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition-all focus-within:border-reusehub-blue focus-within:bg-white xl:w-[270px]"
           >
-            {RAIOS_BUSCA_CEP.map((raio) => (
-              <option key={raio} value={raio}>
-                {raio}km
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className={`flex h-full w-10 shrink-0 items-center justify-center transition-colors ${
-              cepBusca.length === 8
-                ? "bg-reusehub-blue text-white hover:bg-blue-700"
-                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            }`}
-            aria-label="Aplicar filtro por CEP"
-            title="Aplicar filtro por CEP"
-          >
-            <Search size={14} />
-          </button>
-        </form>
+            <MapPin size={16} className="ml-3 shrink-0 text-slate-400" />
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Filtrar por CEP"
+              value={cepBusca}
+              maxLength={8}
+              onChange={(event) => setCepBusca(normalizarCep(event.target.value))}
+              className="min-w-0 flex-1 bg-transparent px-2 text-[13px] font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+              aria-label="CEP para filtrar anuncios por proximidade"
+            />
+            <select
+              value={raioBuscaKm}
+              onChange={(event) => setRaioBuscaKm(Number(event.target.value))}
+              className="h-full w-[70px] border-l border-slate-200 bg-transparent px-1 text-[12px] font-bold text-slate-600 outline-none"
+              aria-label="Raio de busca por CEP"
+            >
+              {RAIOS_BUSCA_CEP.map((raio) => (
+                <option key={raio} value={raio}>
+                  {raio}km
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className={`flex h-full w-10 shrink-0 items-center justify-center transition-colors ${
+                cepBusca.length === 8
+                  ? "bg-reusehub-blue text-white hover:bg-blue-700"
+                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              }`}
+              aria-label="Aplicar filtro por CEP"
+              title="Aplicar filtro por CEP"
+            >
+              <Search size={14} />
+            </button>
+          </form>
+          {cepBusca.length > 0 && cepBusca.length < 8 && (
+            <span className="absolute left-1 top-full z-50 mt-1 whitespace-nowrap rounded-md border border-orange-100 bg-orange-50 px-2 py-1 text-[11px] font-semibold text-orange-600 shadow-sm">
+              CEP incompleto — falta{8 - cepBusca.length > 1 ? "m" : ""} {8 - cepBusca.length} dígito{8 - cepBusca.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
 
         <div className="flex min-w-0 items-center gap-0.5 sm:gap-2 ml-auto">
           <div className="flex items-center gap-1">
