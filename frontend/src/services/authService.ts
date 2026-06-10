@@ -18,12 +18,12 @@ const emitirAtualizacaoUsuario = () => {
 
 const salvarSessao = (token: string, user: AuthResponse | UsuarioRespostaDTO) => {
   localStorage.setItem("token", token);
-  localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("user", JSON.stringify(normalizarUsuarioSessao(user)));
   emitirAtualizacaoUsuario();
 };
 
 const salvarUsuario = (user: AuthResponse | UsuarioRespostaDTO) => {
-  localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("user", JSON.stringify(normalizarUsuarioSessao(user)));
   emitirAtualizacaoUsuario();
 };
 
@@ -32,6 +32,28 @@ const limparSessaoLocal = () => {
   localStorage.removeItem("user");
   limparUltimasBuscas();
   emitirAtualizacaoUsuario();
+};
+
+const normalizarUsuarioSessao = (user: AuthResponse | UsuarioRespostaDTO): UsuarioRespostaDTO => {
+  const dados = user as AuthResponse & UsuarioRespostaDTO;
+
+  return {
+    id: dados.id,
+    name: dados.name,
+    email: dados.email,
+    cpf: dados.cpf,
+    phone: dados.phone || undefined,
+    avatarUrl: dados.avatarUrl ?? dados.avatar_url ?? undefined,
+    bio: dados.bio ?? undefined,
+    perfil: dados.perfil,
+    reputationScore: dados.reputationScore ?? dados.reputation_score,
+    isActive: dados.isActive ?? dados.is_active,
+    isVerified: dados.isVerified ?? dados.is_verified,
+    lgpdConsent: dados.lgpdConsent ?? dados.lgpd_consent,
+    lgpdConsentAt: dados.lgpdConsentAt ?? dados.lgpd_consent_at,
+    createdAt: dados.createdAt ?? dados.created_at,
+    updatedAt: dados.updatedAt ?? dados.updated_at,
+  };
 };
 
 const lerMensagemErro = async (response: Response, fallback: string): Promise<string> => {
@@ -126,7 +148,9 @@ export const authService = {
       throw new Error(error.message || "Erro ao obter perfil");
     }
 
-    return await response.json();
+    const result = await response.json();
+    salvarUsuario(result);
+    return result;
   },
 
   updateProfile: async (
@@ -236,7 +260,7 @@ export const authService = {
 
   getUser: () => {
     const user = localStorage.getItem("user");
-    return user ? JSON.parse(user) : null;
+    return user ? normalizarUsuarioSessao(JSON.parse(user)) : null;
   },
 
   isLoggedIn: (): boolean => {
