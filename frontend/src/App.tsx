@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+﻿import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/Home/HomePage";
 import { RegisterPage } from "./pages/Register/RegisterPage";
 import { LoginPage } from "./pages/Login/LoginPage";
@@ -17,6 +17,8 @@ import { DeactivateAccountPage } from "./pages/Profile/DeactivateAccountPage";
 import { PublicProfilePage } from "./pages/Profile/PublicProfilePage";
 import { ChatPage } from "./pages/Chat/ChatPage";
 import { InteressesRecebidosPage } from "./pages/Interesse/InteressesRecebidosPage";
+import { PoliticaPrivacidadePage } from "./pages/Institucional/PoliticaPrivacidadePage";
+import { ManualUsuarioPage } from "./pages/Institucional/ManualUsuarioPage";
 import { ModeracaoPage } from './pages/Moderacao/ModeracaoPage';
 import { ModeratorRoute } from './components/ModeratorRoute';
 import { UserOnlyRoute } from "./components/UserOnlyRoute";
@@ -40,6 +42,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+        <Route path="/privacidade" element={<PoliticaPrivacidadePage />} />
+        <Route path="/manual" element={<ManualUsuarioPage />} />
 
         <Route
           path="/anuncios"
@@ -213,3 +217,4 @@ function App() {
 }
 
 export default App;
+

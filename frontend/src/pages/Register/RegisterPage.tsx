@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
 import type { RegisterRequest } from "../../types/auth.types";
@@ -349,16 +349,9 @@ export const RegisterPage: React.FC = () => {
                 htmlFor="lgpdConsent"
                 className="text-xs text-slate-500 leading-relaxed"
               >
-                Li e concordo com os{" "}
+                Li e concordo com a{" "}
                 <Link
-                  to="/terms"
-                  className="text-blue-600 font-bold hover:underline"
-                >
-                  Termos de Uso
-                </Link>{" "}
-                e{" "}
-                <Link
-                  to="/privacy"
+                  to="/privacidade"
                   className="text-blue-600 font-bold hover:underline"
                 >
                   Política de Privacidade
@@ -397,3 +390,4 @@ export const RegisterPage: React.FC = () => {
     </div>
   );
 };
+
