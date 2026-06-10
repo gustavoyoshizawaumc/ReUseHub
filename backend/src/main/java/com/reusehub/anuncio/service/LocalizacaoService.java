@@ -1,15 +1,20 @@
 package com.reusehub.anuncio.service;
 
 import com.reusehub.anuncio.dto.BuscaFiltroDTO;
+import com.reusehub.anuncio.dto.ResultadoGeocoding;
+import com.reusehub.anuncio.exception.OperacaoInvalidaException;
+import com.reusehub.anuncio.exception.RecursoNaoEncontradoException;
 import com.reusehub.anuncio.model.Endereco;
 import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LocalizacaoService {
@@ -17,7 +22,7 @@ public class LocalizacaoService {
     private static final Double RAIO_PADRAO_KM = 10.0;
 
     private final ViaCepService viaCepService;
-    private final NominatimService nominatimService;
+    private final GeocodingHibridoService geocodingHibridoService;
     private final UsuarioRepository usuarioRepository;
     private final EnderecoRepository enderecoRepository;
 
@@ -40,11 +45,16 @@ public class LocalizacaoService {
 
     private void resolverCoordenadasPorCepInformado(BuscaFiltroDTO filtro) {
         try {
-            NominatimService.Coordenadas coordenadas = converterCepEmCoordenadas(filtro.getCep());
-            filtro.setLatitude(coordenadas.latitude());
-            filtro.setLongitude(coordenadas.longitude());
-        } catch (Exception ignored) {
-            // Falha silenciosa: busca prossegue sem filtro geográfico
+            ResultadoGeocoding geocoding = converterCepEmCoordenadas(filtro.getCep());
+            if (geocoding.possuiCoordenadas()) {
+                filtro.setLatitude(geocoding.latitude().doubleValue());
+                filtro.setLongitude(geocoding.longitude().doubleValue());
+            }
+            // Geocoding INDEFINIDO: busca prossegue sem filtro geográfico (nunca grava (0,0)).
+        } catch (OperacaoInvalidaException | RecursoNaoEncontradoException e) {
+            // CEP inexistente/invalido ou ViaCEP indisponivel: busca prossegue sem filtro geográfico.
+            log.warn("Geocoding do CEP '{}' falhou; busca seguira sem filtro geografico: {}",
+                    filtro.getCep(), e.getMessage());
         }
     }
 
@@ -82,17 +92,10 @@ public class LocalizacaoService {
         }
     }
 
-    public NominatimService.Coordenadas converterCepEmCoordenadas(String cep) {
+    public ResultadoGeocoding converterCepEmCoordenadas(String cep) {
         ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(cep);
-        String enderecoTextual = montarEnderecoTextualParaBusca(dadosCEP);
-        return nominatimService.buscarCoordenadasPorEndereco(enderecoTextual);
-    }
-
-    private String montarEnderecoTextualParaBusca(ViaCepService.DadosCEP dadosCEP) {
-        return String.format("%s, %s, %s, Brasil",
-                dadosCEP.bairro(),
-                dadosCEP.cidade(),
-                dadosCEP.uf()
-        );
+        // Mesmo endereco textual usado na criacao do anuncio, para que o centro da
+        // busca por raio saia do mesmo geocoder/precisao dos anuncios geocodificados.
+        return geocodingHibridoService.obterCoordenadasPorEndereco(dadosCEP.paraEnderecoCompleto());
     }
 }

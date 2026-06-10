@@ -495,17 +495,7 @@ public class AnuncioService {
     }
 
     private ResultadoGeocoding obterCoordenadasDoEndereco(ViaCepService.DadosCEP dadosCEP) {
-        String enderecoCompleto = montarEnderecoCompleto(dadosCEP);
-        return geocodingHibridoService.obterCoordenadasPorEndereco(enderecoCompleto);
-    }
-
-    private String montarEnderecoCompleto(ViaCepService.DadosCEP dadosCEP) {
-        return String.format("%s, %s, %s, %s, Brasil",
-                dadosCEP.rua(),
-                dadosCEP.bairro(),
-                dadosCEP.cidade(),
-                dadosCEP.uf()
-        );
+        return geocodingHibridoService.obterCoordenadasPorEndereco(dadosCEP.paraEnderecoCompleto());
     }
 
     private void salvarImagensDoAnuncio(Anuncio anuncio, List<MultipartFile> imagens) {
