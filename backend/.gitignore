@@ -1,4 +1,3 @@
-# Backend (Java / Spring Boot / Maven)
 target/
 *.class
 *.jar
@@ -13,7 +12,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# IDEs
 .idea/
 *.iws
 *.iml
@@ -29,17 +27,14 @@ target/
 .vscode-test/
 bin/
 
-# Logs
 *.log
 logs/
 
-# Environment
 .env
 .env.*
 !.env.example
 *.env
 
-# Node/front-end artifacts when commands are run from repo root
 node_modules/
 frontend/node_modules/
 frontend/dist/
@@ -49,15 +44,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# OS
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 *~
 
-# Docker local overrides
 docker-compose.override.yml
 
-# Local uploads
 /uploads/

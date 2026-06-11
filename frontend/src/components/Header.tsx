@@ -98,7 +98,6 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchTerm(params.get("termo") ?? "");
     setActiveCategory(params.get("categoriaId") ? Number(params.get("categoriaId")) : null);
     const handleClickOutside = (event: MouseEvent) => {
@@ -140,7 +139,6 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTemChatPendente(false);
       setTemTrocaPendente(false);
       return;

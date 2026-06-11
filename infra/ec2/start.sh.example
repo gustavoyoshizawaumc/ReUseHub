@@ -1,57 +1,32 @@
 #!/bin/bash
 
-# =====================================================================
-# Template do script de inicialização do backend no EC2.
-# Copiar para /home/ubuntu/start.sh, substituir placeholders e dar
-# permissão de execução: chmod +x /home/ubuntu/start.sh
-# =====================================================================
-
-# Banco de Dados - PostgreSQL (AWS RDS)
 export DB_HOST="seu-host-rds.amazonaws.com"
 export DB_USER="postgres"
 export DB_PASSWORD="sua_senha_postgres"
 
-# Banco de Dados - MongoDB (Atlas)
 export MONGO_USER="seu_usuario_mongo"
 export MONGO_PASSWORD="sua_senha_mongo"
 export MONGO_URI="mongodb+srv://USUARIO:SENHA@cluster.mongodb.net/reusehub?retryWrites=true&w=majority"
 
-# Autenticação (JWT)
 export JWT_SECRET="gere_um_segredo_jwt_longo_e_seguro"
 
-# Criptografia dos dados sensiveis em repouso (email, CPF, telefone, nome)
-# OBRIGATORIA em producao: defina uma chave longa e FIXA e nunca a altere
-# depois - mudar a chave torna os dados ja cifrados ilegiveis. Se omitida, o
-# backend usa JWT_SECRET como fallback. Gere com: openssl rand -base64 48
 export DATA_ENCRYPTION_KEY="gere_uma_chave_longa_para_dados_sensiveis"
 
-# Bootstrap opcional do primeiro administrador
-# Usado apenas no setup inicial: na subida, se o e-mail informado ainda nao
-# existir, o backend cria automaticamente uma conta com perfil ADMIN usando
-# estas credenciais. Idempotente - se o e-mail ja estiver cadastrado, nao faz
-# nada. Apos criar e logar, remova/limpe estas variaveis.
 export ADMIN_BOOTSTRAP_NAME="Administrador"
 export ADMIN_BOOTSTRAP_EMAIL=""
 export ADMIN_BOOTSTRAP_PASSWORD=""
 
-# Front-End
 export FRONTEND_URL="https://www.reusehub.me"
 
-# Resend (E-mail transacional)
 export RESEND_API_KEY="sua_chave_resend"
 export RESEND_FROM_EMAIL="ReUseHub <noreply@reusehub.me>"
 
-# AWS S3 (armazenamento de imagens)
 export AWS_ACCESS_KEY_ID="sua_access_key_id"
 export AWS_SECRET_ACCESS_KEY="sua_secret_access_key"
 export AWS_BUCKET_NAME="reusehub-uploads"
 export AWS_REGION="us-east-2"
 
-# TomTom (geocoding de enderecos para latitude/longitude)
-# Sem essa chave o geocoding fica desabilitado e anuncios novos
-# sao salvos com precisao_localizacao=INDEFINIDA (saem do filtro por raio).
 export TOMTOM_API_KEY="sua_chave_tomtom"
 export TOMTOM_BASE_URL="https://api.tomtom.com/search/2"
 
-# Inicializa a API
 exec java -jar /home/ubuntu/backend-0.0.1-SNAPSHOT.jar

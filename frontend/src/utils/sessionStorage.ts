@@ -17,6 +17,6 @@ export function writeSessionStorage<T>(chave: string, valor: T): void {
   try {
     window.sessionStorage.setItem(chave, JSON.stringify(valor));
   } catch {
-    // ignora indisponibilidade do storage
+    return;
   }
 }

@@ -80,9 +80,6 @@ server:
   port: 8080
   servlet:
     context-path: /
-  # Respeita X-Forwarded-* enviados pelo nginx/ALB em producao para que
-  # request.getRemoteAddr() retorne o IP real do cliente, nao o do proxy.
-  # Usado pelo tracking de visualizacao (PR D.2) como camada de dedupe.
   forward-headers-strategy: FRAMEWORK
 
 jwt:

@@ -5,6 +5,7 @@ import com.reusehub.anuncio.exception.RegraNegocioException;
 import com.reusehub.auth.dto.AuthResponse;
 import com.reusehub.auth.dto.LoginRequest;
 import com.reusehub.auth.dto.RegisterRequest;
+import com.reusehub.auth.dto.UsuarioAtualizacaoDTO;
 import com.reusehub.auth.dto.UsuarioRespostaDTO;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
@@ -17,6 +18,7 @@ import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.anuncio.service.StorageService;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.notificacao.repository.NotificacaoRepository;
+import com.reusehub.shared.service.ConteudoSeguroService;
 
 import com.reusehub.auth.service.AuthService;
 import com.reusehub.auth.service.JwtService;
@@ -67,6 +69,8 @@ class AuthServiceTest {
     private EnderecoRepository enderecoRepository;
     @Mock
     private StorageService storageService;
+    @Mock
+    private ConteudoSeguroService conteudoSeguroService;
 
     @InjectMocks
     private AuthService authService;
@@ -191,6 +195,23 @@ class AuthServiceTest {
         }
 
         @Test
+        @DisplayName("deve bloquear cadastro com nome ofensivo")
+        void bloquearCadastroComNomeOfensivo() {
+            RegisterRequest request = new RegisterRequest();
+            request.setEmail("novo@test.com");
+            request.setCpf("00011122233");
+            request.setPassword("senha");
+            request.setName("Seu idiota");
+
+            Mockito.doThrow(new RegraNegocioException("Nome bloqueado."))
+                    .when(conteudoSeguroService)
+                    .validarTextoSeguro(Mockito.eq(request.getName()), Mockito.anyString());
+
+            assertThrows(RegraNegocioException.class, () -> authService.registrar(request));
+            Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class));
+        }
+
+        @Test
         @DisplayName("deve estourar RegraNegocioException se o e-mail já existir")
         void erroEmailDuplicado() {
             RegisterRequest request = new RegisterRequest();
@@ -292,6 +313,23 @@ class AuthServiceTest {
 
             assertNotNull(resposta);
             assertEquals("Gustavo", resposta.getName());
+        }
+
+        @Test
+        @DisplayName("deve bloquear edicao de perfil com nome ofensivo")
+        void bloquearEdicaoPerfilComNomeOfensivo() {
+            UsuarioAtualizacaoDTO dto = new UsuarioAtualizacaoDTO();
+            dto.setName("Seu lixo");
+            Mockito.when(usuarioRepository.findByEmail(usuarioModelo.getEmail())).thenReturn(Optional.of(usuarioModelo));
+            Mockito.doThrow(new RegraNegocioException("Nome bloqueado."))
+                    .when(conteudoSeguroService)
+                    .validarTextoSeguro(Mockito.eq(dto.getName()), Mockito.anyString());
+
+            assertThrows(
+                    RegraNegocioException.class,
+                    () -> authService.atualizarPerfilPorEmail(usuarioModelo.getEmail(), dto)
+            );
+            Mockito.verify(usuarioRepository, Mockito.never()).save(Mockito.any(Usuario.class));
         }
 
         @Test

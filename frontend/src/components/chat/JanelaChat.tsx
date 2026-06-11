@@ -91,7 +91,6 @@ const JanelaChat: React.FC<JanelaChatProps> = ({ conversaAtiva, onVoltar }) => {
   }, [mensagens]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarMensagens();
   }, [carregarMensagens]);
 

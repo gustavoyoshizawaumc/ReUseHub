@@ -29,13 +29,5 @@ jobs:
       - name: Garantir permissão de execução no mvnw
         run: chmod +x mvnw
 
-      # TODO: reativar `mvn clean verify` quando o workflow tiver service
-      # containers de PostgreSQL e MongoDB. Testes @SpringBootTest sobem
-      # o contexto completo e tentam conectar nos bancos no boot. Sem
-      # containers no runner do GitHub Actions, o contexto falha com
-      # "Failed to load ApplicationContext".
-      #
-      # Os 97 testes da suite ja passam localmente. Quando o ambiente
-      # de CI for ajustado com services, basta restaurar `mvn clean verify`.
-      - name: Compilar (testes rodam localmente; ver TODO acima)
+      - name: Compilar backend
         run: ./mvnw clean package -DskipTests

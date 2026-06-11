@@ -16,6 +16,7 @@ import com.reusehub.auth.repository.TokenUsuarioRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.notificacao.repository.NotificacaoRepository;
+import com.reusehub.shared.service.ConteudoSeguroService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -49,16 +50,18 @@ public class AuthService {
     private final NotificacaoRepository notificacaoRepository;
     private final EnderecoRepository enderecoRepository;
     private final StorageService storageService;
+    private final ConteudoSeguroService conteudoSeguroService;
 
     @Transactional
     public AuthResponse registrar(RegisterRequest request) {
         String emailNormalizado = SensitiveDataCrypto.normalizarEmail(request.getEmail());
         String cpfNormalizado = SensitiveDataCrypto.normalizarCpf(request.getCpf());
+        validarNomeSeguro(request.getName());
         validarBloqueioCredenciais(emailNormalizado, cpfNormalizado);
         validarDuplicidadeCadastro(emailNormalizado, cpfNormalizado);
 
         var usuario = Usuario.builder()
-                .name(request.getName())
+                .name(request.getName().trim())
                 .cpf(cpfNormalizado)
                 .email(emailNormalizado)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -336,7 +339,8 @@ public class AuthService {
 
     private void atualizarDadosUsuario(Usuario usuario, UsuarioAtualizacaoDTO dto) {
         if (dto.getName() != null && !dto.getName().isBlank()) {
-            usuario.setName(dto.getName());
+            validarNomeSeguro(dto.getName());
+            usuario.setName(dto.getName().trim());
         }
         if (dto.getPhone() != null) {
             usuario.setPhone(dto.getPhone());
@@ -347,6 +351,13 @@ public class AuthService {
         if (dto.getAvatarUrl() != null && !dto.getAvatarUrl().isBlank()) {
             usuario.setAvatarUrl(dto.getAvatarUrl());
         }
+    }
+
+    private void validarNomeSeguro(String nome) {
+        conteudoSeguroService.validarTextoSeguro(
+                nome,
+                "O nome informado contem termos que violam as regras da comunidade."
+        );
     }
 
     private UserDetails buildUserDetails(Usuario usuario) {

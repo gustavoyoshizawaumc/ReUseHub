@@ -1,13 +1,3 @@
-# =====================================================================
-# Unit file do systemd para o backend do ReUseHub.
-# Caminho no servidor: /etc/systemd/system/reusehub.service
-#
-# Após copiar este arquivo, rodar:
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable reusehub
-#   sudo systemctl start reusehub
-# =====================================================================
-
 [Unit]
 Description=ReUseHub Backend API
 After=network.target

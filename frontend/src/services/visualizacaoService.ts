@@ -34,6 +34,6 @@ export async function registrarVisualizacao(
   try {
     await api.post(`/${anuncioId}/visualizacao`, { origem }, { headers });
   } catch {
-    // tracking best-effort: ignora falhas
+    return;
   }
 }

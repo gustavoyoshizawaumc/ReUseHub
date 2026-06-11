@@ -65,7 +65,6 @@ textarea {
   color-scheme: light;
 }
 
-/* Esconder scrollbar mantendo funcionalidade */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

@@ -81,33 +81,45 @@ sudo apt install -y openjdk-21-jdk nginx
 
 ### 4. Configurar o start.sh
 
-```bash
-# Copiar template para o EC2 (via SCP, do PC local)
-scp -i chave.pem infra/ec2/start.sh.example ubuntu@<IP>:/home/ubuntu/start.sh
+Copie o template para o EC2 a partir do PC local:
 
-# No EC2, dar permissao e editar com as credenciais reais
+```bash
+scp -i chave.pem infra/ec2/start.sh.example ubuntu@<IP>:/home/ubuntu/start.sh
+```
+
+No EC2, ajuste permissao e credenciais:
+
+```bash
 chmod +x /home/ubuntu/start.sh
 nano /home/ubuntu/start.sh
 ```
 
 ### 5. Subir o JAR inicial
 
+Build local:
+
 ```bash
-# Build local
 cd backend
 ./mvnw clean package -DskipTests
+```
 
-# Enviar para o EC2
+Envie para o EC2:
+
+```bash
 scp -i chave.pem target/backend-0.0.1-SNAPSHOT.jar ubuntu@<IP>:/home/ubuntu/
 ```
 
 ### 6. Configurar o systemd
 
-```bash
-# Copiar template para o EC2
-scp -i chave.pem infra/systemd/reusehub.service ubuntu@<IP>:/tmp/
+Copie o template para o EC2:
 
-# No EC2
+```bash
+scp -i chave.pem infra/systemd/reusehub.service ubuntu@<IP>:/tmp/
+```
+
+No EC2:
+
+```bash
 sudo mv /tmp/reusehub.service /etc/systemd/system/reusehub.service
 sudo systemctl daemon-reload
 sudo systemctl enable reusehub
@@ -117,11 +129,15 @@ sudo systemctl status reusehub
 
 ### 7. Configurar o Nginx
 
-```bash
-# Copiar template para o EC2
-scp -i chave.pem infra/nginx/reusehub.conf ubuntu@<IP>:/tmp/
+Copie o template para o EC2:
 
-# No EC2
+```bash
+scp -i chave.pem infra/nginx/reusehub.conf ubuntu@<IP>:/tmp/
+```
+
+No EC2:
+
+```bash
 sudo mv /tmp/reusehub.conf /etc/nginx/sites-available/reusehub
 sudo ln -s /etc/nginx/sites-available/reusehub /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default

@@ -168,16 +168,18 @@ docker-compose up -d
 ```bash
 cd backend
 ./mvnw spring-boot:run
-# API disponível em http://localhost:8080
 ```
+
+API local: http://localhost:8080
 
 ### 4. Rodar o frontend
 ```bash
 cd frontend
 npm install
 npm run dev
-# App disponível em http://localhost:5173
 ```
+
+App local: http://localhost:5173
 
 ---
 

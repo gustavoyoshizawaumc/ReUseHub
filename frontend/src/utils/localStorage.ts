@@ -17,7 +17,7 @@ export function writeLocalStorage<T>(chave: string, valor: T): void {
   try {
     window.localStorage.setItem(chave, JSON.stringify(valor));
   } catch {
-    // ignora indisponibilidade do storage
+    return;
   }
 }
 
@@ -28,6 +28,6 @@ export function removeLocalStorage(chave: string): void {
   try {
     window.localStorage.removeItem(chave);
   } catch {
-    // ignora indisponibilidade do storage
+    return;
   }
 }

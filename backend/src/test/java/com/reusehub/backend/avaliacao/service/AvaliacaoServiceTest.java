@@ -11,6 +11,7 @@ import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.avaliacao.service.AvaliacaoService;
 import com.reusehub.interesse.model.InteresseTroca;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.shared.service.ConteudoSeguroService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class AvaliacaoServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private AnuncioRepository anuncioRepository;
     @Mock private InteresseTrocaRepository interesseTrocaRepository;
+    @Mock private ConteudoSeguroService conteudoSeguroService;
 
     @InjectMocks
     private AvaliacaoService avaliacaoService;
@@ -66,6 +68,9 @@ class AvaliacaoServiceTest {
                 (short) 5,
                 "Foi um i.d.i.o.t.a na negociacao"
         );
+        Mockito.doThrow(new RegraNegocioException("Comentario bloqueado."))
+                .when(conteudoSeguroService)
+                .validarTextoSeguro(Mockito.eq(dto.comentario()), Mockito.anyString());
 
         assertThrows(RegraNegocioException.class, () -> avaliacaoService.criar(interessado.getEmail(), dto));
         Mockito.verify(avaliacaoRepository, Mockito.never()).save(Mockito.any(Avaliacao.class));
@@ -116,7 +121,7 @@ class AvaliacaoServiceTest {
         RegraNegocioException erro = assertThrows(RegraNegocioException.class,
                 () -> avaliacaoService.criar(interessado.getEmail(), dto));
 
-        assertEquals("Você já avaliou esta negociação.", erro.getMessage());
+        assertEquals("Voce ja avaliou esta negociacao.", erro.getMessage());
         Mockito.verify(avaliacaoRepository, Mockito.never()).save(Mockito.any(Avaliacao.class));
     }
 

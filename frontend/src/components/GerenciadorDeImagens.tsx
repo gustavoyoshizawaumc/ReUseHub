@@ -59,7 +59,6 @@ export const GerenciadorDeImagens: React.FC<GerenciadorDeImagensProps> = ({
 
   useEffect(() => {
     onSelecaoMudou(construirSelecao(itens));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itens]);
 
   useEffect(() => {
@@ -68,7 +67,6 @@ export const GerenciadorDeImagens: React.FC<GerenciadorDeImagensProps> = ({
         .filter((item) => item.arquivoNovo !== null)
         .forEach((item) => URL.revokeObjectURL(item.url));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const aoSoltarItemArrastado = (evento: DragEndEvent) => {

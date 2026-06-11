@@ -34,7 +34,6 @@ export const useFavoritos = () => {
   }, [usuarioId]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarFavoritos();
   }, [carregarFavoritos]);
 
