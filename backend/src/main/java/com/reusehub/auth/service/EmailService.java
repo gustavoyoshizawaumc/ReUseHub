@@ -32,7 +32,7 @@ public class EmailService {
         this.frontendUrl = frontendUrl;
     }
 
-    public void enviarEmailRecuperacaoSenha(
+    public boolean enviarEmailRecuperacaoSenha(
             String destinatario,
             String nomeUsuario,
             String tokenPuro,
@@ -57,8 +57,10 @@ public class EmailService {
                     .toBodilessEntity();
 
             log.info("E-mail de recuperação de senha enviado para {}", destinatario);
+            return true;
         } catch (Exception e) {
             log.error("Falha ao enviar e-mail de recuperação para {}: {}", destinatario, e.getMessage());
+            return false;
         }
     }
 

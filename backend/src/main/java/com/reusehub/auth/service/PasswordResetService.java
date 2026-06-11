@@ -55,12 +55,16 @@ public class PasswordResetService {
 
         tokenRepository.save(novoTokenRecuperacao(usuario, tokenHash));
 
-        emailService.enviarEmailRecuperacaoSenha(
+        boolean emailEnviado = emailService.enviarEmailRecuperacaoSenha(
                 usuario.getEmail(),
                 usuario.getName(),
                 tokenPuro,
                 TOKEN_EXPIRACAO_MINUTOS
         );
+
+        if (!emailEnviado) {
+            throw new RegraNegocioException("Nao foi possivel enviar o e-mail de recuperacao agora. Tente novamente em instantes.");
+        }
 
         log.info("Solicitação de recuperação de senha processada para: {}", email);
     }

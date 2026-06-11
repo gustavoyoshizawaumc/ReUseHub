@@ -100,17 +100,14 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
   const reputacao = Number(anuncio.notaReputacaoUsuario ?? 0).toFixed(1);
 
   const handlePrimaryAction = () => {
-    if (anuncio.status === "ATIVO") {
-      navigate(
-        `/anuncios/${anuncio.id}`,
-        origem ? { state: { origem } } : undefined
-      );
+    if (anuncio.status !== "ATIVO") {
       return;
     }
-    navigate("/meus-anuncios");
+    navigate(
+      `/anuncios/${anuncio.id}`,
+      origem ? { state: { origem } } : undefined
+    );
   };
-
-  const primaryButtonLabel = anuncio.status === "ATIVO" ? "Ver anuncio" : "Acompanhar status";
 
   const handleToggleFavorito = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -283,13 +280,15 @@ export const CardAnuncio: React.FC<CardAnuncioProps> = ({
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={handlePrimaryAction}
-            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-slate-50 p-3 text-slate-600 transition-colors hover:bg-blue-600 hover:text-white active:scale-[0.99] md:flex-none"
-          >
-            <span className="text-xs font-bold">{primaryButtonLabel}</span>
-          </button>
+          {anuncio.status === "ATIVO" && (
+            <button
+              type="button"
+              onClick={handlePrimaryAction}
+              className="flex flex-1 items-center justify-center gap-2 rounded-md bg-slate-50 p-3 text-slate-600 transition-colors hover:bg-blue-600 hover:text-white active:scale-[0.99] md:flex-none"
+            >
+              <span className="text-xs font-bold">Ver anuncio</span>
+            </button>
+          )}
 
           {podeDenunciar && (
             <button

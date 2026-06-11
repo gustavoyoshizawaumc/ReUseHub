@@ -16,4 +16,6 @@ public interface EnderecoRepository extends JpaRepository<Endereco, UUID> {
     List<Endereco> findByUsuarioIdOrderByPrincipalDescCriadoEmDesc(UUID usuarioId);
 
     Optional<Endereco> findFirstByUsuarioIdAndPrincipalTrue(UUID usuarioId);
+
+    Optional<Endereco> findFirstByCepInOrderByCriadoEmDesc(List<String> ceps);
 }

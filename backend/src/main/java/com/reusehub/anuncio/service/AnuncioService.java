@@ -18,6 +18,7 @@ import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.moderacao.service.ModeracaoService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class AnuncioService {
@@ -42,6 +44,7 @@ public class AnuncioService {
     private static final int MINIMO_IMAGENS_POR_ANUNCIO = 3;
     private static final int MAXIMO_IMAGENS_POR_ANUNCIO = 5;
     private static final int TEMPO_VIDA_ANUNCIO_DIAS = 30;
+    private static final String REGEX_NAO_NUMERICO = "\\D";
 
     private final AnuncioRepository anuncioRepository;
     private final AnuncioFavoritoRepository anuncioFavoritoRepository;
@@ -438,7 +441,7 @@ public class AnuncioService {
     }
 
     private Endereco cadastrarEnderecoEnriquecido(Usuario usuario, AnuncioCriacaoComEnderecoDTO dto) {
-        ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(dto.getCep());
+        ViaCepService.DadosCEP dadosCEP = buscarDadosCepComFallback(dto.getCep());
         ResultadoGeocoding geocoding = obterCoordenadasDoEndereco(dadosCEP);
 
         Endereco endereco = construirEndereco(usuario, dto, dadosCEP, geocoding);
@@ -453,10 +456,10 @@ public class AnuncioService {
             return enderecoAtual;
         }
 
-        ViaCepService.DadosCEP dadosCEP = viaCepService.buscarDadosCEP(dto.getCep());
+        ViaCepService.DadosCEP dadosCEP = buscarDadosCepComFallback(dto.getCep());
         ResultadoGeocoding geocoding = obterCoordenadasDoEndereco(dadosCEP);
 
-        enderecoAtual.setCep(dto.getCep());
+        enderecoAtual.setCep(dadosCEP.cep());
         enderecoAtual.setRua(dadosCEP.rua());
         enderecoAtual.setNumero(null);
         enderecoAtual.setComplemento(null);
@@ -478,7 +481,7 @@ public class AnuncioService {
     ) {
         return Endereco.builder()
                 .usuario(usuario)
-                .cep(dto.getCep())
+                .cep(dadosCEP.cep())
                 .rua(dadosCEP.rua())
                 .bairro(dadosCEP.bairro())
                 .cidade(dadosCEP.cidade())
@@ -492,6 +495,41 @@ public class AnuncioService {
 
     private ResultadoGeocoding obterCoordenadasDoEndereco(ViaCepService.DadosCEP dadosCEP) {
         return geocodingHibridoService.obterCoordenadasPorEndereco(dadosCEP.paraEnderecoCompleto());
+    }
+
+    private ViaCepService.DadosCEP buscarDadosCepComFallback(String cep) {
+        try {
+            return viaCepService.buscarDadosCEP(cep);
+        } catch (OperacaoInvalidaException | RecursoNaoEncontradoException e) {
+            String cepNormalizado = normalizarCep(cep);
+            if (cepNormalizado.length() != 8) {
+                throw e;
+            }
+
+            return enderecoRepository.findFirstByCepInOrderByCriadoEmDesc(variantesCep(cepNormalizado))
+                    .map(endereco -> {
+                        log.warn("ViaCEP indisponivel/sem resposta para CEP '{}'; usando endereco ja salvo no banco.", cepNormalizado);
+                        return new ViaCepService.DadosCEP(
+                                cepNormalizado,
+                                endereco.getRua(),
+                                endereco.getBairro(),
+                                endereco.getCidade(),
+                                endereco.getUf()
+                        );
+                    })
+                    .orElseThrow(() -> new OperacaoInvalidaException(
+                            "Nao foi possivel consultar o CEP no momento. Tente novamente mais tarde.",
+                            e
+                    ));
+        }
+    }
+
+    private String normalizarCep(String cep) {
+        return cep == null ? "" : cep.replaceAll(REGEX_NAO_NUMERICO, "");
+    }
+
+    private List<String> variantesCep(String cepNormalizado) {
+        return List.of(cepNormalizado, cepNormalizado.substring(0, 5) + "-" + cepNormalizado.substring(5));
     }
 
     private void salvarImagensDoAnuncio(Anuncio anuncio, List<MultipartFile> imagens) {
