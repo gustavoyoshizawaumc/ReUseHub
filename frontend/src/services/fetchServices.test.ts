@@ -39,7 +39,7 @@ const jsonResponse = (body: unknown, init: ResponseInit = {}) =>
   });
 
 const textResponse = (body: string, init: ResponseInit = {}) =>
-  new Response(body, {
+  new Response(init.status === 204 ? null : body, {
     status: init.status ?? 200,
     headers: init.headers,
   });

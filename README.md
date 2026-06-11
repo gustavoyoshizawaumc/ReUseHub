@@ -1,245 +1,117 @@
-<div align="center">
-
 # ReUseHub
 
-**Plataforma web gratuita de doação e troca de itens usados**
+Plataforma web gratuita de doacao e troca de itens usados.
 
-Projeto Final de Curso — Bacharelado em Sistemas de Informação  
-Universidade de Mogi das Cruzes · 2026
+Projeto Final de Curso do Bacharelado em Sistemas de Informacao da Universidade de Mogi das Cruzes.
 
-[![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)](https://react.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7.x-green?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+## Visao geral
 
-</div>
+O ReUseHub foi criado para aproximar pessoas que desejam dar um novo destino a itens usados em bom estado. A proposta da plataforma e facilitar doacoes e trocas de forma simples, segura e acessivel, incentivando o reaproveitamento de produtos e reduzindo o descarte desnecessario.
 
----
+Mais do que um marketplace, o projeto busca fortalecer praticas de consumo consciente e economia circular, criando um ambiente em que objetos que perderam valor para uma pessoa possam continuar sendo uteis para outra.
 
-## 📋 Sobre o Projeto
+## Problema que o projeto busca enfrentar
 
-O **ReUseHub** é um sistema web responsivo que conecta pessoas que desejam **doar** ou **trocar** itens usados, promovendo a economia circular e o consumo consciente. A plataforma oferece:
+Muitos itens ainda funcionais acabam sem uso, ocupando espaco ou sendo descartados antes do tempo. Ao mesmo tempo, ha pessoas que precisam desses produtos, mas nem sempre conseguem acesso facil ou barato a eles.
 
-- Cadastro e autenticação de usuários com controle de acesso por perfil (Admin, Moderador, Usuário)
-- Publicação e gerenciamento de anúncios de doação e troca
-- Busca com filtros por categoria e localização geográfica
-- Sistema de destaque de anúncios por relevância e atividade
-- Chat direto entre usuários
-- Sistema de avaliações e reputação
-- Dashboard analítico para administradores
-- Conformidade com a LGPD
+O ReUseHub surge como resposta a esse cenario, oferecendo uma solucao digital para:
 
----
+- estimular o reaproveitamento de bens;
+- reduzir desperdicio e descarte inadequado;
+- incentivar relacoes de troca e doacao dentro da comunidade;
+- ampliar o acesso a produtos usados em boas condicoes.
 
-## 👥 Equipe
+## Objetivo geral
 
-| Integrante | Módulos Responsáveis |
-|---|---|
-| **Gustavo Yoshizawa dos Santos** | Autenticação (JWT/RBAC), Chat, Avaliações e Reputação |
-| **Guilherme Yoshizawa dos Santos** | Anúncios, Motor de Busca e Filtros, Sistema de Destaque |
+Desenvolver uma plataforma web responsiva que permita a publicacao, busca, negociacao e acompanhamento de anuncios de doacao e troca, com foco em usabilidade, seguranca e confianca entre os usuarios.
 
-**Orientador:** Prof. Bruno Messias Aguiar  
-**Coorientador:** Prof. Alessandro Aparecido da Silva
+## Objetivos especificos
 
----
+- permitir cadastro e autenticacao de usuarios;
+- disponibilizar publicacao e gerenciamento de anuncios;
+- facilitar a busca de itens por filtros relevantes, como categoria e localizacao;
+- permitir contato entre usuarios interessados;
+- oferecer mecanismos de reputacao e avaliacao;
+- apoiar a moderacao da plataforma para manter a qualidade e a seguranca do ambiente;
+- contribuir para praticas alinhadas a sustentabilidade e ao consumo consciente.
 
-## 🏗️ Arquitetura
+## Justificativa
 
-O sistema adota uma arquitetura de **Monolito Modular** no backend — única instância de deploy com módulos internamente coesos e independentes — e um frontend desacoplado como **SPA (Single Page Application)**, comunicando-se via API RESTful.
+O projeto foi pensado a partir de uma necessidade real: existem muitos itens pouco utilizados, mas ainda valiosos, que poderiam circular novamente em vez de serem descartados. Nesse contexto, uma plataforma voltada especificamente para doacao e troca se torna relevante por combinar impacto social, beneficio economico e consciencia ambiental.
 
-```
-Frontend (React SPA)
-        │
-        │  REST API (JSON / JWT)
-        ▼
-Backend (Spring Boot — Monolito Modular)
- ├── Módulo: Autenticação
- ├── Módulo: Anúncios
- ├── Módulo: Busca e Localização
- ├── Módulo: Relevância
- ├── Módulo: Chat
- └── Módulo: Avaliações
-        │
-        ├── PostgreSQL (dados estruturados)
-        └── MongoDB    (chat, logs, recomendações)
-```
+Do ponto de vista academico, o ReUseHub tambem permite aplicar conceitos importantes de engenharia de software, arquitetura de sistemas, seguranca, persistencia de dados, experiencia do usuario e testes automatizados em um problema com utilidade pratica.
 
----
+## Principais funcionalidades
 
-## 🛠️ Stack Tecnológica
+- cadastro, login e controle de acesso por perfil;
+- criacao e gerenciamento de anuncios de doacao e troca;
+- busca de itens com filtros;
+- chat entre usuarios;
+- envio e recebimento de interesses e propostas;
+- sistema de avaliacoes e reputacao;
+- moderacao de conteudo e acompanhamento administrativo;
+- paginas informativas relacionadas a uso da plataforma e privacidade.
+
+## Tecnologias utilizadas
 
 ### Backend
-| Tecnologia | Versão | Finalidade |
-|---|---|---|
-| Java | 21 | Linguagem principal |
-| Spring Boot | 3.x | Framework backend |
-| Spring Security + JWT | — | Autenticação e autorização |
-| Spring Data JPA | — | Persistência relacional |
-| Spring Data MongoDB | — | Persistência documental |
-| PostgreSQL | 16 | Banco relacional |
-| MongoDB | 7.x | Banco de documentos |
-| JUnit + Mockito | — | Testes automatizados |
+
+- Java 21
+- Spring Boot
+- Spring Security
+- JWT para autenticacao
+- JPA
+- PostgreSQL
+- MongoDB
+- JUnit e Mockito para testes
 
 ### Frontend
-| Tecnologia | Versão | Finalidade |
-|---|---|---|
-| React.js | 18 | Biblioteca de UI |
-| TypeScript | 5.x | Tipagem estática |
-| Tailwind CSS | 3.x | Estilização utilitária |
-| React Router | 6.x | Roteamento SPA |
-| Chart.js | — | Gráficos no dashboard |
 
-### APIs Externas
-| API | Finalidade |
-|---|---|
-| ViaCEP | Validação e preenchimento de endereço por CEP |
-| OpenStreetMap Nominatim | Geocodificação para filtros de localização |
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Chart.js
+- Vitest e Testing Library para testes
 
----
+### Apoio e integracoes
 
-## 📁 Estrutura do Repositório
+- Docker Compose para ambiente local
+- ViaCEP para apoio a endereco e localizacao
+- AWS S3 para armazenamento de arquivos
 
-```
-ReUseHub/
-├── backend/                          # Spring Boot — Monolito Modular
-│   └── src/main/java/com/reusehub/
-│       ├── auth/                     # Módulo de autenticação
-│       │   ├── controller/
-│       │   ├── service/
-│       │   ├── repository/
-│       │   ├── model/
-│       │   └── dto/
-│       ├── listings/                 # Módulo de anúncios
-│       ├── search/                   # Módulo de busca e localização
-│       ├── relevance/                # Módulo de relevância
-│       ├── chat/                     # Módulo de chat (MongoDB)
-│       ├── reviews/                  # Módulo de avaliações
-│       ├── shared/                   # Componentes compartilhados
-│       │   ├── config/               # Configs (Security, CORS, JWT...)
-│       │   ├── exception/            # Tratamento global de exceções
-│       │   └── util/
-│       └── ReUseHubApplication.java
-│
-├── frontend/                         # React SPA
-│   └── src/
-│       ├── components/               # Componentes reutilizáveis
-│       ├── pages/                    # Páginas da aplicação
-│       ├── hooks/                    # Custom hooks
-│       ├── services/                 # Chamadas à API
-│       ├── types/                    # Tipos TypeScript
-│       └── utils/                   # Funções utilitárias
-│
-├── docs/                             # Documentação do projeto
-│   ├── ReUseHub.docx                 # Documento principal (PFC)
-│   ├── diagramas/
-│   └── wireframes/
-│
-├── .github/
-│   ├── PULL_REQUEST_TEMPLATE.md      # Template de Pull Request
-│   └── CODEOWNERS                    # Responsáveis por módulos
-│
-├── docker-compose.yml                # PostgreSQL + MongoDB local
-├── .gitignore
-└── README.md
-```
+## Por que essas tecnologias foram escolhidas
 
----
+As tecnologias usadas no projeto foram escolhidas por combinarem maturidade, boa documentacao e aderencia ao tipo de problema que o ReUseHub resolve.
 
-## 🚀 Como Rodar Localmente
+- Java com Spring Boot oferece uma base solida para regras de negocio, seguranca e criacao de APIs.
+- PostgreSQL atende bem os dados estruturados da aplicacao.
+- MongoDB se encaixa melhor em fluxos que exigem flexibilidade documental, como comunicacao e registros especificos.
+- React com TypeScript ajuda a construir uma interface moderna, reutilizavel e mais segura em manutencao.
+- Vitest, Testing Library, JUnit e Mockito apoiam a validacao do comportamento da aplicacao por meio de testes automatizados.
 
-### Pré-requisitos
-- Java 21+
-- Node.js 20+
-- Docker e Docker Compose
+## Publico-alvo
 
-### 1. Clonar o repositório
-```bash
-git clone https://github.com/gustavoyoshizawaumc/ReUseHub.git
-cd ReUseHub
-```
+O ReUseHub foi pensado para pessoas que desejam:
 
-### 2. Subir os bancos de dados
-```bash
-docker-compose up -d
-```
+- doar itens que nao usam mais;
+- propor trocas de produtos usados;
+- encontrar objetos em boas condicoes sem depender apenas de compra;
+- participar de uma comunidade mais colaborativa e sustentavel.
 
-### 3. Rodar o backend
-```bash
-cd backend
-./mvnw spring-boot:run
-```
+## Impacto esperado
 
-API local: http://localhost:8080
+Com o ReUseHub, espera-se incentivar o reaproveitamento de itens, diminuir o desperdicio e ampliar o acesso a produtos usados de forma organizada e confiavel. O projeto tambem busca mostrar como a tecnologia pode ser usada para apoiar praticas mais conscientes no dia a dia.
 
-### 4. Rodar o frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## Equipe
 
-App local: http://localhost:5173
+- Gustavo Yoshizawa dos Santos
+- Guilherme Yoshizawa dos Santos
 
----
+Orientador: Prof. Bruno Messias Aguiar  
+Coorientador: Prof. Alessandro Aparecido da Silva
 
-## 🌿 Fluxo de Branches (Git Flow)
+## Consideracoes finais
 
-```
-main          ← código estável, entrega final
-  └── develop ← integração contínua
-        ├── feature/auth        (Gustavo)
-        ├── feature/chat        (Gustavo)
-        ├── feature/reviews     (Gustavo)
-        ├── feature/listings    (Guilherme)
-        ├── feature/search      (Guilherme)
-        ├── feature/relevance   (Guilherme)
-        └── feature/login-screen (compartilhada)
-
-hotfix/nome-do-bug ← nasce de main, merge em main e develop
-```
-
-**Regras:**
-- Ninguém commita direto em `main` ou `develop`
-- Todo merge acontece via **Pull Request** com aprovação do outro integrante
-- `main` só recebe merges de `develop` quando a versão estiver estável
-
-### Convenção de commits
-
-```
-feat(módulo): descrição curta
-fix(módulo): descrição curta
-docs: descrição
-test(módulo): descrição
-refactor(módulo): descrição
-```
-
-**Exemplos:**
-```bash
-git commit -m "feat(auth): implementa autenticação JWT com refresh token"
-git commit -m "fix(chat): corrige duplicação de mensagens no MongoDB"
-git commit -m "test(listings): adiciona testes unitários para criação de anúncio"
-```
-
----
-
-## ✅ Módulos e Status
-
-| Módulo | Responsável | Status |
-| :--- | :--- | :--- |
-| Tela de Login | Compartilhado | ✅ Concluído |
-| Autenticação (JWT + RBAC) | Gustavo | ✅ Concluído |
-| Anúncios (CRUD) | Guilherme | ✅ Concluído |
-| Motor de Busca e Filtros | Guilherme | 🟨 Em andamento |
-| Sistema de Destaque | Guilherme | ⬜ Não iniciado |
-| Chat (MongoDB) | Gustavo | ✅ Concluído |
-| Interesses, Avaliações e Reputação | Guilherme / Gustavo | ⬜ Não iniciado |
-| Dashboard Analítico | Compartilhado | ⬜ Não iniciado |
-| Segurança / LGPD | Compartilhado | ⬜ Não iniciado |
-| Testes Automatizados | Compartilhado | ⬜ Não iniciado |
-
----
-
-## 📄 Licença
-
-Projeto acadêmico desenvolvido para fins educacionais — Universidade de Mogi das Cruzes, 2026.
+O ReUseHub representa a uniao entre desenvolvimento de software e responsabilidade social. A plataforma foi concebida para atender uma necessidade atual, com foco em reutilizacao, interacao entre usuarios e criacao de valor por meio da tecnologia.
