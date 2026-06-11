@@ -44,7 +44,6 @@ describe("anuncioService", () => {
   it("encaminha operacoes CRUD, filtros, favoritos e destaques", async () => {
     const modulo = await import("../../src/services/anuncioService");
     const arquivo = new File(["img"], "foto.png", { type: "image/png" });
-    const api = modulo.default;
 
     apiPost.mockResolvedValueOnce({ data: { id: "a1" } });
     apiGet
