@@ -19,6 +19,7 @@ import com.reusehub.interesse.dto.InteresseRespostaDTO;
 import com.reusehub.interesse.model.InteresseTroca;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.notificacao.service.NotificacaoService;
+import com.reusehub.shared.util.NomePublicoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,7 +77,8 @@ public class InteresseTrocaService {
                 anuncioDesejado.getUsuario(),
                 "INTERESSE_RECEBIDO",
                 "Novo interesse no seu anúncio",
-                interessado.getName() + " demonstrou interesse em " + anuncioDesejado.getTitulo() + ".",
+                NomePublicoUtils.primeiroNome(interessado.getName())
+                        + " demonstrou interesse em " + anuncioDesejado.getTitulo() + ".",
                 salvo.getId(),
                 "INTERESSE"
         );
@@ -166,7 +168,8 @@ public class InteresseTrocaService {
                 interesse.getInteressado(),
                 "INTERESSE_ACEITO",
                 "Seu interesse foi aceito",
-                dono.getName() + " aceitou sua proposta para " + interesse.getAnuncioDesejado().getTitulo() + ".",
+                NomePublicoUtils.primeiroNome(dono.getName())
+                        + " aceitou sua proposta para " + interesse.getAnuncioDesejado().getTitulo() + ".",
                 salvo.getId(),
                 "INTERESSE"
         );
@@ -199,7 +202,9 @@ public class InteresseTrocaService {
                 interesse.getInteressado(),
                 "ENTREGA_MARCADA",
                 "Entrega aguardando confirmacao",
-                dono.getName() + " marcou " + interesse.getAnuncioDesejado().getTitulo() + " como entregue. Confirme o recebimento para concluir.",
+                NomePublicoUtils.primeiroNome(dono.getName())
+                        + " marcou " + interesse.getAnuncioDesejado().getTitulo()
+                        + " como entregue. Confirme o recebimento para concluir.",
                 salvo.getId(),
                 "INTERESSE"
         );
@@ -240,7 +245,9 @@ public class InteresseTrocaService {
                 interesse.getAnuncioDesejado().getUsuario(),
                 "NEGOCIACAO_CONCLUIDA",
                 "Negociacao concluida",
-                interessado.getName() + " confirmou o recebimento de " + interesse.getAnuncioDesejado().getTitulo() + ". As avaliacoes ja estao liberadas.",
+                NomePublicoUtils.primeiroNome(interessado.getName())
+                        + " confirmou o recebimento de " + interesse.getAnuncioDesejado().getTitulo()
+                        + ". As avaliacoes ja estao liberadas.",
                 salvo.getId(),
                 "INTERESSE"
         );
@@ -279,7 +286,8 @@ public class InteresseTrocaService {
                 outroParticipante,
                 "NEGOCIACAO_CANCELADA",
                 "Negociacao cancelada",
-                usuario.getName() + " cancelou a negociacao de " + interesse.getAnuncioDesejado().getTitulo() + ".",
+                NomePublicoUtils.primeiroNome(usuario.getName())
+                        + " cancelou a negociacao de " + interesse.getAnuncioDesejado().getTitulo() + ".",
                 salvo.getId(),
                 "INTERESSE"
         );
@@ -307,7 +315,8 @@ public class InteresseTrocaService {
                 interesse.getInteressado(),
                 "INTERESSE_REJEITADO",
                 "Seu interesse foi recusado",
-                dono.getName() + " recusou sua proposta para " + interesse.getAnuncioDesejado().getTitulo() + ".",
+                NomePublicoUtils.primeiroNome(dono.getName())
+                        + " recusou sua proposta para " + interesse.getAnuncioDesejado().getTitulo() + ".",
                 salvo.getId(),
                 "INTERESSE"
         );
@@ -422,11 +431,11 @@ public class InteresseTrocaService {
                 interesse.getAnuncioDesejado().getTipo(),
                 interesse.getAnuncioDesejado().getStatus(),
                 anunciante.getId(),
-                anunciante.getName(),
+                NomePublicoUtils.primeiroNome(anunciante.getName()),
                 anunciante.getAvatarUrl(),
                 anunciante.getReputationScore(),
                 interesse.getInteressado().getId(),
-                interesse.getInteressado().getName(),
+                NomePublicoUtils.primeiroNome(interesse.getInteressado().getName()),
                 interesse.getInteressado().getAvatarUrl(),
                 interesse.getInteressado().getReputationScore(),
                 interesse.getAnuncioOferecido() != null ? interesse.getAnuncioOferecido().getId() : null,

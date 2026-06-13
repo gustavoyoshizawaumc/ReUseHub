@@ -85,14 +85,14 @@ public class AnuncioDestaqueService {
     private List<AnuncioDestaqueDTO> obterPopulares(int size) {
         return anuncioRepository.findElegiveisOrdenadosPorPopularidade(PageRequest.of(0, size))
                 .stream()
-                .map(anuncio -> AnuncioDestaqueDTO.de(anuncioRespostaMapper.mapear(anuncio), null))
+                .map(anuncio -> AnuncioDestaqueDTO.de(anuncioRespostaMapper.mapearPublico(anuncio), null))
                 .toList();
     }
 
     private List<AnuncioDestaqueDTO> obterRecentes(int size) {
         return anuncioRepository.findElegiveisParaDestaque(PageRequest.of(0, size))
                 .stream()
-                .map(anuncio -> AnuncioDestaqueDTO.de(anuncioRespostaMapper.mapear(anuncio), null))
+                .map(anuncio -> AnuncioDestaqueDTO.de(anuncioRespostaMapper.mapearPublico(anuncio), null))
                 .toList();
     }
 
@@ -136,7 +136,7 @@ public class AnuncioDestaqueService {
                 )
                 .limit(size)
                 .map(item -> AnuncioDestaqueDTO.de(
-                        anuncioRespostaMapper.mapear(item.anuncio()),
+                        anuncioRespostaMapper.mapearPublico(item.anuncio()),
                         item.score()
                 ))
                 .toList();

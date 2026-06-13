@@ -18,6 +18,7 @@ import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.interesse.model.InteresseTroca;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.shared.util.NomePublicoUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -157,7 +158,9 @@ public class ChatService {
                     UUID.fromString(usuarioAtualId),
                     anuncio.getId()
             );
-            boolean chatFechado = avaliacaoRepository.existsByAnuncioId(anuncio.getId());
+            boolean chatFechado = avaliacaoRepository.existsByAnuncioId(anuncio.getId())
+                    || (anuncio.getStatus() != Anuncio.StatusAnuncio.ATIVO
+                    && anuncio.getStatus() != Anuncio.StatusAnuncio.CONCLUIDO);
 
             if (interesse == null) {
                 return new FechamentoNegociacao(
@@ -263,8 +266,7 @@ public class ChatService {
 
         try {
             String usuarioReferencia = conversa.getRemetente();
-            return avaliacaoRepository.existsByAnuncioId(UUID.fromString(conversa.getAnuncioId()))
-                    || resolverFechamento(conversa, usuarioReferencia).negociacaoCancelada();
+            return resolverFechamento(conversa, usuarioReferencia).chatFechado();
         } catch (IllegalArgumentException e) {
             return false;
         }
@@ -408,7 +410,7 @@ public class ChatService {
         return new ConversaRespostaDTO(
                 conversa.getId(),
                 dto.destinatarioId(),
-                resolverNomeUsuario(dto.destinatarioId()),
+                NomePublicoUtils.primeiroNome(resolverNomeUsuario(dto.destinatarioId())),
                 resolverAvatarUsuario(dto.destinatarioId()),
                 conversa.getAnuncioId(),
                 anuncio.getTitulo(),
@@ -465,7 +467,7 @@ public class ChatService {
         return new ConversaRespostaDTO(
                 conversa.getId(),
                 destinatarioId,
-                resolverNomeUsuario(destinatarioId),
+                NomePublicoUtils.primeiroNome(resolverNomeUsuario(destinatarioId)),
                 resolverAvatarUsuario(destinatarioId),
                 conversa.getAnuncioId(),
                 resolverTituloAnuncio(conversa.getAnuncioId()),
@@ -512,7 +514,7 @@ public class ChatService {
         return new ConversaRespostaDTO(
                 conversa.getId(),
                 outroUsuarioId,
-                resolverNomeUsuario(outroUsuarioId),
+                NomePublicoUtils.primeiroNome(resolverNomeUsuario(outroUsuarioId)),
                 resolverAvatarUsuario(outroUsuarioId),
                 conversa.getAnuncioId(),
                 resolverTituloAnuncio(conversa.getAnuncioId()),
@@ -546,7 +548,7 @@ public class ChatService {
         List<ListaConversasDTO.ConversaResumo> resumos = conversas.stream()
                 .map(c -> {
                     String outroUsuarioId = c.getRemetente().equals(usuarioId) ? c.getDestinatario() : c.getRemetente();
-                    String nomeOutroUsuario = resolverNomeUsuario(outroUsuarioId);
+                    String nomeOutroUsuario = NomePublicoUtils.primeiroNome(resolverNomeUsuario(outroUsuarioId));
                     String avatarOutroUsuario = resolverAvatarUsuario(outroUsuarioId);
                     String tituloAnuncio = resolverTituloAnuncio(c.getAnuncioId());
                     String imagemAnuncio = resolverImagemAnuncio(c.getAnuncioId());

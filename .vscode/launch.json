@@ -15,7 +15,8 @@
       "projectName": "backend",
       "env": {
         "DB_USER": "reusehub",
-        "DB_PASSWORD": "reusehub123"
+        "DB_PASSWORD": "reusehub123",
+        "MONGO_URI": "mongodb://reusehub:reusehub123@localhost:27017/reusehub?authSource=admin"
       }
     }
   ]

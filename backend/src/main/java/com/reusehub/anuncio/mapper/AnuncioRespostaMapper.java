@@ -5,6 +5,7 @@ import com.reusehub.anuncio.dto.ImagemAnuncioRespostaDTO;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.model.ImagemAnuncio;
 import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
+import com.reusehub.shared.util.NomePublicoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +43,7 @@ public class AnuncioRespostaMapper {
                 .criadoEm(anuncio.getCriadoEm())
                 .atualizadoEm(anuncio.getAtualizadoEm())
                 .usuarioId(anuncio.getUsuario().getId())
-                .nomeUsuario(anuncio.getUsuario().getName())
+                .nomeUsuario(NomePublicoUtils.primeiroNome(anuncio.getUsuario().getName()))
                 .notaReputacaoUsuario(anuncio.getUsuario().getReputationScore() != null ? anuncio.getUsuario().getReputationScore() : BigDecimal.ZERO)
                 .categoriaId(anuncio.getCategoria().getId())
                 .nomeCategoria(anuncio.getCategoria().getNome())
@@ -55,6 +56,23 @@ public class AnuncioRespostaMapper {
                 .cidade(anuncio.getEndereco().getCidade())
                 .uf(anuncio.getEndereco().getUf())
                 .build();
+    }
+
+    /**
+     * Versão para respostas públicas (home, destaques, listagens e busca sem autenticação).
+     * Remove dados que não têm função no card e ferem a minimização da LGPD: logradouro
+     * (rua), CEP e bairro — coletados apenas para geocodificação — além dos campos
+     * internos de moderação. O público mantém apenas cidade/UF para localização. O nome
+     * já é reduzido ao primeiro nome no mapeamento base.
+     */
+    public AnuncioRespostaDTO mapearPublico(Anuncio anuncio) {
+        AnuncioRespostaDTO dto = mapear(anuncio);
+        dto.setRua(null);
+        dto.setCep(null);
+        dto.setBairro(null);
+        dto.setMotivoSuspensao(null);
+        dto.setMotivoReprovacao(null);
+        return dto;
     }
 
     public UUID idDoDono(Anuncio anuncio) {

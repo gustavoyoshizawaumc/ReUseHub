@@ -14,6 +14,7 @@ import com.reusehub.avaliacao.repository.AvaliacaoRepository;
 import com.reusehub.interesse.model.InteresseTroca;
 import com.reusehub.interesse.repository.InteresseTrocaRepository;
 import com.reusehub.shared.service.ConteudoSeguroService;
+import com.reusehub.shared.util.NomePublicoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,9 +137,9 @@ public class AvaliacaoService {
         return new AvaliacaoRespostaDTO(
                 avaliacao.getId(),
                 avaliacao.getAvaliador().getId(),
-                avaliacao.getAvaliador().getName(),
+                NomePublicoUtils.primeiroNome(avaliacao.getAvaliador().getName()),
                 avaliacao.getAvaliado().getId(),
-                avaliacao.getAvaliado().getName(),
+                NomePublicoUtils.primeiroNome(avaliacao.getAvaliado().getName()),
                 avaliacao.getAnuncio().getId(),
                 avaliacao.getAnuncio().getTitulo(),
                 avaliacao.getNota(),

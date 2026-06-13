@@ -84,7 +84,6 @@ class ChatServiceTest {
         Mockito.when(dto.conteudo()).thenReturn("Ola, aceita troca?");
         Mockito.when(usuarioRepository.findByEmail("remetente@reusehub.com")).thenReturn(Optional.of(remetente));
         Mockito.when(chatRepository.findById("conversa-123")).thenReturn(Optional.of(conversaModelo));
-        Mockito.when(avaliacaoRepository.existsByAnuncioId(Mockito.any(UUID.class))).thenReturn(false);
 
         assertDoesNotThrow(() -> chatService.enviarMensagem("remetente@reusehub.com", "conversa-123", dto));
 

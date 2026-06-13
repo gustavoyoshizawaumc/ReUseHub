@@ -84,6 +84,39 @@ public interface InteresseTrocaRepository extends JpaRepository<InteresseTroca, 
     );
 
     @Query("""
+            select distinct interesse
+            from InteresseTroca interesse
+            left join interesse.anuncioOferecido oferecido
+            where interesse.status in :statuses
+              and (
+                interesse.anuncioDesejado.id = :anuncioId
+                or oferecido.id = :anuncioId
+              )
+            order by interesse.criadoEm desc
+            """)
+    List<InteresseTroca> findAtivosRelacionadosAoAnuncioOrderByCriadoEmDesc(
+            @Param("anuncioId") UUID anuncioId,
+            @Param("statuses") List<InteresseTroca.StatusInteresse> statuses
+    );
+
+    @Query("""
+            select distinct interesse
+            from InteresseTroca interesse
+            left join interesse.anuncioOferecido oferecido
+            where interesse.status in :statuses
+              and (
+                interesse.interessado.id = :usuarioId
+                or interesse.anuncioDesejado.usuario.id = :usuarioId
+                or oferecido.usuario.id = :usuarioId
+              )
+            order by interesse.criadoEm desc
+            """)
+    List<InteresseTroca> findAtivosRelacionadosAoUsuarioOrderByCriadoEmDesc(
+            @Param("usuarioId") UUID usuarioId,
+            @Param("statuses") List<InteresseTroca.StatusInteresse> statuses
+    );
+
+    @Query("""
             select interesse.anuncioDesejado.categoria.id, count(interesse)
             from InteresseTroca interesse
             where interesse.interessado.id = :usuarioId

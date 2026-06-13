@@ -15,6 +15,7 @@ import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
 import com.reusehub.moderacao.model.HistoricoModeracao;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
@@ -52,6 +53,7 @@ public class AdminService {
     private final HistoricoModeracaoRepository historicoRepository;
     private final PasswordEncoder passwordEncoder;
     private final AdminRootGuard adminRootGuard;
+    private final InteresseCancelamentoService interesseCancelamentoService;
 
     public AdminUsuarioDTO criarContaInterna(AdminCriarModeradorDTO dto, Perfil perfilPadrao) {
         String emailNormalizado = SensitiveDataCrypto.normalizarEmail(dto.email());
@@ -120,6 +122,7 @@ public class AdminService {
         Usuario adminLogado = buscarUsuarioPorEmail(emailAdminLogado);
         Usuario usuario = buscarUsuario(usuarioId);
         validarProtecaoAdmin(adminLogado, usuario, "desativar");
+        encerrarRelacionamentosDoUsuario(usuario, adminLogado);
         usuario.setIsActive(false);
         usuario.setDesativadoEm(LocalDateTime.now());
         return mapearUsuario(usuarioRepository.save(usuario));
@@ -129,6 +132,7 @@ public class AdminService {
         Usuario adminLogado = buscarUsuarioPorEmail(emailAdminLogado);
         Usuario usuario = buscarUsuario(usuarioId);
         validarProtecaoAdmin(adminLogado, usuario, "banir");
+        encerrarRelacionamentosDoUsuario(usuario, adminLogado);
         usuario.setIsActive(false);
         usuario.setBanido(true);
         usuario.setDesativadoEm(LocalDateTime.now());
@@ -140,6 +144,7 @@ public class AdminService {
         Usuario adminLogado = buscarUsuarioPorEmail(emailAdminLogado);
         Usuario usuario = buscarUsuario(usuarioId);
         validarProtecaoAdmin(adminLogado, usuario, "anonimizar");
+        encerrarRelacionamentosDoUsuario(usuario, adminLogado);
         registrarBloqueioCredenciais(
                 usuario,
                 CredencialBloqueada.Motivo.CONTA_EXCLUIDA,
@@ -337,6 +342,18 @@ public class AdminService {
         if (alvo.getPerfil() == Perfil.ADMIN) {
             throw new RegraNegocioException("Administradores nao podem " + acao + " outros administradores.");
         }
+    }
+
+    private void encerrarRelacionamentosDoUsuario(Usuario usuario, Usuario adminResponsavel) {
+        interesseCancelamentoService.cancelarRelacionadosAoUsuario(usuario, adminResponsavel);
+        anuncioRepository.cancelarPublicacoesDoUsuario(
+                usuario.getId(),
+                java.util.EnumSet.of(
+                        Anuncio.StatusAnuncio.PENDENTE,
+                        Anuncio.StatusAnuncio.ATIVO,
+                        Anuncio.StatusAnuncio.SUSPENSO
+                )
+        );
     }
 
     private void anonimizarUsuarioPorAdmin(Usuario usuario) {

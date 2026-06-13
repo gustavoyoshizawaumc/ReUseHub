@@ -64,22 +64,22 @@ const MiniImagem: React.FC<{ url?: string | null; alt: string }> = ({ url, alt }
 const statusConfig: Record<InteresseStatus, { label: string; className: string; icon: React.ElementType }> = {
   PENDENTE: {
     label: "Pendente",
-    className: "border-amber-100 bg-amber-50 text-amber-700",
+    className: "text-amber-700",
     icon: Clock3,
   },
   ACEITO: {
     label: "Em andamento",
-    className: "border-blue-100 bg-blue-50 text-blue-700",
+    className: "text-blue-700",
     icon: Clock3,
   },
   REJEITADO: {
     label: "Recusada",
-    className: "border-slate-200 bg-slate-50 text-slate-600",
+    className: "text-slate-600",
     icon: XCircle,
   },
   CANCELADO: {
     label: "Cancelada",
-    className: "border-rose-100 bg-rose-50 text-rose-700",
+    className: "text-rose-700",
     icon: XCircle,
   },
 };
@@ -88,7 +88,7 @@ const obterStatusVisual = (item: InteresseResposta) => {
   if (item.status === "ACEITO" && item.anuncioDesejadoStatus === "CONCLUIDO") {
     return {
       label: "Concluida",
-      className: "border-emerald-100 bg-emerald-50 text-emerald-700",
+      className: "text-emerald-700",
       icon: CheckCircle2,
     };
   }
@@ -205,33 +205,12 @@ export const InteressesRecebidosPage: React.FC = () => {
 
       <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:py-8">
         <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">Central de negociacoes</p>
-              <h1 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">Interesses e propostas</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Acompanhe o que voce recebeu, enviou e concluiu. As conversas continuam preservadas no chat quando a negociacao termina.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[420px]">
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recebidas</p>
-                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.recebidas}</p>
-              </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Enviadas</p>
-                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.enviadas}</p>
-              </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Concluidas</p>
-                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.concluidas}</p>
-              </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Encerradas</p>
-                <p className="mt-1 text-2xl font-black text-slate-950">{contadores.canceladas}</p>
-              </div>
-            </div>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">Central de negociacoes</p>
+            <h1 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">Interesses e propostas</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              Acompanhe o que voce recebeu, enviou e concluiu. As conversas continuam preservadas no chat quando a negociacao termina.
+            </p>
           </div>
         </div>
 
@@ -320,7 +299,7 @@ export const InteressesRecebidosPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${status.className}`}>
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${status.className}`}>
                     <StatusIcon size={14} />
                     {status.label}
                   </span>

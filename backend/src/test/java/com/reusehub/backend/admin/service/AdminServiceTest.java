@@ -10,6 +10,7 @@ import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +44,7 @@ class AdminServiceTest {
     @Mock private HistoricoModeracaoRepository historicoRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private AdminRootGuard adminRootGuard;
+    @Mock private InteresseCancelamentoService interesseCancelamentoService;
 
     @InjectMocks
     private AdminService adminService;
@@ -144,6 +146,8 @@ class AdminServiceTest {
         assertTrue(gustavo.getContaExcluida());
         assertFalse(gustavo.getIsActive());
         assertFalse(gustavo.getBanido());
+        org.mockito.Mockito.verify(interesseCancelamentoService)
+                .cancelarRelacionadosAoUsuario(gustavo, adminLogado);
     }
 
     private Usuario usuario(String nome, String email, String cpf) {

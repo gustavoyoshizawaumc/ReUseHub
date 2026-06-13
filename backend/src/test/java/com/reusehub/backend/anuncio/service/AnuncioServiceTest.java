@@ -29,6 +29,7 @@ import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.anuncio.dto.ResultadoGeocoding;
 import com.reusehub.anuncio.service.GeocodingHibridoService;
 import com.reusehub.anuncio.service.LocalizacaoService;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.moderacao.service.ModeracaoService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -95,6 +96,8 @@ class AnuncioServiceTest {
     private ModeracaoService moderacaoService;
     @Mock
     private AnuncioRespostaMapper anuncioRespostaMapper;
+    @Mock
+    private InteresseCancelamentoService interesseCancelamentoService;
 
     @InjectMocks
     private AnuncioService anuncioService;

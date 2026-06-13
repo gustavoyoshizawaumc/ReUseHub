@@ -14,7 +14,7 @@ import com.reusehub.auth.model.*;
 import com.reusehub.auth.repository.CredencialBloqueadaRepository;
 import com.reusehub.auth.repository.TokenUsuarioRepository;
 import com.reusehub.auth.repository.UsuarioRepository;
-import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.notificacao.repository.NotificacaoRepository;
 import com.reusehub.shared.service.ConteudoSeguroService;
 import lombok.RequiredArgsConstructor;
@@ -45,12 +45,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenUsuarioRepository tokenUsuarioRepository;
     private final AnuncioRepository anuncioRepository;
-    private final InteresseTrocaRepository interesseTrocaRepository;
     private final AnuncioFavoritoRepository anuncioFavoritoRepository;
     private final NotificacaoRepository notificacaoRepository;
     private final EnderecoRepository enderecoRepository;
     private final StorageService storageService;
     private final ConteudoSeguroService conteudoSeguroService;
+    private final InteresseCancelamentoService interesseCancelamentoService;
 
     @Transactional
     public AuthResponse registrar(RegisterRequest request) {
@@ -179,7 +179,7 @@ public class AuthService {
     private void prepararEncerramento(Usuario usuario) {
         UUID usuarioId = usuario.getId();
         tokenUsuarioRepository.invalidarTokensAtivos(usuarioId);
-        interesseTrocaRepository.cancelarPendentesRelacionadosAoUsuario(usuarioId);
+        interesseCancelamentoService.cancelarRelacionadosAoUsuario(usuario, usuario);
         anuncioRepository.cancelarPublicacoesDoUsuario(
                 usuarioId,
                 EnumSet.of(
@@ -235,13 +235,6 @@ public class AuthService {
     private void validarEncerramentoPermitido(Usuario usuario) {
         if (usuario.getPerfil() != Perfil.USUARIO) {
             throw new RegraNegocioException("Contas operacionais devem ser gerenciadas por outro administrador.");
-        }
-
-        boolean possuiNegociacaoEmAndamento = interesseTrocaRepository.existsNegociacaoEmAndamento(usuario.getId());
-        if (possuiNegociacaoEmAndamento) {
-            throw new RegraNegocioException(
-                    "Conclua ou cancele as negociacoes em andamento antes de encerrar sua conta."
-            );
         }
     }
 

@@ -31,7 +31,7 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGO_URI:mongodb://reusehub:reusehub123@localhost:27017/reusehub?authSource=admin}
+      uri: ${MONGO_URI:mongodb://${MONGO_USER:reusehub}:${MONGO_PASSWORD:reusehub123}@${MONGO_HOST:localhost}:${MONGO_PORT:27017}/${MONGO_DATABASE:reusehub}?authSource=${MONGO_AUTH_DATABASE:admin}}
 
   web:
     resources:

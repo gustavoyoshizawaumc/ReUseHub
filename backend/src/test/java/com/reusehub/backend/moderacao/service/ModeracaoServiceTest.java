@@ -14,7 +14,7 @@ import com.reusehub.denuncia.dto.DenunciaRespostaDTO;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
 import com.reusehub.interesse.model.InteresseTroca;
-import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.moderacao.repository.HistoricoModeracaoRepository;
 import com.reusehub.moderacao.service.ModeracaoService;
 import com.reusehub.notificacao.service.NotificacaoService;
@@ -53,7 +53,7 @@ class ModeracaoServiceTest {
     @Mock private HistoricoModeracaoRepository historicoRepository;
     @Mock private AvaliacaoRepository avaliacaoRepository;
     @Mock private NotificacaoService notificacaoService;
-    @Mock private InteresseTrocaRepository interesseTrocaRepository;
+    @Mock private InteresseCancelamentoService interesseCancelamentoService;
 
     @InjectMocks
     private ModeracaoService moderacaoService;
@@ -171,20 +171,21 @@ class ModeracaoServiceTest {
             Mockito.when(denunciaRepository.findByAnuncioIdAndStatus(
                     anuncioAlheio.getId(), DenunciaAnuncio.StatusDenuncia.ABERTA
             )).thenReturn(List.of(d1, d2));
-            Mockito.when(interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
-                    Mockito.eq(anuncioAlheio.getId()), Mockito.anyList()
-            )).thenReturn(List.of(pendente, aceito));
+            Mockito.when(interesseCancelamentoService.cancelarRelacionadosAoAnuncio(anuncioAlheio, moderador))
+                    .thenReturn(List.of(
+                            new InteresseCancelamentoService.InteresseCancelado(
+                                    pendente, InteresseTroca.StatusInteresse.PENDENTE
+                            ),
+                            new InteresseCancelamentoService.InteresseCancelado(
+                                    aceito, InteresseTroca.StatusInteresse.ACEITO
+                            )
+                    ));
 
             moderacaoService.suspenderAnuncioPorDenuncia(d1.getId(), moderador.getEmail(), "Conteudo proibido.");
 
             assertEquals(Anuncio.StatusAnuncio.SUSPENSO, anuncioAlheio.getStatus());
             assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d1.getStatus());
             assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d2.getStatus());
-            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, pendente.getStatus());
-            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, aceito.getStatus());
-            assertNotNull(pendente.getCanceladoEm());
-            assertNotNull(aceito.getCanceladoEm());
-            Mockito.verify(interesseTrocaRepository).saveAll(List.of(pendente, aceito));
             Mockito.verify(notificacaoService).criar(
                     Mockito.any(), Mockito.eq("ANUNCIO_SUSPENSO"), Mockito.anyString(), Mockito.anyString(),
                     Mockito.any(), Mockito.anyString()
@@ -208,19 +209,20 @@ class ModeracaoServiceTest {
             Mockito.when(denunciaRepository.findByAnuncioIdAndStatus(
                     anuncioAlheio.getId(), DenunciaAnuncio.StatusDenuncia.ABERTA
             )).thenReturn(List.of(d1));
-            Mockito.when(interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
-                    Mockito.eq(anuncioAlheio.getId()), Mockito.anyList()
-            )).thenReturn(List.of(pendente, aceito));
+            Mockito.when(interesseCancelamentoService.cancelarRelacionadosAoAnuncio(anuncioAlheio, moderador))
+                    .thenReturn(List.of(
+                            new InteresseCancelamentoService.InteresseCancelado(
+                                    pendente, InteresseTroca.StatusInteresse.PENDENTE
+                            ),
+                            new InteresseCancelamentoService.InteresseCancelado(
+                                    aceito, InteresseTroca.StatusInteresse.ACEITO
+                            )
+                    ));
 
             moderacaoService.reprovarDefinitivo(anuncioAlheio.getId(), moderador.getEmail(), "Conteudo proibido.");
 
             assertEquals(Anuncio.StatusAnuncio.REPROVADO, anuncioAlheio.getStatus());
             assertEquals(DenunciaAnuncio.StatusDenuncia.ANALISADA, d1.getStatus());
-            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, pendente.getStatus());
-            assertEquals(InteresseTroca.StatusInteresse.CANCELADO, aceito.getStatus());
-            assertNotNull(pendente.getCanceladoEm());
-            assertNotNull(aceito.getCanceladoEm());
-            Mockito.verify(interesseTrocaRepository).saveAll(List.of(pendente, aceito));
             Mockito.verify(notificacaoService).criar(
                     Mockito.any(), Mockito.eq("ANUNCIO_REPROVADO"), Mockito.anyString(), Mockito.anyString(),
                     Mockito.any(), Mockito.eq("ANUNCIO")

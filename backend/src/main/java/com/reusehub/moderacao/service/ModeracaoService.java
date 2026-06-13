@@ -18,7 +18,7 @@ import com.reusehub.denuncia.dto.DenunciaRespostaDTO;
 import com.reusehub.denuncia.model.DenunciaAnuncio;
 import com.reusehub.denuncia.repository.DenunciaAnuncioRepository;
 import com.reusehub.interesse.model.InteresseTroca;
-import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.moderacao.dto.AnuncioSuspeitoDTO;
 import com.reusehub.moderacao.dto.HistoricoModeracaoDTO;
 import com.reusehub.moderacao.model.HistoricoModeracao;
@@ -53,7 +53,7 @@ public class ModeracaoService {
     private final HistoricoModeracaoRepository historicoRepository;
     private final AvaliacaoRepository avaliacaoRepository;
     private final NotificacaoService notificacaoService;
-    private final InteresseTrocaRepository interesseTrocaRepository;
+    private final InteresseCancelamentoService interesseCancelamentoService;
 
     public DenunciaRespostaDTO criarDenuncia(String emailUsuario, DenunciaCriacaoDTO dto) {
         Usuario denunciante = buscarUsuarioPorEmail(emailUsuario);
@@ -117,7 +117,12 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
-        cancelarNegociacoesDoAnuncioModerado(anuncio, moderador, motivoSuspensao, "suspenso");
+        notificarCancelamentosPorModeracao(
+                anuncio,
+                interesseCancelamentoService.cancelarRelacionadosAoAnuncio(anuncio, moderador),
+                motivoSuspensao,
+                "suspenso"
+        );
         fecharDenunciasAbertas(anuncio.getId(), DenunciaAnuncio.StatusDenuncia.ANALISADA);
 
         registrar(moderador, "DENUNCIA_ANALISADA_COM_SUSPENSAO", "DENUNCIA", denunciaId, motivoSuspensao);
@@ -162,7 +167,12 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.SUSPENSO);
         anuncio.setMotivoSuspensao(motivoSuspensao);
         anuncioRepository.save(anuncio);
-        cancelarNegociacoesDoAnuncioModerado(anuncio, moderador, motivoSuspensao, "suspenso");
+        notificarCancelamentosPorModeracao(
+                anuncio,
+                interesseCancelamentoService.cancelarRelacionadosAoAnuncio(anuncio, moderador),
+                motivoSuspensao,
+                "suspenso"
+        );
         registrar(moderador, "ANUNCIO_SUSPENSO", "ANUNCIO", anuncioId, motivoSuspensao);
         notificarSuspensao(anuncio, motivoSuspensao);
         return mapearSuspeito(anuncio);
@@ -189,7 +199,12 @@ public class ModeracaoService {
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
         anuncio.setMotivoSuspensao(null);
         anuncioRepository.save(anuncio);
-        cancelarNegociacoesDoAnuncioModerado(anuncio, moderador, motivoReprovacao, "reprovado");
+        notificarCancelamentosPorModeracao(
+                anuncio,
+                interesseCancelamentoService.cancelarRelacionadosAoAnuncio(anuncio, moderador),
+                motivoReprovacao,
+                "reprovado"
+        );
         fecharDenunciasAbertas(anuncioId, DenunciaAnuncio.StatusDenuncia.ANALISADA);
         registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", anuncioId, motivoReprovacao);
         notificarReprovacao(anuncio, motivoReprovacao);
@@ -389,37 +404,34 @@ public class ModeracaoService {
         );
     }
 
-    private void cancelarNegociacoesDoAnuncioModerado(
-            Anuncio anuncio,
-            Usuario moderador,
+    public void notificarCancelamentosPorModeracao(
+            Anuncio anuncioModerado,
+            List<InteresseCancelamentoService.InteresseCancelado> cancelamentos,
             String motivoModeracao,
             String acaoModeracao
     ) {
-        List<InteresseTroca> interessesAtivos = interesseTrocaRepository.findByAnuncioDesejadoIdAndStatusInOrderByCriadoEmDesc(
-                anuncio.getId(),
-                List.of(
-                        InteresseTroca.StatusInteresse.PENDENTE,
-                        InteresseTroca.StatusInteresse.ACEITO
-                )
-        );
+        for (InteresseCancelamentoService.InteresseCancelado cancelamento : cancelamentos) {
+            InteresseTroca interesse = cancelamento.interesse();
+            InteresseTroca.StatusInteresse statusAnterior = cancelamento.statusAnterior();
 
-        if (interessesAtivos.isEmpty()) {
-            return;
+            boolean anuncioModeradoEraOferecido = interesse.getAnuncioOferecido() != null
+                    && interesse.getAnuncioOferecido().getId().equals(anuncioModerado.getId());
+            Usuario destinatario = anuncioModeradoEraOferecido
+                    ? interesse.getAnuncioDesejado().getUsuario()
+                    : interesse.getInteressado();
+
+            notificarInteressadoSobreCancelamentoPorModeracao(
+                    destinatario,
+                    interesse,
+                    statusAnterior,
+                    motivoModeracao,
+                    acaoModeracao
+            );
         }
-
-        LocalDateTime canceladoEm = LocalDateTime.now();
-        for (InteresseTroca interesse : interessesAtivos) {
-            InteresseTroca.StatusInteresse statusAnterior = interesse.getStatus();
-            interesse.setStatus(InteresseTroca.StatusInteresse.CANCELADO);
-            interesse.setCanceladoEm(canceladoEm);
-            interesse.setCanceladoPor(moderador);
-            notificarInteressadoSobreCancelamentoPorModeracao(interesse, statusAnterior, motivoModeracao, acaoModeracao);
-        }
-
-        interesseTrocaRepository.saveAll(interessesAtivos);
     }
 
     private void notificarInteressadoSobreCancelamentoPorModeracao(
+            Usuario destinatario,
             InteresseTroca interesse,
             InteresseTroca.StatusInteresse statusAnterior,
             String motivoModeracao,
@@ -433,7 +445,7 @@ public class ModeracaoService {
                 + motivoModeracao + ".";
 
         notificacaoService.criar(
-                interesse.getInteressado(),
+                destinatario,
                 "NEGOCIACAO_CANCELADA_MODERACAO",
                 titulo,
                 mensagem,

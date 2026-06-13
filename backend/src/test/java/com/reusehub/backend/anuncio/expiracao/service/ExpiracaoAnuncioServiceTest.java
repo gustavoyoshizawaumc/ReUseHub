@@ -3,6 +3,7 @@ package com.reusehub.backend.anuncio.expiracao.service;
 import com.reusehub.anuncio.expiracao.service.ExpiracaoAnuncioService;
 import com.reusehub.anuncio.model.Anuncio;
 import com.reusehub.anuncio.repository.AnuncioRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,8 @@ class ExpiracaoAnuncioServiceTest {
 
     @Mock
     private AnuncioRepository anuncioRepository;
+    @Mock
+    private InteresseCancelamentoService interesseCancelamentoService;
 
     @InjectMocks
     private ExpiracaoAnuncioService service;
@@ -37,6 +40,8 @@ class ExpiracaoAnuncioServiceTest {
         assertEquals(2, quantidade);
         assertEquals(Anuncio.StatusAnuncio.EXPIRADO, a1.getStatus());
         assertEquals(Anuncio.StatusAnuncio.EXPIRADO, a2.getStatus());
+        org.mockito.Mockito.verify(interesseCancelamentoService, org.mockito.Mockito.times(2))
+                .cancelarRelacionadosAoAnuncio(org.mockito.Mockito.any(Anuncio.class), org.mockito.Mockito.isNull());
     }
 
     @Test

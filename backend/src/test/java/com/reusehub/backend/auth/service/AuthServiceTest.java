@@ -16,7 +16,7 @@ import com.reusehub.anuncio.repository.AnuncioFavoritoRepository;
 import com.reusehub.anuncio.repository.AnuncioRepository;
 import com.reusehub.anuncio.repository.EnderecoRepository;
 import com.reusehub.anuncio.service.StorageService;
-import com.reusehub.interesse.repository.InteresseTrocaRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.notificacao.repository.NotificacaoRepository;
 import com.reusehub.shared.service.ConteudoSeguroService;
 
@@ -60,7 +60,7 @@ class AuthServiceTest {
     @Mock
     private AnuncioRepository anuncioRepository;
     @Mock
-    private InteresseTrocaRepository interesseTrocaRepository;
+    private InteresseCancelamentoService interesseCancelamentoService;
     @Mock
     private AnuncioFavoritoRepository anuncioFavoritoRepository;
     @Mock
@@ -104,23 +104,19 @@ class AuthServiceTest {
             assertFalse(usuarioModelo.getIsActive());
             assertNotNull(usuarioModelo.getDesativadoEm());
             Mockito.verify(tokenUsuarioRepository).invalidarTokensAtivos(usuarioModelo.getId());
-            Mockito.verify(interesseTrocaRepository).cancelarPendentesRelacionadosAoUsuario(usuarioModelo.getId());
+            Mockito.verify(interesseCancelamentoService).cancelarRelacionadosAoUsuario(usuarioModelo, usuarioModelo);
             Mockito.verify(anuncioRepository).cancelarPublicacoesDoUsuario(Mockito.eq(usuarioModelo.getId()), Mockito.any());
         }
 
         @Test
-        @DisplayName("deve bloquear encerramento se houver negociacao em andamento")
-        void bloquearEncerramentoComNegociacao() {
+        @DisplayName("deve encerrar negociacoes em andamento ao desativar a conta")
+        void encerrarNegociacoesAoDesativarConta() {
             Mockito.when(usuarioRepository.findByEmail(usuarioModelo.getEmail()))
                     .thenReturn(Optional.of(usuarioModelo));
-            Mockito.when(interesseTrocaRepository.existsNegociacaoEmAndamento(usuarioModelo.getId()))
-                    .thenReturn(true);
 
-            assertThrows(
-                    RegraNegocioException.class,
-                    () -> authService.desativarContaPorEmail(usuarioModelo.getEmail())
-            );
-            Mockito.verify(tokenUsuarioRepository, Mockito.never()).invalidarTokensAtivos(Mockito.any());
+            assertDoesNotThrow(() -> authService.desativarContaPorEmail(usuarioModelo.getEmail()));
+            Mockito.verify(interesseCancelamentoService).cancelarRelacionadosAoUsuario(usuarioModelo, usuarioModelo);
+            Mockito.verify(tokenUsuarioRepository).invalidarTokensAtivos(usuarioModelo.getId());
         }
 
         @Test
@@ -160,6 +156,7 @@ class AuthServiceTest {
             assertEquals("Usuario excluido", usuarioModelo.getName());
             assertTrue(usuarioModelo.getEmail().startsWith("excluido+"));
             assertNull(usuarioModelo.getPhone());
+            Mockito.verify(interesseCancelamentoService).cancelarRelacionadosAoUsuario(usuarioModelo, usuarioModelo);
             Mockito.verify(anuncioFavoritoRepository).deleteByUsuarioId(usuarioModelo.getId());
             Mockito.verify(notificacaoRepository).deleteByUsuarioId(usuarioModelo.getId());
         }

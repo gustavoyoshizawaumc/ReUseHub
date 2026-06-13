@@ -10,6 +10,7 @@ import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
 import com.reusehub.avaliacao.service.AvaliacaoService;
 import com.reusehub.perfil.dto.PerfilPublicoDTO;
+import com.reusehub.shared.util.NomePublicoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +56,7 @@ public class PerfilPublicoService {
 
         return new PerfilPublicoDTO(
                 usuario.getId(),
-                usuario.getName(),
+                NomePublicoUtils.primeiroNome(usuario.getName()),
                 usuario.getAvatarUrl(),
                 usuario.getBio(),
                 usuario.getReputationScore(),
@@ -83,7 +84,7 @@ public class PerfilPublicoService {
                 .criadoEm(anuncio.getCriadoEm())
                 .atualizadoEm(anuncio.getAtualizadoEm())
                 .usuarioId(anuncio.getUsuario().getId())
-                .nomeUsuario(anuncio.getUsuario().getName())
+                .nomeUsuario(NomePublicoUtils.primeiroNome(anuncio.getUsuario().getName()))
                 .categoriaId(anuncio.getCategoria().getId())
                 .nomeCategoria(anuncio.getCategoria().getNome())
                 .enderecoId(anuncio.getEndereco().getId())

@@ -16,6 +16,7 @@ import com.reusehub.anuncio.repository.ImagemAnuncioRepository;
 import com.reusehub.auth.model.Perfil;
 import com.reusehub.auth.model.Usuario;
 import com.reusehub.auth.repository.UsuarioRepository;
+import com.reusehub.interesse.service.InteresseCancelamentoService;
 import com.reusehub.moderacao.service.ModeracaoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +59,7 @@ public class AnuncioService {
     private final ImagemAnuncioRepository imagemAnuncioRepository;
     private final ModeracaoService moderacaoService;
     private final com.reusehub.anuncio.mapper.AnuncioRespostaMapper anuncioRespostaMapper;
+    private final InteresseCancelamentoService interesseCancelamentoService;
 
     public AnuncioRespostaDTO criarAnuncioComEndereco(
             String emailUsuario,
@@ -98,7 +100,9 @@ public class AnuncioService {
             validarAcessoAnuncioInativo(anuncio, emailUsuario);
         }
 
-        return mapearParaRespostaDTO(anuncio);
+        boolean ehDono = emailUsuario != null
+                && anuncio.getUsuario().getEmail().equals(emailUsuario);
+        return ehDono ? mapearParaRespostaDTO(anuncio) : mapearParaRespostaPublica(anuncio);
     }
 
     @Transactional(readOnly = true)
@@ -111,13 +115,13 @@ public class AnuncioService {
     @Transactional(readOnly = true)
     public Page<AnuncioRespostaDTO> listarAnunciosAtivos(Pageable pageable) {
         return anuncioRepository.findAnunciosAtivosOrdenadosPorRelevancia(pageable)
-                .map(this::mapearParaRespostaDTO);
+                .map(this::mapearParaRespostaPublica);
     }
 
     @Transactional(readOnly = true)
     public Page<AnuncioRespostaDTO> buscarAnuncios(String termo, Pageable pageable) {
         return anuncioRepository.buscarPorTermo(termo, pageable)
-                .map(this::mapearParaRespostaDTO);
+                .map(this::mapearParaRespostaPublica);
     }
 
     @Transactional(readOnly = true)
@@ -139,24 +143,25 @@ public class AnuncioService {
                 filtro.getRaioKm(),
                 ordenacaoFinal.name(),
                 pageable
-        ).map(this::mapearParaRespostaDTO);
+        ).map(this::mapearParaRespostaPublica);
     }
 
     @Transactional(readOnly = true)
     public Page<AnuncioRespostaDTO> listarPorCategoria(Integer categoriaId, Pageable pageable) {
         return anuncioRepository.findByCategoriaIdAndStatus(categoriaId, Anuncio.StatusAnuncio.ATIVO, pageable)
-                .map(this::mapearParaRespostaDTO);
+                .map(this::mapearParaRespostaPublica);
     }
 
     @Transactional(readOnly = true)
     public Page<AnuncioRespostaDTO> listarPorTipo(Anuncio.TipoAnuncio tipo, Pageable pageable) {
         return anuncioRepository.findByTipoAndStatus(tipo, Anuncio.StatusAnuncio.ATIVO, pageable)
-                .map(this::mapearParaRespostaDTO);
+                .map(this::mapearParaRespostaPublica);
     }
 
     public AnuncioRespostaDTO atualizarAnuncio(UUID id, String emailUsuario, AnuncioAtualizacaoDTO dto) {
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarPropriedadeDoAnuncio(anuncio, emailUsuario);
+        Anuncio.StatusAnuncio statusAnterior = anuncio.getStatus();
 
         Endereco endereco = resolverEnderecoParaAtualizacao(anuncio, dto);
         Categoria categoria = buscarCategoriaPorId(dto.getCategoriaId());
@@ -171,6 +176,7 @@ public class AnuncioService {
         anuncio.setMotivoReprovacao(null);
 
         Anuncio atualizado = anuncioRepository.save(anuncio);
+        cancelarInteressesSeStatusInvalidaNegociacoes(atualizado, statusAnterior, atualizado.getUsuario());
         return mapearParaRespostaDTO(atualizado);
     }
 
@@ -182,6 +188,7 @@ public class AnuncioService {
     ) {
         Anuncio anuncio = buscarAnuncioPorId(anuncioId);
         validarPropriedadeDoAnuncio(anuncio, emailUsuario);
+        Anuncio.StatusAnuncio statusAnterior = anuncio.getStatus();
 
         List<UUID> idsParaManter = dto.idsParaManter() == null ? List.of() : dto.idsParaManter();
         List<MultipartFile> imagensNovasValidas = filtrarImagensNaoVazias(novasImagens);
@@ -202,6 +209,7 @@ public class AnuncioService {
         anuncio.setMotivoSuspensao(null);
         anuncio.setMotivoReprovacao(null);
         Anuncio atualizado = anuncioRepository.save(anuncio);
+        cancelarInteressesSeStatusInvalidaNegociacoes(atualizado, statusAnterior, atualizado.getUsuario());
         return mapearParaRespostaDTO(atualizado);
     }
 
@@ -271,16 +279,22 @@ public class AnuncioService {
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarPropriedadeDoAnuncio(anuncio, emailUsuario);
         validarRestricaoStatusDeUsuario(novoStatus);
+        Anuncio.StatusAnuncio statusAnterior = anuncio.getStatus();
 
         anuncio.setStatus(novoStatus);
         Anuncio atualizado = anuncioRepository.save(anuncio);
+        cancelarInteressesSeStatusInvalidaNegociacoes(atualizado, statusAnterior, atualizado.getUsuario());
         return mapearParaRespostaDTO(atualizado);
     }
 
     public void deletarAnuncio(UUID id, String emailUsuario) {
         Anuncio anuncio = buscarAnuncioPorId(id);
         validarPropriedadeDoAnuncio(anuncio, emailUsuario);
-        anuncioRepository.deleteById(id);
+        anuncio.setStatus(Anuncio.StatusAnuncio.CANCELADO);
+        anuncio.setMotivoSuspensao(null);
+        anuncio.setMotivoReprovacao(null);
+        Anuncio atualizado = anuncioRepository.save(anuncio);
+        interesseCancelamentoService.cancelarRelacionadosAoAnuncio(atualizado, atualizado.getUsuario());
     }
 
     @Transactional(readOnly = true)
@@ -322,6 +336,12 @@ public class AnuncioService {
         anuncio.setStatus(Anuncio.StatusAnuncio.REPROVADO);
         anuncio.setMotivoReprovacao(motivo);
         Anuncio atualizado = anuncioRepository.save(anuncio);
+        moderacaoService.notificarCancelamentosPorModeracao(
+                atualizado,
+                interesseCancelamentoService.cancelarRelacionadosAoAnuncio(atualizado, moderador),
+                motivo,
+                "reprovado"
+        );
         moderacaoService.registrar(moderador, "ANUNCIO_REPROVADO", "ANUNCIO", id, motivo);
         moderacaoService.notificarReprovacao(atualizado, motivo);
         return mapearParaRespostaDTO(atualizado);
@@ -346,7 +366,7 @@ public class AnuncioService {
         return anuncioFavoritoRepository.findAnunciosFavoritosByUsuarioId(usuario.getId())
                 .stream()
                 .filter(anuncio -> anuncio.getStatus() == Anuncio.StatusAnuncio.ATIVO)
-                .map(this::mapearParaRespostaDTO)
+                .map(this::mapearParaRespostaPublica)
                 .toList();
     }
 
@@ -601,8 +621,34 @@ public class AnuncioService {
         }
     }
 
+    private void cancelarInteressesSeStatusInvalidaNegociacoes(
+            Anuncio anuncio,
+            Anuncio.StatusAnuncio statusAnterior,
+            Usuario responsavel
+    ) {
+        if (statusAnterior == anuncio.getStatus()) {
+            return;
+        }
+
+        if (statusInvalidaNegociacoes(anuncio.getStatus())) {
+            interesseCancelamentoService.cancelarRelacionadosAoAnuncio(anuncio, responsavel);
+        }
+    }
+
+    private boolean statusInvalidaNegociacoes(Anuncio.StatusAnuncio status) {
+        return status == Anuncio.StatusAnuncio.PENDENTE
+                || status == Anuncio.StatusAnuncio.REPROVADO
+                || status == Anuncio.StatusAnuncio.SUSPENSO
+                || status == Anuncio.StatusAnuncio.CANCELADO
+                || status == Anuncio.StatusAnuncio.EXPIRADO;
+    }
+
     private AnuncioRespostaDTO mapearParaRespostaDTO(Anuncio anuncio) {
         return anuncioRespostaMapper.mapear(anuncio);
+    }
+
+    private AnuncioRespostaDTO mapearParaRespostaPublica(Anuncio anuncio) {
+        return anuncioRespostaMapper.mapearPublico(anuncio);
     }
 
 }
